@@ -39,3 +39,18 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local file storage
+/storage/*
+!/storage/.gitkeep
+
+# testing
+/playwright-report/
+/test-results/
+/blob-report/
+
+# editor
+.vscode/*
+!.vscode/extensions.json
+.idea
+
