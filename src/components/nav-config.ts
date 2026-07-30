@@ -1,5 +1,6 @@
 import type { LucideIcon } from "lucide-react";
 import {
+  BookText,
   CalendarClock,
   FileText,
   LayoutDashboard,
@@ -35,6 +36,12 @@ export const NAV_ITEMS: NavItem[] = [
     href: "/clients",
     icon: Users,
     roles: ["super_admin", "manager", "executive", "accountant"],
+  },
+  {
+    title: "Catalog",
+    href: "/catalog",
+    icon: BookText,
+    roles: ["super_admin", "manager", "executive"],
   },
   {
     title: "Orders",

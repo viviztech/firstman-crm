@@ -1,3 +1,5 @@
+import { registerLeadNotificationJobs } from "@/jobs/lead-notifications";
+import { registerOrderNotificationJobs } from "@/jobs/order-notifications";
 import { logger } from "@/lib/logger";
 import { getBoss } from "@/lib/queue";
 
@@ -7,7 +9,8 @@ import { getBoss } from "@/lib/queue";
  * later phases (compliance reminders, WhatsApp sends, digests, ...).
  */
 export async function registerJobs(): Promise<void> {
-  const boss = await getBoss();
-  logger.info("pg-boss started, no workers registered yet");
-  void boss;
+  await getBoss();
+  await registerLeadNotificationJobs();
+  await registerOrderNotificationJobs();
+  logger.info("pg-boss started, lead + order notification workers registered");
 }

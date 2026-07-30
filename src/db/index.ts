@@ -2,10 +2,24 @@ import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import * as activitySchema from "@/db/schema/activity-logs";
 import * as authSchema from "@/db/schema/auth-schema";
+import * as catalogSchema from "@/db/schema/catalog";
+import * as clientsSchema from "@/db/schema/clients";
+import * as documentsSchema from "@/db/schema/documents";
+import * as leadsSchema from "@/db/schema/leads";
+import * as ordersSchema from "@/db/schema/orders";
 import * as settingsSchema from "@/db/schema/settings";
 import { env } from "@/lib/env";
 
-const schema = { ...authSchema, ...settingsSchema, ...activitySchema };
+const schema = {
+  ...authSchema,
+  ...settingsSchema,
+  ...activitySchema,
+  ...catalogSchema,
+  ...clientsSchema,
+  ...leadsSchema,
+  ...ordersSchema,
+  ...documentsSchema,
+};
 
 declare global {
   var _postgresClient: postgres.Sql | undefined;
