@@ -4,14 +4,21 @@ import { db } from "@/db";
 import { user } from "@/db/schema/auth-schema";
 import { serviceCategories, services } from "@/db/schema/catalog";
 import { clients } from "@/db/schema/clients";
+import { complianceItems } from "@/db/schema/compliance";
 import { leadFollowups, leads } from "@/db/schema/leads";
 import { orders } from "@/db/schema/orders";
 import { CATALOG_SEED } from "@/db/seed-data/catalog";
 import { CLIENT_SEED } from "@/db/seed-data/clients";
+import { COMPLIANCE_SEED } from "@/db/seed-data/compliance";
 import { FOLLOWUP_SEED_INDEXES, LEAD_SEED } from "@/db/seed-data/leads";
 import { ORDER_SEED } from "@/db/seed-data/orders";
 import { auth, type Role } from "@/lib/auth";
 import { env } from "@/lib/env";
+import {
+  createComplianceItem,
+  markComplianceItemFiled,
+  rollComplianceStatuses,
+} from "@/services/compliance";
 import { createOrder, updateOrderStatus } from "@/services/orders";
 
 const STAFF: { role: Role; count: number }[] = [
@@ -207,6 +214,46 @@ async function seedOrders(actorId: string, executiveIds: string[]): Promise<void
   console.log(`seeded ${ORDER_SEED.length} demo orders`);
 }
 
+async function seedCompliance(actorId: string): Promise<void> {
+  const actor = { userId: actorId, role: "super_admin" as const };
+  const now = Date.now();
+  const dayMs = 24 * 60 * 60 * 1000;
+
+  for (const seed of COMPLIANCE_SEED) {
+    const client = await db.query.clients.findFirst({ where: eq(clients.name, seed.clientName) });
+    if (!client) continue;
+
+    const existing = await db.query.complianceItems.findFirst({
+      where: and(eq(complianceItems.clientId, client.id), eq(complianceItems.title, seed.title)),
+    });
+    if (existing) continue;
+
+    const service = seed.serviceSlug
+      ? await db.query.services.findFirst({ where: eq(services.slug, seed.serviceSlug) })
+      : undefined;
+
+    const created = await createComplianceItem(
+      {
+        clientId: client.id,
+        serviceId: service?.id,
+        title: seed.title,
+        description: seed.description,
+        dueDate: new Date(now + seed.dueDateOffsetDays * dayMs),
+        recurrence: seed.recurrence,
+      },
+      actor,
+    );
+    if (!created) continue;
+
+    if (seed.markFiled) {
+      await markComplianceItemFiled(created.id, actor);
+    }
+  }
+
+  await rollComplianceStatuses();
+  console.log(`seeded ${COMPLIANCE_SEED.length} demo compliance items`);
+}
+
 async function main(): Promise<void> {
   const adminId = await upsertUser("admin@firstman.in", "Admin", "super_admin");
 
@@ -223,6 +270,7 @@ async function main(): Promise<void> {
   await seedClients(adminId, executiveIds);
   await seedLeads(adminId, executiveIds);
   await seedOrders(adminId, executiveIds);
+  await seedCompliance(adminId);
 
   console.log("Seed complete.");
   process.exit(0);

@@ -1,3 +1,4 @@
+import type { complianceRecurrenceEnum, complianceStatusEnum } from "@/db/schema/compliance";
 import type { documentStatusEnum } from "@/db/schema/documents";
 import type { leadSourceEnum, leadStatusEnum } from "@/db/schema/leads";
 import type { orderStatusEnum, orderTaskStatusEnum } from "@/db/schema/orders";
@@ -140,4 +141,40 @@ export const DOCUMENT_STATUS_BADGE: Record<DocumentStatus, { label: string; clas
     label: "Rejected",
     className: "bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300",
   },
+};
+
+export type ComplianceStatus = (typeof complianceStatusEnum.enumValues)[number];
+export type ComplianceRecurrence = (typeof complianceRecurrenceEnum.enumValues)[number];
+
+export const COMPLIANCE_STATUS_BADGE: Record<
+  ComplianceStatus,
+  { label: string; className: string }
+> = {
+  upcoming: {
+    label: "Upcoming",
+    className: "bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-300",
+  },
+  due_soon: {
+    label: "Due Soon",
+    className: "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300",
+  },
+  filed: {
+    label: "Filed",
+    className: "bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-300",
+  },
+  overdue: {
+    label: "Overdue",
+    className: "bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300",
+  },
+  na: {
+    label: "N/A",
+    className: "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400",
+  },
+};
+
+export const COMPLIANCE_RECURRENCE_LABEL: Record<ComplianceRecurrence, string> = {
+  none: "One-time",
+  monthly: "Monthly",
+  quarterly: "Quarterly",
+  yearly: "Yearly",
 };

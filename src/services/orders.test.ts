@@ -144,7 +144,7 @@ describe("orders service (integration)", () => {
     expect(order.dueAt.getTime()).toBe(expectedDueAt);
   });
 
-  it("generates sequential order numbers within the same year", async () => {
+  it("generates increasing, unique order numbers within the same year", async () => {
     const client = await makeTestClient("+919876602002", managerId);
 
     const first = await createOrder(
@@ -166,9 +166,12 @@ describe("orders service (integration)", () => {
       managerScope,
     );
 
+    // The sequence counter is a shared, lock-protected global (per year), so other test files
+    // creating orders concurrently can interleave — assert monotonic increase, not exact +1.
     const firstSeq = Number(first.orderNo.split("-")[2]);
     const secondSeq = Number(second.orderNo.split("-")[2]);
-    expect(secondSeq).toBe(firstSeq + 1);
+    expect(secondSeq).toBeGreaterThan(firstSeq);
+    expect(first.orderNo).not.toBe(second.orderNo);
   });
 
   it("lets an executive see and fetch only orders assigned to them", async () => {

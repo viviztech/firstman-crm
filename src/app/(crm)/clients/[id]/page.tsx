@@ -3,6 +3,7 @@ import { and, desc, eq } from "drizzle-orm";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { DeleteClientButton } from "@/components/clients/delete-client-button";
+import { ComplianceStatusBadge } from "@/components/compliance/compliance-status-badge";
 import { ClientDocumentUploadForm } from "@/components/documents/client-document-upload-form";
 import { DocumentChecklist } from "@/components/documents/document-checklist";
 import { OrderStatusBadge } from "@/components/orders/order-status-badge";
@@ -17,16 +18,12 @@ import { formatMoney } from "@/lib/money";
 import { requireUser } from "@/lib/session";
 import { getDocumentDownloadUrl } from "@/lib/signed-url";
 import { getClient } from "@/services/clients";
+import { listComplianceItemsForClient } from "@/services/compliance";
 import { listDocumentsForOwner } from "@/services/documents";
 import { listOrdersForClient } from "@/services/orders";
 
 const STUB_TABS = [
   { value: "invoices", label: "Invoices", copy: "Invoices will appear here once Phase 6 ships." },
-  {
-    value: "compliance",
-    label: "Compliance",
-    copy: "Compliance items will appear here once Phase 5 ships.",
-  },
   {
     value: "followups",
     label: "Follow-ups",
@@ -53,9 +50,10 @@ export default async function ClientProfilePage({ params }: { params: Promise<{ 
   const canDelete = user.role === "super_admin" || user.role === "manager";
 
   const scope = { userId: user.id, role: user.role };
-  const [orders, clientDocuments] = await Promise.all([
+  const [orders, clientDocuments, complianceItems] = await Promise.all([
     listOrdersForClient(id, scope),
     listDocumentsForOwner("client", id),
+    canManage ? listComplianceItemsForClient(id, scope) : Promise.resolve([]),
   ]);
 
   return (
@@ -91,6 +89,7 @@ export default async function ClientProfilePage({ params }: { params: Promise<{ 
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="orders">Orders</TabsTrigger>
           <TabsTrigger value="documents">Documents</TabsTrigger>
+          {canManage ? <TabsTrigger value="compliance">Compliance</TabsTrigger> : null}
           {STUB_TABS.map((tab) => (
             <TabsTrigger key={tab.value} value={tab.value}>
               {tab.label}
@@ -182,6 +181,43 @@ export default async function ClientProfilePage({ params }: { params: Promise<{ 
             />
           </div>
         </TabsContent>
+
+        {canManage ? (
+          <TabsContent value="compliance">
+            <div className="flex flex-col gap-4">
+              <div>
+                <Button
+                  variant="outline"
+                  nativeButton={false}
+                  render={<Link href={`/compliance/new?clientId=${id}`} />}
+                >
+                  Add compliance item
+                </Button>
+              </div>
+              {complianceItems.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No compliance items yet.</p>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  {complianceItems.map((item) => (
+                    <Link
+                      key={item.id}
+                      href={`/compliance/${item.id}`}
+                      className="flex items-center justify-between rounded-lg border p-3 text-sm hover:bg-muted/50"
+                    >
+                      <div className="flex flex-col">
+                        <span className="font-medium">{item.title}</span>
+                        <span className="text-muted-foreground">
+                          Due {formatInTimeZone(item.dueDate, env.TZ_DISPLAY, "d MMM yyyy")}
+                        </span>
+                      </div>
+                      <ComplianceStatusBadge status={item.status} />
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+          </TabsContent>
+        ) : null}
 
         {STUB_TABS.map((tab) => (
           <TabsContent key={tab.value} value={tab.value}>

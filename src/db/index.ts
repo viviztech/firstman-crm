@@ -4,6 +4,7 @@ import * as activitySchema from "@/db/schema/activity-logs";
 import * as authSchema from "@/db/schema/auth-schema";
 import * as catalogSchema from "@/db/schema/catalog";
 import * as clientsSchema from "@/db/schema/clients";
+import * as complianceSchema from "@/db/schema/compliance";
 import * as documentsSchema from "@/db/schema/documents";
 import * as leadsSchema from "@/db/schema/leads";
 import * as ordersSchema from "@/db/schema/orders";
@@ -19,6 +20,7 @@ const schema = {
   ...leadsSchema,
   ...ordersSchema,
   ...documentsSchema,
+  ...complianceSchema,
 };
 
 declare global {
