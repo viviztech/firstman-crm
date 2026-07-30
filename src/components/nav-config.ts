@@ -8,6 +8,7 @@ import {
   Settings,
   Users,
   UsersRound,
+  Wallet,
 } from "lucide-react";
 import type { Role } from "@/lib/auth";
 
@@ -59,6 +60,12 @@ export const NAV_ITEMS: NavItem[] = [
     title: "Invoices",
     href: "/invoices",
     icon: Receipt,
+    roles: ["super_admin", "manager", "accountant"],
+  },
+  {
+    title: "Expenses",
+    href: "/expenses",
+    icon: Wallet,
     roles: ["super_admin", "manager", "accountant"],
   },
   {

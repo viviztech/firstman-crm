@@ -1,0 +1,648 @@
+import { randomUUID } from "node:crypto";
+import { addDays, subDays } from "date-fns";
+import { eq, ilike, inArray } from "drizzle-orm";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { db } from "@/db";
+import { user } from "@/db/schema/auth-schema";
+import { clients } from "@/db/schema/clients";
+import { invoices, payments } from "@/db/schema/invoices";
+import {
+  cancelInvoice,
+  computeInvoiceTotals,
+  createInvoice,
+  deleteInvoice,
+  getClientFinancialSummary,
+  getCollectionsThisMonth,
+  getInvoice,
+  getOutstandingInvoicesTotal,
+  getOverdueInvoicesForDigest,
+  getOverdueInvoicesTotalPaise,
+  listInvoices,
+  listInvoicesForClient,
+  listInvoicesForOrder,
+  recordPayment,
+  rollInvoiceStatusesOverdue,
+  sendInvoice,
+  updateInvoice,
+} from "@/services/invoices";
+
+async function makeTestClient(phone: string, actorId: string) {
+  const [client] = await db
+    .insert(clients)
+    .values({ type: "individual", name: "Invoice Test Client", phone, createdBy: actorId })
+    .returning();
+  if (!client) throw new Error("Failed to create test client");
+  return client;
+}
+
+describe("invoices service (integration)", () => {
+  const managerId = randomUUID();
+  const execId = randomUUID();
+  const accountantId = randomUUID();
+
+  const managerScope = { userId: managerId, role: "manager" as const };
+  const execScope = { userId: execId, role: "executive" as const };
+  const accountantScope = { userId: accountantId, role: "accountant" as const };
+
+  beforeAll(async () => {
+    await db.insert(user).values([
+      {
+        id: managerId,
+        name: "Invoice Test Manager",
+        email: `invoice-manager-${managerId}@test.local`,
+        emailVerified: true,
+        role: "manager",
+      },
+      {
+        id: execId,
+        name: "Invoice Test Exec",
+        email: `invoice-exec-${execId}@test.local`,
+        emailVerified: true,
+        role: "executive",
+      },
+      {
+        id: accountantId,
+        name: "Invoice Test Accountant",
+        email: `invoice-accountant-${accountantId}@test.local`,
+        emailVerified: true,
+        role: "accountant",
+      },
+    ]);
+  });
+
+  afterAll(async () => {
+    const testClients = await db
+      .select({ id: clients.id })
+      .from(clients)
+      .where(ilike(clients.phone, "+919876605%"));
+    const clientIds = testClients.map((c) => c.id);
+
+    if (clientIds.length > 0) {
+      const testInvoices = await db
+        .select({ id: invoices.id })
+        .from(invoices)
+        .where(inArray(invoices.clientId, clientIds));
+      const invoiceIds = testInvoices.map((i) => i.id);
+      if (invoiceIds.length > 0) {
+        await db.delete(payments).where(inArray(payments.invoiceId, invoiceIds));
+        await db.delete(invoices).where(inArray(invoices.id, invoiceIds));
+      }
+    }
+
+    await db.delete(clients).where(ilike(clients.phone, "+919876605%"));
+    await db.delete(user).where(eq(user.id, managerId));
+    await db.delete(user).where(eq(user.id, execId));
+    await db.delete(user).where(eq(user.id, accountantId));
+  });
+
+  describe("computeInvoiceTotals (paise math)", () => {
+    it("sums many odd line-item amounts without float drift", () => {
+      const lineItems = Array.from({ length: 500 }, (_, i) => ({
+        description: `Item ${i}`,
+        qty: 1,
+        ratePaise: 1,
+      }));
+      const totals = computeInvoiceTotals(lineItems, 0);
+      expect(totals.subtotalPaise).toBe(500);
+      expect(Number.isInteger(totals.subtotalPaise)).toBe(true);
+    });
+
+    it("rounds each line amount individually (qty * rate)", () => {
+      const totals = computeInvoiceTotals(
+        [
+          { description: "Fractional qty", qty: 1.5, ratePaise: 333 },
+          { description: "Whole qty", qty: 2, ratePaise: 100 },
+        ],
+        0,
+      );
+      // 1.5 * 333 = 499.5 -> rounds to 500; 2 * 100 = 200
+      expect(totals.lineItems[0]?.amountPaise).toBe(500);
+      expect(totals.lineItems[1]?.amountPaise).toBe(200);
+      expect(totals.subtotalPaise).toBe(700);
+    });
+
+    it("computes 18% GST correctly and totalPaise = subtotal + gst exactly", () => {
+      const totals = computeInvoiceTotals(
+        [{ description: "Service", qty: 1, ratePaise: 149900 }],
+        18,
+      );
+      expect(totals.subtotalPaise).toBe(149900);
+      expect(totals.gstAmountPaise).toBe(26982); // round(149900 * 18 / 100)
+      expect(totals.totalPaise).toBe(totals.subtotalPaise + totals.gstAmountPaise);
+      expect(totals.totalPaise).toBe(176882);
+    });
+
+    it("applies 0% GST as a true no-op", () => {
+      const totals = computeInvoiceTotals(
+        [{ description: "Service", qty: 1, ratePaise: 100000 }],
+        0,
+      );
+      expect(totals.gstAmountPaise).toBe(0);
+      expect(totals.totalPaise).toBe(totals.subtotalPaise);
+    });
+  });
+
+  describe("createInvoice", () => {
+    it("generates increasing, unique invoice numbers and stores computed totals", async () => {
+      const client = await makeTestClient("+919876605001", managerId);
+
+      const first = await createInvoice(
+        {
+          clientId: client.id,
+          lineItems: [{ description: "invoice-test-marker A", qty: 1, ratePaise: 100000 }],
+          gstRate: 18,
+          dueDate: new Date("2026-09-01T00:00:00.000Z"),
+        },
+        managerScope,
+      );
+      const second = await createInvoice(
+        {
+          clientId: client.id,
+          lineItems: [{ description: "invoice-test-marker B", qty: 1, ratePaise: 200000 }],
+          gstRate: 18,
+          dueDate: new Date("2026-09-01T00:00:00.000Z"),
+        },
+        managerScope,
+      );
+      if (!first || !second) throw new Error("setup failed");
+
+      expect(first.invoiceNo).toMatch(/^FM-INV-\d{4}-\d{4}$/);
+      const firstSeq = Number(first.invoiceNo.split("-")[3]);
+      const secondSeq = Number(second.invoiceNo.split("-")[3]);
+      expect(secondSeq).toBeGreaterThan(firstSeq);
+      expect(first.invoiceNo).not.toBe(second.invoiceNo);
+
+      expect(first.subtotalPaise).toBe(100000);
+      expect(first.gstAmountPaise).toBe(18000);
+      expect(first.totalPaise).toBe(118000);
+      expect(first.status).toBe("draft");
+    });
+
+    it("returns null for an executive — invoices are outside their access entirely", async () => {
+      const client = await makeTestClient("+919876605002", managerId);
+      const result = await createInvoice(
+        {
+          clientId: client.id,
+          lineItems: [{ description: "invoice-test-marker exec-blocked", qty: 1, ratePaise: 1000 }],
+          gstRate: 0,
+          dueDate: new Date("2026-09-01T00:00:00.000Z"),
+        },
+        execScope,
+      );
+      expect(result).toBeNull();
+    });
+  });
+
+  describe("updateInvoice", () => {
+    it("only allows edits while the invoice is a draft", async () => {
+      const client = await makeTestClient("+919876605003", managerId);
+      const created = await createInvoice(
+        {
+          clientId: client.id,
+          lineItems: [{ description: "invoice-test-marker edit", qty: 1, ratePaise: 100000 }],
+          gstRate: 0,
+          dueDate: new Date("2026-09-05T00:00:00.000Z"),
+        },
+        managerScope,
+      );
+      if (!created) throw new Error("setup failed");
+
+      const updated = await updateInvoice(
+        created.id,
+        {
+          lineItems: [{ description: "invoice-test-marker edited", qty: 2, ratePaise: 50000 }],
+          gstRate: 18,
+          dueDate: new Date("2026-09-10T00:00:00.000Z"),
+        },
+        managerScope,
+      );
+      expect(updated?.totalPaise).toBe(118000);
+
+      await sendInvoice(created.id, managerScope);
+      const blockedEdit = await updateInvoice(
+        created.id,
+        {
+          lineItems: [{ description: "should not apply", qty: 1, ratePaise: 1 }],
+          gstRate: 0,
+          dueDate: new Date("2026-09-15T00:00:00.000Z"),
+        },
+        managerScope,
+      );
+      expect(blockedEdit).toBeNull();
+    });
+  });
+
+  describe("sendInvoice", () => {
+    it("moves draft -> sent and rejects sending an already-sent invoice", async () => {
+      const client = await makeTestClient("+919876605004", managerId);
+      const created = await createInvoice(
+        {
+          clientId: client.id,
+          lineItems: [{ description: "invoice-test-marker send", qty: 1, ratePaise: 100000 }],
+          gstRate: 0,
+          dueDate: new Date("2026-09-05T00:00:00.000Z"),
+        },
+        managerScope,
+      );
+      if (!created) throw new Error("setup failed");
+
+      const sent = await sendInvoice(created.id, managerScope);
+      expect(sent?.status).toBe("sent");
+      expect(sent?.sentAt).toBeTruthy();
+
+      const secondSend = await sendInvoice(created.id, managerScope);
+      expect(secondSend).toBeNull();
+    });
+  });
+
+  describe("recordPayment", () => {
+    it("moves sent -> partially_paid -> paid as payments accumulate, and rejects further payment once paid", async () => {
+      const client = await makeTestClient("+919876605005", managerId);
+      const created = await createInvoice(
+        {
+          clientId: client.id,
+          lineItems: [{ description: "invoice-test-marker payments", qty: 1, ratePaise: 100000 }],
+          gstRate: 0,
+          dueDate: new Date("2026-09-05T00:00:00.000Z"),
+        },
+        managerScope,
+      );
+      if (!created) throw new Error("setup failed");
+      await sendInvoice(created.id, managerScope);
+
+      const partial = await recordPayment(
+        created.id,
+        { amountPaise: 40000, method: "upi" },
+        managerScope,
+      );
+      expect(partial?.invoice.status).toBe("partially_paid");
+
+      const full = await recordPayment(
+        created.id,
+        { amountPaise: 60000, method: "cash" },
+        managerScope,
+      );
+      expect(full?.invoice.status).toBe("paid");
+
+      const rejected = await recordPayment(
+        created.id,
+        { amountPaise: 100, method: "cash" },
+        managerScope,
+      );
+      expect(rejected).toBeNull();
+    });
+
+    it("rejects recording a payment against a draft invoice", async () => {
+      const client = await makeTestClient("+919876605006", managerId);
+      const created = await createInvoice(
+        {
+          clientId: client.id,
+          lineItems: [
+            { description: "invoice-test-marker draft-payment", qty: 1, ratePaise: 100000 },
+          ],
+          gstRate: 0,
+          dueDate: new Date("2026-09-05T00:00:00.000Z"),
+        },
+        managerScope,
+      );
+      if (!created) throw new Error("setup failed");
+
+      const result = await recordPayment(
+        created.id,
+        { amountPaise: 1000, method: "cash" },
+        managerScope,
+      );
+      expect(result).toBeNull();
+    });
+  });
+
+  describe("cancelInvoice", () => {
+    it("cancels an invoice with no payments, and refuses once a payment exists", async () => {
+      const client = await makeTestClient("+919876605007", managerId);
+      const cancellable = await createInvoice(
+        {
+          clientId: client.id,
+          lineItems: [{ description: "invoice-test-marker cancel-ok", qty: 1, ratePaise: 100000 }],
+          gstRate: 0,
+          dueDate: new Date("2026-09-05T00:00:00.000Z"),
+        },
+        managerScope,
+      );
+      if (!cancellable) throw new Error("setup failed");
+      const cancelled = await cancelInvoice(cancellable.id, managerScope);
+      expect(cancelled?.status).toBe("cancelled");
+
+      const paidOne = await createInvoice(
+        {
+          clientId: client.id,
+          lineItems: [
+            { description: "invoice-test-marker cancel-blocked", qty: 1, ratePaise: 100000 },
+          ],
+          gstRate: 0,
+          dueDate: new Date("2026-09-05T00:00:00.000Z"),
+        },
+        managerScope,
+      );
+      if (!paidOne) throw new Error("setup failed");
+      await sendInvoice(paidOne.id, managerScope);
+      await recordPayment(paidOne.id, { amountPaise: 50000, method: "upi" }, managerScope);
+
+      await expect(cancelInvoice(paidOne.id, managerScope)).rejects.toThrow();
+    });
+  });
+
+  describe("deleteInvoice", () => {
+    it("only soft-deletes draft invoices", async () => {
+      const client = await makeTestClient("+919876605008", managerId);
+      const created = await createInvoice(
+        {
+          clientId: client.id,
+          lineItems: [{ description: "invoice-test-marker delete", qty: 1, ratePaise: 100000 }],
+          gstRate: 0,
+          dueDate: new Date("2026-09-05T00:00:00.000Z"),
+        },
+        managerScope,
+      );
+      if (!created) throw new Error("setup failed");
+
+      const deleted = await deleteInvoice(created.id, managerScope);
+      expect(deleted?.deletedAt).toBeTruthy();
+      expect(await getInvoice(created.id, managerScope)).toBeUndefined();
+
+      const sentOne = await createInvoice(
+        {
+          clientId: client.id,
+          lineItems: [
+            { description: "invoice-test-marker delete-blocked", qty: 1, ratePaise: 100000 },
+          ],
+          gstRate: 0,
+          dueDate: new Date("2026-09-05T00:00:00.000Z"),
+        },
+        managerScope,
+      );
+      if (!sentOne) throw new Error("setup failed");
+      await sendInvoice(sentOne.id, managerScope);
+      expect(await deleteInvoice(sentOne.id, managerScope)).toBeNull();
+    });
+  });
+
+  describe("rollInvoiceStatusesOverdue (time-frozen)", () => {
+    it("rolls sent/partially_paid invoices past their due date to overdue, and is idempotent", async () => {
+      const client = await makeTestClient("+919876605009", managerId);
+      const now = new Date("2026-06-15T00:00:00.000Z");
+
+      const overdueOne = await createInvoice(
+        {
+          clientId: client.id,
+          lineItems: [
+            { description: "invoice-test-marker rollover-overdue", qty: 1, ratePaise: 100000 },
+          ],
+          gstRate: 0,
+          dueDate: subDays(now, 3),
+        },
+        managerScope,
+      );
+      const notYetDue = await createInvoice(
+        {
+          clientId: client.id,
+          lineItems: [
+            { description: "invoice-test-marker rollover-future", qty: 1, ratePaise: 100000 },
+          ],
+          gstRate: 0,
+          dueDate: addDays(now, 10),
+        },
+        managerScope,
+      );
+      if (!overdueOne || !notYetDue) throw new Error("setup failed");
+      await sendInvoice(overdueOne.id, managerScope);
+      await sendInvoice(notYetDue.id, managerScope);
+
+      const result = await rollInvoiceStatusesOverdue(now);
+      expect(result.overdue).toBeGreaterThanOrEqual(1);
+
+      const [overdueRow, futureRow] = await Promise.all([
+        db.query.invoices.findFirst({ where: eq(invoices.id, overdueOne.id) }),
+        db.query.invoices.findFirst({ where: eq(invoices.id, notYetDue.id) }),
+      ]);
+      expect(overdueRow?.status).toBe("overdue");
+      expect(futureRow?.status).toBe("sent");
+
+      const second = await rollInvoiceStatusesOverdue(now);
+      const overdueRowAgain = await db.query.invoices.findFirst({
+        where: eq(invoices.id, overdueOne.id),
+      });
+      expect(overdueRowAgain?.status).toBe("overdue");
+      expect(second.overdue).toBe(0);
+    });
+
+    it("never rolls a draft, paid, or cancelled invoice into overdue", async () => {
+      const client = await makeTestClient("+919876605010", managerId);
+      const now = new Date("2026-06-15T00:00:00.000Z");
+
+      const draftOne = await createInvoice(
+        {
+          clientId: client.id,
+          lineItems: [
+            { description: "invoice-test-marker rollover-draft", qty: 1, ratePaise: 100000 },
+          ],
+          gstRate: 0,
+          dueDate: subDays(now, 3),
+        },
+        managerScope,
+      );
+      const paidOne = await createInvoice(
+        {
+          clientId: client.id,
+          lineItems: [
+            { description: "invoice-test-marker rollover-paid", qty: 1, ratePaise: 100000 },
+          ],
+          gstRate: 0,
+          dueDate: subDays(now, 3),
+        },
+        managerScope,
+      );
+      if (!draftOne || !paidOne) throw new Error("setup failed");
+      await sendInvoice(paidOne.id, managerScope);
+      await recordPayment(paidOne.id, { amountPaise: 100000, method: "cash" }, managerScope);
+
+      await rollInvoiceStatusesOverdue(now);
+
+      const [draftRow, paidRow] = await Promise.all([
+        db.query.invoices.findFirst({ where: eq(invoices.id, draftOne.id) }),
+        db.query.invoices.findFirst({ where: eq(invoices.id, paidOne.id) }),
+      ]);
+      expect(draftRow?.status).toBe("draft");
+      expect(paidRow?.status).toBe("paid");
+    });
+  });
+
+  describe("digest helpers", () => {
+    it("getOverdueInvoicesForDigest and getOverdueInvoicesTotalPaise reflect only overdue invoices, net of partial payments", async () => {
+      const client = await makeTestClient("+919876605011", managerId);
+      const now = new Date("2026-06-15T00:00:00.000Z");
+
+      const overdueWithPartialPayment = await createInvoice(
+        {
+          clientId: client.id,
+          lineItems: [{ description: "invoice-test-marker digest", qty: 1, ratePaise: 100000 }],
+          gstRate: 0,
+          dueDate: subDays(now, 5),
+        },
+        managerScope,
+      );
+      if (!overdueWithPartialPayment) throw new Error("setup failed");
+      await sendInvoice(overdueWithPartialPayment.id, managerScope);
+      await recordPayment(
+        overdueWithPartialPayment.id,
+        { amountPaise: 30000, method: "upi" },
+        managerScope,
+      );
+      await rollInvoiceStatusesOverdue(now);
+
+      const digestList = await getOverdueInvoicesForDigest();
+      const ids = digestList.map((invoice) => invoice.id);
+      expect(ids).toContain(overdueWithPartialPayment.id);
+
+      const total = await getOverdueInvoicesTotalPaise();
+      expect(total).toBeGreaterThanOrEqual(70000);
+    });
+  });
+
+  describe("client financial summary and org-wide stats", () => {
+    it("computes lifetime value (paid only) and open balance (net of partial payments) for a client", async () => {
+      const client = await makeTestClient("+919876605012", managerId);
+
+      const paidInvoice = await createInvoice(
+        {
+          clientId: client.id,
+          lineItems: [
+            { description: "invoice-test-marker summary-paid", qty: 1, ratePaise: 100000 },
+          ],
+          gstRate: 0,
+          dueDate: new Date("2026-09-05T00:00:00.000Z"),
+        },
+        managerScope,
+      );
+      const openInvoice = await createInvoice(
+        {
+          clientId: client.id,
+          lineItems: [
+            { description: "invoice-test-marker summary-open", qty: 1, ratePaise: 50000 },
+          ],
+          gstRate: 0,
+          dueDate: new Date("2026-09-05T00:00:00.000Z"),
+        },
+        managerScope,
+      );
+      if (!paidInvoice || !openInvoice) throw new Error("setup failed");
+
+      await sendInvoice(paidInvoice.id, managerScope);
+      await recordPayment(paidInvoice.id, { amountPaise: 100000, method: "cash" }, managerScope);
+      await sendInvoice(openInvoice.id, managerScope);
+      await recordPayment(openInvoice.id, { amountPaise: 20000, method: "cash" }, managerScope);
+
+      const summary = await getClientFinancialSummary(client.id, managerScope);
+      expect(summary?.lifetimeValuePaise).toBe(100000);
+      expect(summary?.openBalancePaise).toBe(30000);
+    });
+
+    it("returns null for an executive on every financial helper", async () => {
+      const client = await makeTestClient("+919876605013", managerId);
+      expect(await getClientFinancialSummary(client.id, execScope)).toBeNull();
+      expect(await getOutstandingInvoicesTotal(execScope)).toBeNull();
+      expect(await getCollectionsThisMonth(execScope)).toBeNull();
+      expect(await listInvoicesForClient(client.id, execScope)).toEqual([]);
+      expect((await listInvoices(execScope)).rows).toEqual([]);
+    });
+
+    it("lets an accountant read invoices too, not just manager/admin", async () => {
+      const client = await makeTestClient("+919876605014", managerId);
+      const created = await createInvoice(
+        {
+          clientId: client.id,
+          lineItems: [
+            { description: "invoice-test-marker accountant-read", qty: 1, ratePaise: 100000 },
+          ],
+          gstRate: 0,
+          dueDate: new Date("2026-09-05T00:00:00.000Z"),
+        },
+        managerScope,
+      );
+      if (!created) throw new Error("setup failed");
+
+      expect(await getInvoice(created.id, accountantScope)).toBeTruthy();
+    });
+  });
+
+  describe("role gating on every mutating/reading function", () => {
+    it("blocks an executive from getInvoice, updateInvoice, sendInvoice, recordPayment, cancelInvoice, deleteInvoice, listInvoicesForOrder", async () => {
+      const client = await makeTestClient("+919876605015", managerId);
+      const invoice = await createInvoice(
+        {
+          clientId: client.id,
+          lineItems: [{ description: "invoice-test-marker role-gate", qty: 1, ratePaise: 100000 }],
+          gstRate: 0,
+          dueDate: new Date("2026-09-05T00:00:00.000Z"),
+        },
+        managerScope,
+      );
+      if (!invoice) throw new Error("setup failed");
+
+      expect(await getInvoice(invoice.id, execScope)).toBeUndefined();
+      expect(
+        await updateInvoice(
+          invoice.id,
+          {
+            lineItems: [{ description: "nope", qty: 1, ratePaise: 1 }],
+            gstRate: 0,
+            dueDate: new Date(),
+          },
+          execScope,
+        ),
+      ).toBeNull();
+      expect(await sendInvoice(invoice.id, execScope)).toBeNull();
+      expect(
+        await recordPayment(invoice.id, { amountPaise: 100, method: "cash" }, execScope),
+      ).toBeNull();
+      expect(await cancelInvoice(invoice.id, execScope)).toBeNull();
+      expect(await deleteInvoice(invoice.id, execScope)).toBeNull();
+      expect(await listInvoicesForOrder(randomUUID(), execScope)).toEqual([]);
+    });
+  });
+
+  describe("listInvoices filters", () => {
+    it("filters by search term (invoice number or client name) and by status", async () => {
+      const client = await makeTestClient("+919876605016", managerId);
+      const invoice = await createInvoice(
+        {
+          clientId: client.id,
+          lineItems: [
+            { description: "invoice-test-marker list-filter", qty: 1, ratePaise: 100000 },
+          ],
+          gstRate: 0,
+          dueDate: new Date("2026-09-05T00:00:00.000Z"),
+        },
+        managerScope,
+      );
+      if (!invoice) throw new Error("setup failed");
+
+      const byInvoiceNo = await listInvoices(managerScope, { search: invoice.invoiceNo });
+      expect(byInvoiceNo.rows.map((row) => row.id)).toContain(invoice.id);
+
+      const byClientName = await listInvoices(managerScope, { search: "Invoice Test Client" });
+      expect(byClientName.rows.map((row) => row.id)).toContain(invoice.id);
+
+      const byStatus = await listInvoices(managerScope, {
+        search: invoice.invoiceNo,
+        status: "draft",
+      });
+      expect(byStatus.rows.map((row) => row.id)).toContain(invoice.id);
+
+      const wrongStatus = await listInvoices(managerScope, {
+        search: invoice.invoiceNo,
+        status: "paid",
+      });
+      expect(wrongStatus.rows.map((row) => row.id)).not.toContain(invoice.id);
+    });
+  });
+});

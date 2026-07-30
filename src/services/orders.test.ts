@@ -12,6 +12,7 @@ import {
   deleteOrder,
   getDocsPendingOrderIds,
   getOrder,
+  listOrderOptions,
   listOrders,
   listOrdersForClient,
   orderEditSchema,
@@ -379,5 +380,39 @@ describe("orders service (integration)", () => {
     const deleted = await deleteOrder(order.id, managerScope);
     expect(deleted?.deletedAt).toBeTruthy();
     expect(await getOrder(order.id, managerScope)).toBeUndefined();
+  });
+
+  it("scopes listOrderOptions to an executive's assigned orders, but not a manager", async () => {
+    const client = await makeTestClient("+919876602011", managerId);
+    const orderForA = await createOrder(
+      {
+        clientId: client.id,
+        serviceId: pvtLtdServiceId,
+        quotedPricePaise: 100000,
+        assignedTo: execAId,
+        notes: "order-test-marker options-scoped-A",
+      },
+      managerScope,
+    );
+    const orderForB = await createOrder(
+      {
+        clientId: client.id,
+        serviceId: pvtLtdServiceId,
+        quotedPricePaise: 100000,
+        assignedTo: execBId,
+        notes: "order-test-marker options-scoped-B",
+      },
+      managerScope,
+    );
+
+    const execOptions = await listOrderOptions(execAScope);
+    expect(execOptions.map((o) => o.id)).toContain(orderForA.id);
+    expect(execOptions.map((o) => o.id)).not.toContain(orderForB.id);
+
+    const managerOptions = await listOrderOptions(managerScope);
+    expect(managerOptions.map((o) => o.id)).toEqual(
+      expect.arrayContaining([orderForA.id, orderForB.id]),
+    );
+    expect(managerOptions.find((o) => o.id === orderForA.id)?.client.name).toBe(client.name);
   });
 });

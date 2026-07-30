@@ -6,6 +6,7 @@ import { DeleteClientButton } from "@/components/clients/delete-client-button";
 import { ComplianceStatusBadge } from "@/components/compliance/compliance-status-badge";
 import { ClientDocumentUploadForm } from "@/components/documents/client-document-upload-form";
 import { DocumentChecklist } from "@/components/documents/document-checklist";
+import { InvoiceStatusBadge } from "@/components/invoices/invoice-status-badge";
 import { OrderStatusBadge } from "@/components/orders/order-status-badge";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -20,10 +21,10 @@ import { getDocumentDownloadUrl } from "@/lib/signed-url";
 import { getClient } from "@/services/clients";
 import { listComplianceItemsForClient } from "@/services/compliance";
 import { listDocumentsForOwner } from "@/services/documents";
+import { getClientFinancialSummary, listInvoicesForClient } from "@/services/invoices";
 import { listOrdersForClient } from "@/services/orders";
 
 const STUB_TABS = [
-  { value: "invoices", label: "Invoices", copy: "Invoices will appear here once Phase 6 ships." },
   {
     value: "followups",
     label: "Follow-ups",
@@ -48,12 +49,15 @@ export default async function ClientProfilePage({ params }: { params: Promise<{ 
 
   const canManage = user.role !== "accountant";
   const canDelete = user.role === "super_admin" || user.role === "manager";
+  const canViewFinancials = user.role !== "executive";
 
   const scope = { userId: user.id, role: user.role };
-  const [orders, clientDocuments, complianceItems] = await Promise.all([
+  const [orders, clientDocuments, complianceItems, invoices, financialSummary] = await Promise.all([
     listOrdersForClient(id, scope),
     listDocumentsForOwner("client", id),
     canManage ? listComplianceItemsForClient(id, scope) : Promise.resolve([]),
+    canViewFinancials ? listInvoicesForClient(id, scope) : Promise.resolve([]),
+    canViewFinancials ? getClientFinancialSummary(id, scope) : Promise.resolve(null),
   ]);
 
   return (
@@ -90,6 +94,7 @@ export default async function ClientProfilePage({ params }: { params: Promise<{ 
           <TabsTrigger value="orders">Orders</TabsTrigger>
           <TabsTrigger value="documents">Documents</TabsTrigger>
           {canManage ? <TabsTrigger value="compliance">Compliance</TabsTrigger> : null}
+          {canViewFinancials ? <TabsTrigger value="invoices">Invoices</TabsTrigger> : null}
           {STUB_TABS.map((tab) => (
             <TabsTrigger key={tab.value} value={tab.value}>
               {tab.label}
@@ -137,6 +142,17 @@ export default async function ClientProfilePage({ params }: { params: Promise<{ 
                 <span>Referral: {client.referralSource ?? "—"}</span>
               </CardContent>
             </Card>
+            {financialSummary ? (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-sm text-muted-foreground">Billing</CardTitle>
+                </CardHeader>
+                <CardContent className="flex flex-col gap-1 text-sm">
+                  <span>Lifetime value: {formatMoney(financialSummary.lifetimeValuePaise)}</span>
+                  <span>Open balance: {formatMoney(financialSummary.openBalancePaise)}</span>
+                </CardContent>
+              </Card>
+            ) : null}
           </div>
         </TabsContent>
 
@@ -211,6 +227,46 @@ export default async function ClientProfilePage({ params }: { params: Promise<{ 
                         </span>
                       </div>
                       <ComplianceStatusBadge status={item.status} />
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+          </TabsContent>
+        ) : null}
+
+        {canViewFinancials ? (
+          <TabsContent value="invoices">
+            <div className="flex flex-col gap-4">
+              <div>
+                <Button
+                  variant="outline"
+                  nativeButton={false}
+                  render={<Link href={`/invoices/new?clientId=${id}`} />}
+                >
+                  New invoice
+                </Button>
+              </div>
+              {invoices.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No invoices yet.</p>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  {invoices.map((invoice) => (
+                    <Link
+                      key={invoice.id}
+                      href={`/invoices/${invoice.id}`}
+                      className="flex items-center justify-between rounded-lg border p-3 text-sm hover:bg-muted/50"
+                    >
+                      <div className="flex flex-col">
+                        <span className="font-medium">{invoice.invoiceNo}</span>
+                        <span className="text-muted-foreground">
+                          Due {formatInTimeZone(invoice.dueDate, env.TZ_DISPLAY, "d MMM yyyy")}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span>{formatMoney(invoice.totalPaise)}</span>
+                        <InvoiceStatusBadge status={invoice.status} />
+                      </div>
                     </Link>
                   ))}
                 </div>

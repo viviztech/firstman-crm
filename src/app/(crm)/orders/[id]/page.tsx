@@ -3,6 +3,7 @@ import { and, desc, eq } from "drizzle-orm";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { DocumentChecklist } from "@/components/documents/document-checklist";
+import { InvoiceStatusBadge } from "@/components/invoices/invoice-status-badge";
 import { DeleteOrderButton } from "@/components/orders/delete-order-button";
 import { OrderStatusSelect } from "@/components/orders/order-status-select";
 import { OrderStatusTimeline } from "@/components/orders/order-status-timeline";
@@ -16,6 +17,7 @@ import { env } from "@/lib/env";
 import { formatMoney } from "@/lib/money";
 import { requireUser } from "@/lib/session";
 import { getDocumentDownloadUrl } from "@/lib/signed-url";
+import { listInvoicesForOrder } from "@/services/invoices";
 import { getOrder } from "@/services/orders";
 
 export default async function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -35,7 +37,11 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
 
   const canManage = user.role !== "accountant";
   const canDelete = user.role === "super_admin" || user.role === "manager";
+  const canViewFinancials = user.role !== "executive";
   const isOverdue = !order.completedAt && new Date(order.dueAt) < new Date();
+
+  const scope = { userId: user.id, role: user.role };
+  const invoices = canViewFinancials ? await listInvoicesForOrder(id, scope) : [];
 
   return (
     <div className="flex flex-col gap-4">
@@ -72,7 +78,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="tasks">Tasks</TabsTrigger>
           <TabsTrigger value="documents">Documents</TabsTrigger>
-          <TabsTrigger value="invoices">Invoices</TabsTrigger>
+          {canViewFinancials ? <TabsTrigger value="invoices">Invoices</TabsTrigger> : null}
           <TabsTrigger value="activity">Activity</TabsTrigger>
         </TabsList>
 
@@ -143,11 +149,45 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
           />
         </TabsContent>
 
-        <TabsContent value="invoices">
-          <p className="text-sm text-muted-foreground">
-            Invoices will appear here once Phase 6 ships.
-          </p>
-        </TabsContent>
+        {canViewFinancials ? (
+          <TabsContent value="invoices">
+            <div className="flex flex-col gap-4">
+              <div>
+                <Button
+                  variant="outline"
+                  nativeButton={false}
+                  render={<Link href={`/invoices/new?clientId=${order.client.id}&orderId=${id}`} />}
+                >
+                  New invoice
+                </Button>
+              </div>
+              {invoices.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No invoices yet.</p>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  {invoices.map((invoice) => (
+                    <Link
+                      key={invoice.id}
+                      href={`/invoices/${invoice.id}`}
+                      className="flex items-center justify-between rounded-lg border p-3 text-sm hover:bg-muted/50"
+                    >
+                      <div className="flex flex-col">
+                        <span className="font-medium">{invoice.invoiceNo}</span>
+                        <span className="text-muted-foreground">
+                          Due {formatInTimeZone(invoice.dueDate, env.TZ_DISPLAY, "d MMM yyyy")}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span>{formatMoney(invoice.totalPaise)}</span>
+                        <InvoiceStatusBadge status={invoice.status} />
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+          </TabsContent>
+        ) : null}
 
         <TabsContent value="activity">
           <div className="flex flex-col gap-2">

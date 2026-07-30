@@ -1,5 +1,6 @@
 import type { complianceRecurrenceEnum, complianceStatusEnum } from "@/db/schema/compliance";
 import type { documentStatusEnum } from "@/db/schema/documents";
+import type { invoiceStatusEnum, paymentMethodEnum } from "@/db/schema/invoices";
 import type { leadSourceEnum, leadStatusEnum } from "@/db/schema/leads";
 import type { orderStatusEnum, orderTaskStatusEnum } from "@/db/schema/orders";
 
@@ -177,4 +178,42 @@ export const COMPLIANCE_RECURRENCE_LABEL: Record<ComplianceRecurrence, string> =
   monthly: "Monthly",
   quarterly: "Quarterly",
   yearly: "Yearly",
+};
+
+export type InvoiceStatus = (typeof invoiceStatusEnum.enumValues)[number];
+export type PaymentMethod = (typeof paymentMethodEnum.enumValues)[number];
+
+export const INVOICE_STATUS_BADGE: Record<InvoiceStatus, { label: string; className: string }> = {
+  draft: {
+    label: "Draft",
+    className: "bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-300",
+  },
+  sent: {
+    label: "Sent",
+    className: "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300",
+  },
+  partially_paid: {
+    label: "Partially Paid",
+    className: "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300",
+  },
+  paid: {
+    label: "Paid",
+    className: "bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-300",
+  },
+  overdue: {
+    label: "Overdue",
+    className: "bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300",
+  },
+  cancelled: {
+    label: "Cancelled",
+    className: "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400",
+  },
+};
+
+export const PAYMENT_METHOD_LABEL: Record<PaymentMethod, string> = {
+  upi: "UPI",
+  bank_transfer: "Bank Transfer",
+  cash: "Cash",
+  card: "Card",
+  cheque: "Cheque",
 };

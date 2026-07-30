@@ -130,6 +130,20 @@ export async function listOrders(
   };
 }
 
+/** Minimal {id, orderNo, clientId, clientName} list for select dropdowns (e.g. the invoice form's order picker). */
+export async function listOrderOptions(scope: ActorScope) {
+  const conditions = [isNull(orders.deletedAt)];
+  const scoped = scopeCondition(scope);
+  if (scoped) conditions.push(scoped);
+
+  return db.query.orders.findMany({
+    where: and(...conditions),
+    orderBy: (order, { desc }) => [desc(order.createdAt)],
+    columns: { id: true, orderNo: true, clientId: true },
+    with: { client: { columns: { name: true } } },
+  });
+}
+
 /** All of a client's orders, unpaginated — for the client profile's Orders tab. */
 export async function listOrdersForClient(clientId: string, scope: ActorScope) {
   const conditions = [eq(orders.clientId, clientId), isNull(orders.deletedAt)];

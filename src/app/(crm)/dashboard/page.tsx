@@ -3,8 +3,11 @@ import Link from "next/link";
 import { ComplianceStatusBadge } from "@/components/compliance/compliance-status-badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { env } from "@/lib/env";
+import { formatMoney } from "@/lib/money";
 import { requireUser } from "@/lib/session";
 import { listUpcomingComplianceItems } from "@/services/compliance";
+import { getExpensesThisMonth } from "@/services/expenses";
+import { getCollectionsThisMonth, getOutstandingInvoicesTotal } from "@/services/invoices";
 
 export default async function DashboardPage() {
   const user = await requireUser();
@@ -14,6 +17,15 @@ export default async function DashboardPage() {
     user.role === "super_admin" || user.role === "manager" || user.role === "executive";
   const upcomingCompliance = showCompliance ? await listUpcomingComplianceItems(scope, 14) : [];
 
+  const showAccountantStats = user.role === "accountant";
+  const [outstandingPaise, collectionsPaise, expensesPaise] = showAccountantStats
+    ? await Promise.all([
+        getOutstandingInvoicesTotal(scope),
+        getCollectionsThisMonth(scope),
+        getExpensesThisMonth(scope),
+      ])
+    : [null, null, null];
+
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
       <Card>
@@ -22,6 +34,41 @@ export default async function DashboardPage() {
         </CardHeader>
         <CardContent className="text-2xl font-semibold">{user.name}</CardContent>
       </Card>
+
+      {showAccountantStats ? (
+        <>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Outstanding invoices
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="text-2xl font-semibold">
+              {formatMoney(outstandingPaise ?? 0)}
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Collections this month
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="text-2xl font-semibold">
+              {formatMoney(collectionsPaise ?? 0)}
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Expenses this month
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="text-2xl font-semibold">
+              {formatMoney(expensesPaise ?? 0)}
+            </CardContent>
+          </Card>
+        </>
+      ) : null}
 
       {showCompliance ? (
         <Card className="md:col-span-2 lg:col-span-3">

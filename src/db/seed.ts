@@ -5,11 +5,15 @@ import { user } from "@/db/schema/auth-schema";
 import { serviceCategories, services } from "@/db/schema/catalog";
 import { clients } from "@/db/schema/clients";
 import { complianceItems } from "@/db/schema/compliance";
+import { expenses } from "@/db/schema/expenses";
+import { invoices } from "@/db/schema/invoices";
 import { leadFollowups, leads } from "@/db/schema/leads";
 import { orders } from "@/db/schema/orders";
 import { CATALOG_SEED } from "@/db/seed-data/catalog";
 import { CLIENT_SEED } from "@/db/seed-data/clients";
 import { COMPLIANCE_SEED } from "@/db/seed-data/compliance";
+import { EXPENSE_SEED } from "@/db/seed-data/expenses";
+import { INVOICE_SEED } from "@/db/seed-data/invoices";
 import { FOLLOWUP_SEED_INDEXES, LEAD_SEED } from "@/db/seed-data/leads";
 import { ORDER_SEED } from "@/db/seed-data/orders";
 import { auth, type Role } from "@/lib/auth";
@@ -19,6 +23,14 @@ import {
   markComplianceItemFiled,
   rollComplianceStatuses,
 } from "@/services/compliance";
+import { createExpense } from "@/services/expenses";
+import {
+  cancelInvoice,
+  createInvoice,
+  recordPayment,
+  rollInvoiceStatusesOverdue,
+  sendInvoice,
+} from "@/services/invoices";
 import { createOrder, updateOrderStatus } from "@/services/orders";
 
 const STAFF: { role: Role; count: number }[] = [
@@ -254,6 +266,97 @@ async function seedCompliance(actorId: string): Promise<void> {
   console.log(`seeded ${COMPLIANCE_SEED.length} demo compliance items`);
 }
 
+async function seedInvoices(actorId: string): Promise<void> {
+  const actor = { userId: actorId, role: "super_admin" as const };
+  const now = Date.now();
+  const dayMs = 24 * 60 * 60 * 1000;
+
+  for (const seed of INVOICE_SEED) {
+    const client = await db.query.clients.findFirst({ where: eq(clients.name, seed.clientName) });
+    if (!client) continue;
+
+    const firstDescription = seed.lineItems[0]?.description;
+    const clientInvoices = await db.query.invoices.findMany({
+      where: eq(invoices.clientId, client.id),
+    });
+    const alreadyExists = clientInvoices.some(
+      (invoice) => invoice.lineItems[0]?.description === firstDescription,
+    );
+    if (alreadyExists) continue;
+
+    const created = await createInvoice(
+      {
+        clientId: client.id,
+        lineItems: seed.lineItems,
+        gstRate: seed.gstRate,
+        dueDate: new Date(now + seed.dueDateOffsetDays * dayMs),
+      },
+      actor,
+    );
+    if (!created) continue;
+
+    if (seed.action === "cancelled") {
+      await cancelInvoice(created.id, actor);
+      continue;
+    }
+
+    if (seed.action === "sent") {
+      await sendInvoice(created.id, actor);
+    }
+
+    for (const payment of seed.payments ?? []) {
+      await recordPayment(
+        created.id,
+        { amountPaise: payment.amountPaise, method: payment.method, reference: payment.reference },
+        actor,
+      );
+    }
+  }
+
+  await rollInvoiceStatusesOverdue();
+  console.log(`seeded ${INVOICE_SEED.length} demo invoices`);
+}
+
+async function seedExpenses(actorId: string): Promise<void> {
+  const actor = { userId: actorId, role: "super_admin" as const };
+  const now = Date.now();
+  const dayMs = 24 * 60 * 60 * 1000;
+
+  for (const seed of EXPENSE_SEED) {
+    const existing = await db.query.expenses.findFirst({
+      where: and(eq(expenses.category, seed.category), eq(expenses.amountPaise, seed.amountPaise)),
+    });
+    if (existing) continue;
+
+    let order: { id: string } | undefined;
+    if (seed.orderClientName && seed.orderServiceSlug) {
+      const orderClient = await db.query.clients.findFirst({
+        where: eq(clients.name, seed.orderClientName),
+      });
+      const orderService = await db.query.services.findFirst({
+        where: eq(services.slug, seed.orderServiceSlug),
+      });
+      if (orderClient && orderService) {
+        order = await db.query.orders.findFirst({
+          where: and(eq(orders.clientId, orderClient.id), eq(orders.serviceId, orderService.id)),
+        });
+      }
+    }
+
+    await createExpense(
+      {
+        date: new Date(now + seed.dateOffsetDays * dayMs),
+        category: seed.category,
+        description: seed.description,
+        amountPaise: seed.amountPaise,
+        orderId: order?.id,
+      },
+      actor,
+    );
+  }
+  console.log(`seeded ${EXPENSE_SEED.length} demo expenses`);
+}
+
 async function main(): Promise<void> {
   const adminId = await upsertUser("admin@firstman.in", "Admin", "super_admin");
 
@@ -271,6 +374,8 @@ async function main(): Promise<void> {
   await seedLeads(adminId, executiveIds);
   await seedOrders(adminId, executiveIds);
   await seedCompliance(adminId);
+  await seedInvoices(adminId);
+  await seedExpenses(adminId);
 
   console.log("Seed complete.");
   process.exit(0);
