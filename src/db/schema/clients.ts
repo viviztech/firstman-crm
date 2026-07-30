@@ -1,5 +1,5 @@
 import { relations } from "drizzle-orm";
-import { index, pgEnum, pgTable, text } from "drizzle-orm/pg-core";
+import { boolean, index, pgEnum, pgTable, text } from "drizzle-orm/pg-core";
 import { actorColumns, baseColumns } from "@/db/schema/_shared";
 import { user } from "@/db/schema/auth-schema";
 
@@ -23,6 +23,8 @@ export const clients = pgTable(
     pincode: text("pincode"),
     assignedTo: text("assigned_to").references(() => user.id, { onDelete: "set null" }),
     referralSource: text("referral_source"),
+    // Manual flag for now — spec 4.8 defers the inbound "STOP" webhook to a later phase.
+    whatsappOptedOut: boolean("whatsapp_opted_out").notNull().default(false),
   },
   (table) => [
     index("clients_phone_idx").on(table.phone),

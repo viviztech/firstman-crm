@@ -12,9 +12,11 @@ import {
   deleteOrder,
   getDocsPendingOrderIds,
   getOrder,
+  getOrderForNotification,
   listOrderOptions,
   listOrders,
   listOrdersForClient,
+  listOrdersWithPendingDocs,
   orderEditSchema,
   orderInputSchema,
   updateOrder,
@@ -414,5 +416,66 @@ describe("orders service (integration)", () => {
       expect.arrayContaining([orderForA.id, orderForB.id]),
     );
     expect(managerOptions.find((o) => o.id === orderForA.id)?.client.name).toBe(client.name);
+  });
+
+  it("getOrderForNotification returns the order with the client's contact info, unscoped", async () => {
+    const client = await makeTestClient("+919876602012", managerId);
+    const order = await createOrder(
+      {
+        clientId: client.id,
+        serviceId: pvtLtdServiceId,
+        quotedPricePaise: 100000,
+        notes: "order-test-marker notify-fetch",
+      },
+      managerScope,
+    );
+
+    const fetched = await getOrderForNotification(order.id);
+    expect(fetched?.orderNo).toBe(order.orderNo);
+    expect(fetched?.client.phone).toBe(client.phone);
+    expect(fetched?.client.whatsappOptedOut).toBe(false);
+
+    expect(await getOrderForNotification(randomUUID())).toBeUndefined();
+  });
+
+  it("listOrdersWithPendingDocs includes freshly created orders and excludes ones with all docs verified", async () => {
+    const client = await makeTestClient("+919876602013", managerId);
+    const order = await createOrder(
+      {
+        clientId: client.id,
+        serviceId: pvtLtdServiceId,
+        quotedPricePaise: 100000,
+        notes: "order-test-marker docs-pending-cron",
+      },
+      managerScope,
+    );
+
+    const beforeVerify = await listOrdersWithPendingDocs();
+    expect(beforeVerify.map((o) => o.id)).toContain(order.id);
+
+    await db
+      .update(documents)
+      .set({ status: "verified" })
+      .where(and(eq(documents.ownerType, "order"), eq(documents.ownerId, order.id)));
+
+    const afterVerify = await listOrdersWithPendingDocs();
+    expect(afterVerify.map((o) => o.id)).not.toContain(order.id);
+  });
+
+  it("listOrdersWithPendingDocs excludes completed and cancelled orders even if docs are still pending", async () => {
+    const client = await makeTestClient("+919876602014", managerId);
+    const order = await createOrder(
+      {
+        clientId: client.id,
+        serviceId: pvtLtdServiceId,
+        quotedPricePaise: 100000,
+        notes: "order-test-marker docs-pending-completed",
+      },
+      managerScope,
+    );
+    await updateOrderStatus(order.id, "completed", managerScope);
+
+    const pending = await listOrdersWithPendingDocs();
+    expect(pending.map((o) => o.id)).not.toContain(order.id);
   });
 });

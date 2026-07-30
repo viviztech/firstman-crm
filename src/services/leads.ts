@@ -1,4 +1,5 @@
-import { and, asc, count, eq, ilike, isNull, ne, or } from "drizzle-orm";
+import { endOfDay } from "date-fns";
+import { and, asc, count, eq, ilike, isNotNull, isNull, lte, ne, or } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/db";
 import { user } from "@/db/schema/auth-schema";
@@ -182,6 +183,29 @@ export async function getLead(id: string, scope: ActorScope) {
         with: { user: { columns: { id: true, name: true } } },
       },
     },
+  });
+}
+
+/** Unscoped fetch for notification jobs — system-context, not a user request (mirrors getInvoiceForPdf). */
+export async function getLeadForNotification(id: string) {
+  return db.query.leads.findFirst({
+    where: and(eq(leads.id, id), isNull(leads.deletedAt)),
+    columns: { id: true, name: true, phone: true },
+    with: { assignee: { columns: { id: true, name: true, email: true } } },
+  });
+}
+
+/** A given executive's leads with a follow-up due today or overdue — morning digest cron (spec 4.8). */
+export async function listFollowUpsDueForExecutive(executiveId: string, now: Date = new Date()) {
+  return db.query.leads.findMany({
+    where: and(
+      isNull(leads.deletedAt),
+      eq(leads.assignedTo, executiveId),
+      isNotNull(leads.nextFollowUpAt),
+      lte(leads.nextFollowUpAt, endOfDay(now)),
+    ),
+    columns: { id: true, name: true, phone: true, nextFollowUpAt: true },
+    orderBy: (lead, { asc }) => [asc(lead.nextFollowUpAt)],
   });
 }
 

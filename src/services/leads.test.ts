@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { addDays, subDays } from "date-fns";
 import { eq, ilike, inArray } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { db } from "@/db";
@@ -12,10 +13,12 @@ import {
   createLead,
   deleteLead,
   getLead,
+  getLeadForNotification,
   LEAD_AUTO_ASSIGNMENT_KEY,
   type LeadInput,
   leadInputSchema,
   leadStatusUpdateSchema,
+  listFollowUpsDueForExecutive,
   listLeads,
   listLeadsForBoard,
   nextInRoundRobin,
@@ -299,5 +302,55 @@ describe("leads service (integration)", () => {
     const deleted = await deleteLead(created.id, managerScope);
     expect(deleted?.deletedAt).toBeTruthy();
     expect(await getLead(created.id, managerScope)).toBeUndefined();
+  });
+
+  it("getLeadForNotification returns the lead with its assignee's contact info", async () => {
+    const created = await createLead(
+      input("9876600018", { assignedTo: execAId, name: "Notify Fetch Target" }),
+      managerScope,
+    );
+
+    const fetched = await getLeadForNotification(created.id);
+    expect(fetched?.name).toBe("Notify Fetch Target");
+    expect(fetched?.assignee?.id).toBe(execAId);
+    expect(fetched?.assignee?.email).toContain("lead-execA-");
+
+    expect(await getLeadForNotification(randomUUID())).toBeUndefined();
+  });
+
+  describe("listFollowUpsDueForExecutive (time-frozen)", () => {
+    it("includes overdue and due-today follow-ups, excludes future ones and other executives'", async () => {
+      const now = new Date("2026-06-15T12:00:00.000Z");
+
+      const overdue = await createLead(
+        input("9876600019", { assignedTo: execAId, nextFollowUpAt: subDays(now, 2) }),
+        managerScope,
+      );
+      const dueToday = await createLead(
+        input("9876600020", { assignedTo: execAId, nextFollowUpAt: now }),
+        managerScope,
+      );
+      const dueFuture = await createLead(
+        input("9876600021", { assignedTo: execAId, nextFollowUpAt: addDays(now, 5) }),
+        managerScope,
+      );
+      const forOtherExec = await createLead(
+        input("9876600022", { assignedTo: execBId, nextFollowUpAt: subDays(now, 1) }),
+        managerScope,
+      );
+      const noFollowUp = await createLead(
+        input("9876600023", { assignedTo: execAId }),
+        managerScope,
+      );
+
+      const due = await listFollowUpsDueForExecutive(execAId, now);
+      const dueIds = due.map((lead) => lead.id);
+
+      expect(dueIds).toContain(overdue.id);
+      expect(dueIds).toContain(dueToday.id);
+      expect(dueIds).not.toContain(dueFuture.id);
+      expect(dueIds).not.toContain(forOtherExec.id);
+      expect(dueIds).not.toContain(noFollowUp.id);
+    });
   });
 });

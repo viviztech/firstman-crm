@@ -10,8 +10,10 @@ import {
   createClient,
   deleteClient,
   getClient,
+  getClientForNotification,
   listClientOptions,
   listClients,
+  setWhatsAppOptOut,
   updateClient,
 } from "@/services/clients";
 
@@ -176,5 +178,37 @@ describe("clients service — executive scoping (integration)", () => {
     expect(deleted?.deletedAt).toBeTruthy();
 
     expect(await getClient(created.id, managerScope)).toBeUndefined();
+  });
+
+  it("toggles whatsappOptedOut, scoped like every other mutation", async () => {
+    const clientForA = await createClient(
+      input("9876500011", { assignedTo: execAId }),
+      managerScope,
+    );
+    expect(clientForA.whatsappOptedOut).toBe(false);
+
+    const optedOut = await setWhatsAppOptOut(clientForA.id, true, execAScope);
+    expect(optedOut?.whatsappOptedOut).toBe(true);
+
+    const blocked = await setWhatsAppOptOut(clientForA.id, false, execBScope);
+    expect(blocked).toBeNull();
+
+    const optedBackIn = await setWhatsAppOptOut(clientForA.id, false, managerScope);
+    expect(optedBackIn?.whatsappOptedOut).toBe(false);
+  });
+
+  it("getClientForNotification returns unscoped contact info for the notification jobs", async () => {
+    const created = await createClient(
+      input("9876500012", { name: "Notification Fetch Target", email: "notif@example.com" }),
+      managerScope,
+    );
+
+    const contact = await getClientForNotification(created.id);
+    expect(contact?.name).toBe("Notification Fetch Target");
+    expect(contact?.phone).toBe("+919876500012");
+    expect(contact?.email).toBe("notif@example.com");
+    expect(contact?.whatsappOptedOut).toBe(false);
+
+    expect(await getClientForNotification(randomUUID())).toBeUndefined();
   });
 });

@@ -23,6 +23,10 @@ export async function runComplianceNightlyJob(now: Date = new Date()): Promise<v
       await enqueueComplianceReminder({
         complianceItemId: item.id,
         clientId: item.client.id,
+        clientName: item.client.name,
+        clientPhone: item.client.phone,
+        clientEmail: item.client.email,
+        whatsappOptedOut: item.client.whatsappOptedOut,
         title: item.title,
         dueDate: item.dueDate.toISOString(),
         daysUntilDue,

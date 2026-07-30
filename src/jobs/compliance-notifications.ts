@@ -1,5 +1,7 @@
-import { logger } from "@/lib/logger";
+import { notifyClientWhatsApp, notifyEmail } from "@/jobs/notify";
+import { getAppUrl } from "@/lib/app-url";
 import { getBoss } from "@/lib/queue";
+import { getUserContact } from "@/services/users";
 
 export const COMPLIANCE_REMINDER_JOB = "compliance-reminder";
 export const COMPLIANCE_INTERNAL_TASK_JOB = "compliance-internal-task";
@@ -7,6 +9,10 @@ export const COMPLIANCE_INTERNAL_TASK_JOB = "compliance-internal-task";
 type ComplianceReminderPayload = {
   complianceItemId: string;
   clientId: string;
+  clientName: string;
+  clientPhone: string;
+  clientEmail: string | null;
+  whatsappOptedOut: boolean;
   title: string;
   dueDate: string;
   daysUntilDue: number;
@@ -39,25 +45,52 @@ export async function registerComplianceNotificationJobs(): Promise<void> {
 
   await boss.work<ComplianceReminderPayload>(COMPLIANCE_REMINDER_JOB, async (jobs) => {
     for (const job of jobs) {
-      // WHATSAPP_TOKEN is empty in dev, so this stays a log-only driver (spec 4.8).
-      // Phase 7 replaces this body with real WhatsApp + email sends + message_logs rows.
-      logger.info(
-        {
-          complianceItemId: job.data.complianceItemId,
-          clientId: job.data.clientId,
-          daysUntilDue: job.data.daysUntilDue,
-        },
-        "notification: compliance deadline reminder (WhatsApp+email send stub)",
-      );
+      const { complianceItemId, clientPhone, clientEmail, whatsappOptedOut, title, daysUntilDue } =
+        job.data;
+      const dueLabel = daysUntilDue === 1 ? "tomorrow" : `in ${daysUntilDue} days`;
+
+      await notifyClientWhatsApp({
+        phone: clientPhone,
+        whatsappOptedOut,
+        eventKey: "compliance_reminder",
+        bodyParams: [job.data.clientName, title, dueLabel],
+        entityType: "compliance_item",
+        entityId: complianceItemId,
+      });
+
+      await notifyEmail({
+        to: clientEmail,
+        subject: `Reminder: ${title} due ${dueLabel}`,
+        heading: "Upcoming compliance deadline",
+        lines: [
+          `${title} is due ${dueLabel}.`,
+          "Please share any pending documents so we can file on time.",
+        ],
+        ctaLabel: "View details",
+        ctaUrl: getAppUrl(`/compliance/${complianceItemId}`),
+        template: "compliance_reminder",
+        entityType: "compliance_item",
+        entityId: complianceItemId,
+      });
     }
   });
 
   await boss.work<ComplianceInternalTaskPayload>(COMPLIANCE_INTERNAL_TASK_JOB, async (jobs) => {
     for (const job of jobs) {
-      logger.info(
-        { complianceItemId: job.data.complianceItemId, assignedTo: job.data.assignedTo },
-        "notification: compliance internal task reminder (T-15)",
-      );
+      const assignee = await getUserContact(job.data.assignedTo);
+      if (!assignee) continue;
+
+      await notifyEmail({
+        to: assignee.email,
+        subject: `Action needed: ${job.data.title}`,
+        heading: "Compliance deadline in 15 days",
+        lines: [`${job.data.title} is due in 15 days for a client assigned to you.`],
+        ctaLabel: "View details",
+        ctaUrl: getAppUrl(`/compliance/${job.data.complianceItemId}`),
+        template: "compliance_internal_task",
+        entityType: "compliance_item",
+        entityId: job.data.complianceItemId,
+      });
     }
   });
 }

@@ -9,6 +9,7 @@ import * as documentsSchema from "@/db/schema/documents";
 import * as expensesSchema from "@/db/schema/expenses";
 import * as invoicesSchema from "@/db/schema/invoices";
 import * as leadsSchema from "@/db/schema/leads";
+import * as messageLogsSchema from "@/db/schema/message-logs";
 import * as ordersSchema from "@/db/schema/orders";
 import * as settingsSchema from "@/db/schema/settings";
 import { env } from "@/lib/env";
@@ -25,6 +26,7 @@ const schema = {
   ...complianceSchema,
   ...invoicesSchema,
   ...expensesSchema,
+  ...messageLogsSchema,
 };
 
 declare global {

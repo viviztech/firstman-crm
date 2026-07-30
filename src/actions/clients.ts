@@ -4,7 +4,13 @@ import { revalidatePath } from "next/cache";
 import { type ActionResult, firstIssueMessage, toScope } from "@/actions/shared";
 import type { Role } from "@/lib/auth";
 import { requireUser } from "@/lib/session";
-import { clientInputSchema, createClient, deleteClient, updateClient } from "@/services/clients";
+import {
+  clientInputSchema,
+  createClient,
+  deleteClient,
+  setWhatsAppOptOut,
+  updateClient,
+} from "@/services/clients";
 
 const CAN_WRITE: Role[] = ["super_admin", "manager", "executive"];
 const CAN_DELETE: Role[] = ["super_admin", "manager"];
@@ -49,6 +55,24 @@ export async function updateClientAction(
   }
 
   revalidatePath("/clients");
+  revalidatePath(`/clients/${id}`);
+  return { ok: true, data: undefined };
+}
+
+export async function setWhatsAppOptOutAction(
+  id: string,
+  optedOut: boolean,
+): Promise<ActionResult> {
+  const currentUser = await requireUser();
+  if (!CAN_WRITE.includes(currentUser.role)) {
+    return { ok: false, error: "You do not have permission to edit clients." };
+  }
+
+  const updated = await setWhatsAppOptOut(id, optedOut, toScope(currentUser));
+  if (!updated) {
+    return { ok: false, error: "Client not found, or you do not have access to it." };
+  }
+
   revalidatePath(`/clients/${id}`);
   return { ok: true, data: undefined };
 }

@@ -193,6 +193,16 @@ prescribe an exact answer:
    (not in Docker) with `postgres`/`postgres` credentials — `.env`'s `DATABASE_URL`
    points at that instance directly rather than the `docker-compose.yml` Postgres
    service, which is there for teams without a local install.
+10. **Internal staff notifications are email-only, never WhatsApp**: better-auth's
+    `user` table (`src/db/schema/auth-schema.ts`, CLI-generated — see #4) has no
+    phone column, and better-auth's schema isn't one we hand-edit. So "new lead
+    assigned" and the T-15 compliance internal-task reminder, which spec 4.1/4.6
+    describe as WhatsApp alerts to staff, go out by email instead
+    (`src/jobs/lead-notifications.ts`, `src/jobs/compliance-notifications.ts`).
+    Client-facing notifications (order status, compliance reminders, invoices,
+    docs-pending) still send WhatsApp + email as specified, since `clients.phone`
+    exists. If staff WhatsApp becomes a real requirement, it needs a phone field
+    added to a separate staff-profile table (not `user` itself).
 
 ## Phase 0 checklist (per `CLAUDE.md` §5)
 

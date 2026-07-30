@@ -94,6 +94,42 @@ export async function getClient(id: string, scope: ActorScope) {
   });
 }
 
+/** Unscoped fetch for notification jobs — system-context, not a user request (mirrors getInvoiceForPdf). */
+export async function getClientForNotification(clientId: string) {
+  return db.query.clients.findFirst({
+    where: and(eq(clients.id, clientId), isNull(clients.deletedAt)),
+    columns: { id: true, name: true, phone: true, email: true, whatsappOptedOut: true },
+  });
+}
+
+/** Manual stand-in for the inbound "STOP" webhook (spec 4.8) — flips the client's opt-out flag. */
+export async function setWhatsAppOptOut(id: string, optedOut: boolean, actor: ActorScope) {
+  return db.transaction(async (tx) => {
+    const conditions = [eq(clients.id, id), isNull(clients.deletedAt)];
+    const scoped = scopeCondition(actor);
+    if (scoped) conditions.push(scoped);
+
+    const [updated] = await tx
+      .update(clients)
+      .set({ whatsappOptedOut: optedOut, updatedBy: actor.userId })
+      .where(and(...conditions))
+      .returning();
+    if (!updated) return null;
+
+    await recordActivity(
+      {
+        actorId: actor.userId,
+        entityType: "client",
+        entityId: updated.id,
+        action: optedOut ? "whatsapp_opted_out" : "whatsapp_opted_in",
+      },
+      tx,
+    );
+
+    return updated;
+  });
+}
+
 export async function createClient(input: ClientInput, actor: ActorScope) {
   const values = enforceAssignment(input, actor);
 

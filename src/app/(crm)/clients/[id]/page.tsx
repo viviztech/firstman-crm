@@ -3,6 +3,7 @@ import { and, desc, eq } from "drizzle-orm";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { DeleteClientButton } from "@/components/clients/delete-client-button";
+import { WhatsAppOptOutToggle } from "@/components/clients/whatsapp-opt-out-toggle";
 import { ComplianceStatusBadge } from "@/components/compliance/compliance-status-badge";
 import { ClientDocumentUploadForm } from "@/components/documents/client-document-upload-form";
 import { DocumentChecklist } from "@/components/documents/document-checklist";
@@ -109,9 +110,14 @@ export default async function ClientProfilePage({ params }: { params: Promise<{ 
               <CardHeader>
                 <CardTitle className="text-sm text-muted-foreground">Contact</CardTitle>
               </CardHeader>
-              <CardContent className="flex flex-col gap-1 text-sm">
+              <CardContent className="flex flex-col gap-2 text-sm">
                 <span>{client.phone}</span>
                 <span>{client.email ?? "No email on file"}</span>
+                {canManage ? (
+                  <WhatsAppOptOutToggle clientId={id} initialOptedOut={client.whatsappOptedOut} />
+                ) : client.whatsappOptedOut ? (
+                  <span className="text-muted-foreground">Opted out of WhatsApp messages</span>
+                ) : null}
               </CardContent>
             </Card>
             <Card>

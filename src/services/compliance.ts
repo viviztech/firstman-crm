@@ -425,6 +425,17 @@ export async function getItemsDueInDays(daysAhead: number, now: Date = new Date(
       gte(complianceItems.dueDate, dayStart),
       lte(complianceItems.dueDate, dayEnd),
     ),
-    with: { client: { columns: { id: true, name: true, phone: true, assignedTo: true } } },
+    with: {
+      client: {
+        columns: {
+          id: true,
+          name: true,
+          phone: true,
+          email: true,
+          whatsappOptedOut: true,
+          assignedTo: true,
+        },
+      },
+    },
   });
 }

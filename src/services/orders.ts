@@ -182,6 +182,39 @@ export async function getOrder(id: string, scope: ActorScope) {
   return { ...order, documents: orderDocuments };
 }
 
+/** Unscoped fetch for notification jobs — system-context, not a user request (mirrors getInvoiceForPdf). */
+export async function getOrderForNotification(id: string) {
+  return db.query.orders.findFirst({
+    where: and(eq(orders.id, id), isNull(orders.deletedAt)),
+    columns: { id: true, orderNo: true, status: true },
+    with: {
+      client: {
+        columns: { id: true, name: true, phone: true, email: true, whatsappOptedOut: true },
+      },
+    },
+  });
+}
+
+/** Orders (scoped) currently flagged docs-pending — for the weekly client reminder cron. */
+export async function listOrdersWithPendingDocs() {
+  const openOrders = await db.query.orders.findMany({
+    where: and(
+      isNull(orders.deletedAt),
+      ne(orders.status, "completed"),
+      ne(orders.status, "cancelled"),
+    ),
+    columns: { id: true, orderNo: true },
+    with: {
+      client: {
+        columns: { id: true, name: true, phone: true, email: true, whatsappOptedOut: true },
+      },
+    },
+  });
+
+  const pendingIds = await getDocsPendingOrderIds(openOrders.map((order) => order.id));
+  return openOrders.filter((order) => pendingIds.has(order.id));
+}
+
 /** Creates an order and, in the same transaction, generates its task checklist and document checklist (spec 4.4). */
 export async function createOrder(input: OrderInput, actor: ActorScope) {
   return db.transaction(async (tx) => {

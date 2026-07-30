@@ -233,6 +233,19 @@ export async function getInvoiceForPdf(id: string) {
   });
 }
 
+/** Unscoped fetch for notification jobs — system-context, not a user request (mirrors getInvoiceForPdf). */
+export async function getInvoiceForNotification(id: string) {
+  return db.query.invoices.findFirst({
+    where: and(eq(invoices.id, id), isNull(invoices.deletedAt)),
+    columns: { id: true, invoiceNo: true, totalPaise: true },
+    with: {
+      client: {
+        columns: { id: true, name: true, phone: true, email: true, whatsappOptedOut: true },
+      },
+    },
+  });
+}
+
 export async function createInvoice(input: InvoiceInput, actor: ActorScope) {
   if (!canAccessInvoices(actor)) return null;
 

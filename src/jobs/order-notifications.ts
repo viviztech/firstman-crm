@@ -1,5 +1,8 @@
+import { notifyClientWhatsApp, notifyEmail } from "@/jobs/notify";
+import { getAppUrl } from "@/lib/app-url";
 import { logger } from "@/lib/logger";
 import { getBoss } from "@/lib/queue";
+import { getOrderForNotification } from "@/services/orders";
 
 export const ORDER_STATUS_CHANGED_JOB = "order-status-changed";
 
@@ -19,12 +22,32 @@ export async function registerOrderNotificationJobs(): Promise<void> {
 
   await boss.work<OrderStatusChangedPayload>(ORDER_STATUS_CHANGED_JOB, async (jobs) => {
     for (const job of jobs) {
-      // WHATSAPP_TOKEN is empty in dev, so this stays a log-only driver (spec 4.8).
-      // Phase 7 replaces this body with real WhatsApp + email sends + message_logs rows.
-      logger.info(
-        { orderId: job.data.orderId, orderNo: job.data.orderNo, status: job.data.status },
-        "notification: order status changed (WhatsApp+email send stub)",
-      );
+      const order = await getOrderForNotification(job.data.orderId);
+      if (!order) {
+        logger.warn(job.data, "order-status-changed notification: order not found, skipping");
+        continue;
+      }
+
+      await notifyClientWhatsApp({
+        phone: order.client.phone,
+        whatsappOptedOut: order.client.whatsappOptedOut,
+        eventKey: "order_status_changed",
+        bodyParams: [order.client.name, order.orderNo, job.data.status],
+        entityType: "order",
+        entityId: order.id,
+      });
+
+      await notifyEmail({
+        to: order.client.email,
+        subject: `Update on your order ${order.orderNo}`,
+        heading: "Your order status has changed",
+        lines: [`Order ${order.orderNo} is now: ${job.data.status.replace(/_/g, " ")}.`],
+        ctaLabel: "View order",
+        ctaUrl: getAppUrl(`/orders/${order.id}`),
+        template: "order_status_changed",
+        entityType: "order",
+        entityId: order.id,
+      });
     }
   });
 }

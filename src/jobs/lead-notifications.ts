@@ -1,5 +1,8 @@
+import { notifyEmail } from "@/jobs/notify";
+import { getAppUrl } from "@/lib/app-url";
 import { logger } from "@/lib/logger";
 import { getBoss } from "@/lib/queue";
+import { getLeadForNotification } from "@/services/leads";
 
 export const LEAD_ASSIGNED_JOB = "lead-assigned";
 
@@ -17,12 +20,27 @@ export async function registerLeadNotificationJobs(): Promise<void> {
 
   await boss.work<LeadAssignedPayload>(LEAD_ASSIGNED_JOB, async (jobs) => {
     for (const job of jobs) {
-      // WHATSAPP_TOKEN is empty in dev, so this stays a log-only driver (spec 4.8).
-      // Phase 7 replaces this body with a real WhatsApp send + message_logs row.
-      logger.info(
-        { leadId: job.data.leadId, assignedTo: job.data.assignedTo },
-        "notification: new lead assigned (WhatsApp send stub)",
-      );
+      const lead = await getLeadForNotification(job.data.leadId);
+      if (!lead?.assignee) {
+        logger.warn(job.data, "lead-assigned notification: lead or assignee not found, skipping");
+        continue;
+      }
+
+      // Staff have no phone number on file in this data model — internal notifications go by email only.
+      await notifyEmail({
+        to: lead.assignee.email,
+        subject: `New lead assigned: ${lead.name}`,
+        heading: "A new lead has been assigned to you",
+        lines: [
+          `${lead.name} (${lead.phone}) has been assigned to you.`,
+          "Follow up as soon as you can.",
+        ],
+        ctaLabel: "View lead",
+        ctaUrl: getAppUrl(`/leads/${lead.id}`),
+        template: "lead_assigned",
+        entityType: "lead",
+        entityId: lead.id,
+      });
     }
   });
 }
