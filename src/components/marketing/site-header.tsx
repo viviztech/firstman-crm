@@ -6,6 +6,8 @@ import { getCompanyProfile } from "@/services/company-profile";
 const NAV_LINKS = [
   { href: "/services", label: "Services" },
   { href: "/pricing", label: "Pricing" },
+  { href: "/compare", label: "Compare" },
+  { href: "/resources", label: "Resources" },
   { href: "/about", label: "About" },
   { href: "/contact", label: "Contact" },
 ];

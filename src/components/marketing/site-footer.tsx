@@ -51,6 +51,16 @@ export async function SiteFooter() {
               </Link>
             </li>
             <li>
+              <Link href="/compare" className="hover:text-foreground">
+                Compare structures
+              </Link>
+            </li>
+            <li>
+              <Link href="/resources" className="hover:text-foreground">
+                Resources
+              </Link>
+            </li>
+            <li>
               <Link href="/contact" className="hover:text-foreground">
                 Contact
               </Link>

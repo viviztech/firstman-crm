@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { COMPARISONS } from "@/content/comparisons";
+import { getClusterArticles, PILLARS } from "@/content/resources";
 import { getAppUrl } from "@/lib/app-url";
 import { formatMoney } from "@/lib/money";
 import { getCompanyProfile } from "@/services/company-profile";
@@ -35,6 +37,21 @@ export async function GET(): Promise<NextResponse> {
       lines.push(
         `- [${service.name}](${getAppUrl(`/services/${service.slug}`)}): ${fee}, ~${service.estimatedDays} business days`,
       );
+    }
+    lines.push("");
+  }
+
+  lines.push("## Compare business structures", "");
+  for (const comparison of COMPARISONS) {
+    lines.push(`- [${comparison.title}](${getAppUrl(`/compare/${comparison.slug}`)})`);
+  }
+  lines.push("");
+
+  lines.push("## Guides", "");
+  for (const pillar of PILLARS) {
+    lines.push(`### ${pillar.title}`, "", `${getAppUrl(`/resources/${pillar.slug}`)}`, "");
+    for (const article of getClusterArticles(pillar.pillarSlug)) {
+      lines.push(`- [${article.title}](${getAppUrl(`/resources/${article.slug}`)})`);
     }
     lines.push("");
   }
