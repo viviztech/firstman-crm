@@ -24,7 +24,10 @@ export function LeadsFunnelChart({ data }: { data: { status: string; count: numb
         />
         <YAxis allowDecimals={false} tick={{ fontSize: 12 }} width={30} />
         <Tooltip />
-        <Bar dataKey="count" fill="#4f46e5" radius={[4, 4, 0, 0]} />
+        {/* Matches the --primary brand pink (oklch(0.488 0.243 357) ~ #b20061) — a literal
+            hex rather than var(--primary), since SVG fill attribute var() support is
+            inconsistent across renderers. */}
+        <Bar dataKey="count" fill="#b20061" radius={[4, 4, 0, 0]} />
       </BarChart>
     </ResponsiveContainer>
   );
