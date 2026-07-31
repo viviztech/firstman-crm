@@ -18,11 +18,15 @@ export default async function MarketingLayout({ children }: { children: ReactNod
           "@context": "https://schema.org",
           "@type": "Organization",
           name: profile.name,
+          ...(profile.legalName ? { legalName: profile.legalName } : {}),
           url: getAppUrl("/"),
           areaServed: profile.areasServed,
-          ...(profile.logoUrl ? { logo: profile.logoUrl } : {}),
+          ...(profile.logoUrl ? { logo: getAppUrl(profile.logoUrl) } : {}),
           ...(profile.address ? { address: profile.address } : {}),
           ...(profile.gstin ? { taxID: profile.gstin } : {}),
+          ...(profile.llpin
+            ? { identifier: { "@type": "PropertyValue", name: "LLPIN", value: profile.llpin } }
+            : {}),
           ...(profile.email || profile.phone
             ? {
                 contactPoint: {

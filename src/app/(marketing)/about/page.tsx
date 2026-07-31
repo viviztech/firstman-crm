@@ -55,6 +55,30 @@ export default async function AboutPage() {
         </div>
       </dl>
 
+      {profile.address || profile.gstin || profile.llpin ? (
+        <>
+          <h2 className="mt-12 text-xl font-bold">Registered office</h2>
+          <dl className="mt-6 flex flex-col gap-3 text-sm text-muted-foreground">
+            <div>
+              <dt className="font-semibold text-foreground">{profile.legalName || profile.name}</dt>
+              {profile.address ? <dd className="mt-1">{profile.address}</dd> : null}
+            </div>
+            {profile.llpin ? (
+              <div className="flex gap-2">
+                <dt className="font-semibold text-foreground">LLPIN</dt>
+                <dd>{profile.llpin}</dd>
+              </div>
+            ) : null}
+            {profile.gstin ? (
+              <div className="flex gap-2">
+                <dt className="font-semibold text-foreground">GSTIN</dt>
+                <dd>{profile.gstin}</dd>
+              </div>
+            ) : null}
+          </dl>
+        </>
+      ) : null}
+
       <div className="mt-12 rounded-xl border bg-muted/30 p-6">
         <h2 className="font-semibold">Ready to get started?</h2>
         <p className="mt-1 text-sm text-muted-foreground">

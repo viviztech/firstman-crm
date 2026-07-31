@@ -17,6 +17,12 @@ export async function SiteFooter() {
             Company registration, GST, and compliance — done right, tracked end to end.
           </p>
           <p className="text-sm text-muted-foreground">Serving {profile.areasServed}.</p>
+          {profile.address ? (
+            <p className="text-xs text-muted-foreground">{profile.address}</p>
+          ) : null}
+          {profile.gstin ? (
+            <p className="text-xs text-muted-foreground">GSTIN: {profile.gstin}</p>
+          ) : null}
         </div>
 
         <nav aria-label="Services">
@@ -96,7 +102,7 @@ export async function SiteFooter() {
       <div className="border-t">
         <div className="mx-auto flex max-w-6xl flex-col gap-2 px-4 py-5 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between sm:px-6">
           <span>
-            © {year} {profile.name}. All rights reserved.
+            © {year} {profile.legalName || profile.name}. All rights reserved.
           </span>
           <div className="flex gap-4">
             <Link href="/legal/privacy" className="hover:text-foreground">

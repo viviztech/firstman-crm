@@ -25,7 +25,7 @@ export default async function ContactPage() {
           <ul className="mt-8 flex flex-col gap-4 text-sm">
             <li className="flex items-start gap-3">
               <MapPin className="text-brand mt-0.5 size-4.5 shrink-0" />
-              <span>Serving clients across {profile.areasServed}</span>
+              <span>{profile.address || `Serving clients across ${profile.areasServed}`}</span>
             </li>
             {profile.phone ? (
               <li className="flex items-start gap-3">
