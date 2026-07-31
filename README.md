@@ -264,24 +264,34 @@ prescribe an exact answer:
     docs-pending) still send WhatsApp + email as specified, since `clients.phone`
     exists. If staff WhatsApp becomes a real requirement, it needs a phone field
     added to a separate staff-profile table (not `user` itself).
-11. **CI's root cause found: cross-test-file races against the shared Postgres
-    DB, fixed by disabling file-level parallelism**: the workflow was red at
-    the "Unit tests" step on all 4 pushes so far. Log access needs repo-admin
-    rights this environment doesn't have, so GitHub's exact failure output was
-    never directly visible — but the 4th run's failure was reproduced locally:
-    `leads.test.ts`'s round-robin auto-assignment test throws a foreign-key
-    violation when it runs concurrently with another test file whose `afterAll`
-    deletes the same shared-shape "executive" user row mid-transaction. This
-    isn't one bad assertion — every integration test here hits one real,
-    shared Postgres database rather than a per-test-isolated one (deliberately,
-    per this spec's own testing philosophy), and several services query
-    broadly across shared-shape rows (round-robin picks *any* executive-role
-    user), so any test file running in parallel with another is a latent race.
-    Vitest defaults to running test files across parallel workers; `vitest.config.ts`
-    now sets `fileParallelism: false`, trading suite speed (~40s → ~145s
-    locally) for determinism — confirmed via two consecutive full,
-    non-flaking `test:coverage` runs. This fix is pushed but the resulting
-    CI run hasn't been checked yet — update this note once it has.
+11. **CI's actual root cause: a Postgres collation mismatch between this
+    machine's local Windows install and CI's Linux container.** The GitHub
+    Actions "Check Runs" API exposes failure annotations even without the log-
+    download rights this environment lacks (`GET
+    /repos/{owner}/{repo}/check-runs/{id}/annotations` — the fix that finally
+    surfaced the real error, after three earlier runs stayed a black box).
+    `catalog.test.ts` expected `listServiceOptions()` to return service names
+    ordered `[…, "Import Export Code (IEC)", "ISO Certification", "ITR
+    Filing", …]`; CI produced `[…, "ISO Certification", "ITR Filing", "Import
+    Export Code (IEC)", …]`. Both are "correct" for their own database — this
+    machine's local Postgres install sorts case-insensitively by default,
+    while a fresh `postgres:16-alpine` container (CI's, and presumably any
+    production deploy's) defaults to the "C" locale, which sorts by raw byte
+    value — so uppercase `I-S` and `I-T` sort before lowercase-continuing
+    `I-m`. Every `.orderBy(someTable.name)` in the codebase was silently
+    depending on whichever collation happened to be ambient, which is exactly
+    the kind of thing that's invisible until you deploy somewhere with a
+    different default. Fixed by ordering on `sql\`lower(name)\`` instead,
+    everywhere a query ordered by a free-text name column (`catalog.ts`,
+    `marketing-catalog.ts`, `users.ts`) — deterministic regardless of the
+    underlying database's locale. (A separate, real but non-blocking bug was
+    also fixed alongside this: `vitest.config.ts` now sets
+    `fileParallelism: false`, since several integration tests query broadly
+    across the one real, shared Postgres database this suite deliberately
+    uses rather than mocking, and running test files in parallel workers let
+    one file's `afterAll` cleanup delete a row another file's test was
+    mid-transaction with.) Both fixes are pushed; confirm the resulting CI run
+    before treating this as fully resolved.
 
 ## Phase checklists (per `CLAUDE.md` §5)
 

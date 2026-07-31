@@ -1,6 +1,9 @@
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, isNull, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { serviceCategories, services } from "@/db/schema/catalog";
+
+/** See catalog.ts's byNameCaseInsensitive — same cross-environment collation fix. */
+const byNameCaseInsensitive = sql`lower(${services.name})`;
 
 /**
  * Public projection of the service catalog for the marketing site — reads the same
@@ -51,7 +54,7 @@ export async function getPublicCatalog(): Promise<PublicServiceCategory[]> {
     with: {
       services: {
         where: (row, { isNull: isNullFn }) => isNullFn(row.deletedAt),
-        orderBy: (row, { asc }) => [asc(row.name)],
+        orderBy: () => [byNameCaseInsensitive],
       },
     },
   });
