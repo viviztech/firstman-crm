@@ -264,19 +264,24 @@ prescribe an exact answer:
     docs-pending) still send WhatsApp + email as specified, since `clients.phone`
     exists. If staff WhatsApp becomes a real requirement, it needs a phone field
     added to a separate staff-profile table (not `user` itself).
-11. **CI has failed on every push so far (unit-test step) and hasn't been
-    re-verified since**: the workflow has run 3 times on `origin` (through the
-    Phase 6 commit), all 3 red at the "Unit tests" step, with everything after
-    it (E2E, build, audit) skipped as a result. Log access needs repo-admin
-    rights this environment doesn't have, so the exact failure reason on
-    GitHub's Ubuntu runners is unconfirmed. What *is* confirmed: on the current
-    codebase (through Phase 8), `npm run typecheck`, `npm run lint`, and
-    `npm run test:coverage` all pass cleanly against a **freshly created,
-    migrated, and seeded** Postgres database (mirroring the CI job's exact
-    sequence — migrate → seed → test — rather than reusing a long-lived local
-    dev DB), so whatever caused the earlier failures looks to already be fixed
-    by later-phase work. Treat CI as **unverified, not green**, until it
-    actually runs on GitHub Actions against this code and the run is checked.
+11. **CI's root cause found: cross-test-file races against the shared Postgres
+    DB, fixed by disabling file-level parallelism**: the workflow was red at
+    the "Unit tests" step on all 4 pushes so far. Log access needs repo-admin
+    rights this environment doesn't have, so GitHub's exact failure output was
+    never directly visible — but the 4th run's failure was reproduced locally:
+    `leads.test.ts`'s round-robin auto-assignment test throws a foreign-key
+    violation when it runs concurrently with another test file whose `afterAll`
+    deletes the same shared-shape "executive" user row mid-transaction. This
+    isn't one bad assertion — every integration test here hits one real,
+    shared Postgres database rather than a per-test-isolated one (deliberately,
+    per this spec's own testing philosophy), and several services query
+    broadly across shared-shape rows (round-robin picks *any* executive-role
+    user), so any test file running in parallel with another is a latent race.
+    Vitest defaults to running test files across parallel workers; `vitest.config.ts`
+    now sets `fileParallelism: false`, trading suite speed (~40s → ~145s
+    locally) for determinism — confirmed via two consecutive full,
+    non-flaking `test:coverage` runs. This fix is pushed but the resulting
+    CI run hasn't been checked yet — update this note once it has.
 
 ## Phase checklists (per `CLAUDE.md` §5)
 
