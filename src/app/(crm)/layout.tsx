@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { AppSidebar } from "@/components/app-sidebar";
+import { CommandPalette } from "@/components/command-palette";
 import { Separator } from "@/components/ui/separator";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { requireUser } from "@/lib/session";
@@ -17,6 +18,9 @@ export default async function CrmLayout({ children }: { children: ReactNode }) {
           <span className="text-sm text-muted-foreground">
             {user.name} · {user.role.replace("_", " ")}
           </span>
+          <div className="ml-auto">
+            <CommandPalette />
+          </div>
         </header>
         <main className="flex flex-1 flex-col gap-4 p-4">{children}</main>
       </SidebarInset>

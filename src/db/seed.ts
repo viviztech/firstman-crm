@@ -31,7 +31,11 @@ import {
   rollInvoiceStatusesOverdue,
   sendInvoice,
 } from "@/services/invoices";
+import { convertLeadToClient } from "@/services/leads";
 import { createOrder, updateOrderStatus } from "@/services/orders";
+
+/** A couple of seeded leads get genuinely converted so conversion-rate reports have non-zero data. */
+const WON_LEAD_PHONES = ["+919833100033", "+919900100010"] as const;
 
 const STAFF: { role: Role; count: number }[] = [
   { role: "manager", count: 3 },
@@ -186,6 +190,18 @@ async function seedLeads(actorId: string, executiveIds: string[]): Promise<void>
     }
   }
   console.log(`seeded ${LEAD_SEED.length} demo leads`);
+}
+
+async function seedLeadConversions(actorId: string): Promise<void> {
+  const actor = { userId: actorId, role: "super_admin" as const };
+
+  for (const phone of WON_LEAD_PHONES) {
+    const lead = await db.query.leads.findFirst({ where: eq(leads.phone, phone) });
+    if (!lead || lead.status === "won") continue;
+
+    await convertLeadToClient(lead.id, actor);
+  }
+  console.log(`converted ${WON_LEAD_PHONES.length} demo leads to won/client`);
 }
 
 async function seedOrders(actorId: string, executiveIds: string[]): Promise<void> {
@@ -372,6 +388,7 @@ async function main(): Promise<void> {
   await seedCatalog(adminId);
   await seedClients(adminId, executiveIds);
   await seedLeads(adminId, executiveIds);
+  await seedLeadConversions(adminId);
   await seedOrders(adminId, executiveIds);
   await seedCompliance(adminId);
   await seedInvoices(adminId);
