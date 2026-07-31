@@ -5,17 +5,26 @@ export type CompanyProfile = {
   address: string;
   gstin: string;
   logoUrl: string;
+  /** Public contact channels — the marketing site only renders a Call/WhatsApp CTA once these are set. */
+  phone: string;
+  email: string;
+  whatsappNumber: string;
+  areasServed: string;
 };
 
 /**
- * Defaults until Phase 8's settings UI lets admins edit this — reads through the same
- * generic `settings` key/value store, so the eventual settings page needs no schema change.
+ * Defaults until a settings UI lets admins edit this — reads through the same generic
+ * `settings` key/value store, so an eventual settings page needs no schema change.
  */
 const DEFAULT_COMPANY_PROFILE: CompanyProfile = {
   name: "FirstMan Corporate Services",
   address: "",
   gstin: "",
   logoUrl: "",
+  phone: "",
+  email: "",
+  whatsappNumber: "",
+  areasServed: "Tamil Nadu",
 };
 
 export async function getCompanyProfile(): Promise<CompanyProfile> {

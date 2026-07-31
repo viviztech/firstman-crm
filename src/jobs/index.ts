@@ -5,6 +5,7 @@ import { registerInvoiceCron } from "@/jobs/invoice-cron";
 import { registerInvoiceNotificationJobs } from "@/jobs/invoice-notifications";
 import { registerLeadDigestCron } from "@/jobs/lead-digest-cron";
 import { registerLeadNotificationJobs } from "@/jobs/lead-notifications";
+import { registerMarketingLeadNotificationJobs } from "@/jobs/marketing-lead-notifications";
 import { registerOrderNotificationJobs } from "@/jobs/order-notifications";
 import { logger } from "@/lib/logger";
 import { getBoss } from "@/lib/queue";
@@ -16,6 +17,7 @@ import { getBoss } from "@/lib/queue";
 export async function registerJobs(): Promise<void> {
   await getBoss();
   await registerLeadNotificationJobs();
+  await registerMarketingLeadNotificationJobs();
   await registerOrderNotificationJobs();
   await registerComplianceNotificationJobs();
   await registerComplianceCron();

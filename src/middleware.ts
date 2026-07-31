@@ -1,7 +1,25 @@
 import { getSessionCookie } from "better-auth/cookies";
 import { type NextRequest, NextResponse } from "next/server";
 
-const PUBLIC_PATHS = ["/login"];
+/**
+ * Everything not listed here is public (marketing site + auth pages) — the CRM's own
+ * pages opt into protection explicitly rather than the middleware defaulting to "protect
+ * everything except an allowlist", since the public marketing site now lives at "/" and
+ * sibling routes in this same app.
+ */
+const PROTECTED_PREFIXES = [
+  "/dashboard",
+  "/leads",
+  "/clients",
+  "/orders",
+  "/catalog",
+  "/compliance",
+  "/invoices",
+  "/expenses",
+  "/reports",
+  "/settings",
+];
+const AUTH_PATHS = ["/login"];
 
 function withSecurityHeaders(response: NextResponse): NextResponse {
   response.headers.set("X-Frame-Options", "DENY");
@@ -27,16 +45,21 @@ function withSecurityHeaders(response: NextResponse): NextResponse {
 
 export function middleware(request: NextRequest): NextResponse {
   const { pathname } = request.nextUrl;
-  const isPublicPath = PUBLIC_PATHS.some((path) => pathname.startsWith(path));
+  const isProtected = PROTECTED_PREFIXES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+  );
+  const isAuthPath = AUTH_PATHS.some((path) => pathname.startsWith(path));
   const sessionCookie = getSessionCookie(request);
 
-  if (!sessionCookie && !isPublicPath) {
+  if (!sessionCookie && isProtected) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("redirect", pathname);
     return withSecurityHeaders(NextResponse.redirect(loginUrl));
   }
 
-  if (sessionCookie && isPublicPath) {
+  // Signed-in staff hitting the login page or the marketing homepage land on the dashboard
+  // instead — the marketing site at "/" is for signed-out visitors.
+  if (sessionCookie && (isAuthPath || pathname === "/")) {
     return withSecurityHeaders(NextResponse.redirect(new URL("/dashboard", request.url)));
   }
 
