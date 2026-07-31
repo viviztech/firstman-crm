@@ -1,3 +1,4 @@
+import { Fraunces } from "next/font/google";
 import type { ReactNode } from "react";
 import { JsonLd } from "@/components/marketing/json-ld";
 import { SiteFooter } from "@/components/marketing/site-footer";
@@ -5,11 +6,18 @@ import { SiteHeader } from "@/components/marketing/site-header";
 import { getAppUrl } from "@/lib/app-url";
 import { getCompanyProfile } from "@/services/company-profile";
 
+const fraunces = Fraunces({
+  variable: "--font-fraunces",
+  subsets: ["latin"],
+  weight: "variable",
+  axes: ["opsz", "SOFT"],
+});
+
 export default async function MarketingLayout({ children }: { children: ReactNode }) {
   const profile = await getCompanyProfile();
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className={`${fraunces.variable} flex min-h-screen flex-col`}>
       <SiteHeader />
       <main className="flex-1">{children}</main>
       <SiteFooter />
