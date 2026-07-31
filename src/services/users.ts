@@ -39,3 +39,18 @@ export async function listStaffEmailsByRole(roles: Role[]): Promise<string[]> {
   const rows = await db.select({ email: user.email }).from(user).where(inArray(user.role, roles));
   return rows.map((row) => row.email);
 }
+
+/** Full staff roster for the admin user-management screen (spec 4.10) — super_admin only. */
+export async function listAllStaffForAdmin() {
+  return db
+    .select({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      banned: user.banned,
+      createdAt: user.createdAt,
+    })
+    .from(user)
+    .orderBy(byNameCaseInsensitive);
+}

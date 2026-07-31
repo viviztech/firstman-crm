@@ -5,8 +5,7 @@ import { db } from "@/db";
 import { env } from "@/lib/env";
 import { ac, accountantRole, executiveRole, managerRole, superAdminRole } from "@/lib/permissions";
 
-export const ROLES = ["super_admin", "manager", "executive", "accountant"] as const;
-export type Role = (typeof ROLES)[number];
+export { ROLES, type Role } from "@/lib/roles";
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {

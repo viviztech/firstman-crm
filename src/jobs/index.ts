@@ -7,6 +7,7 @@ import { registerLeadDigestCron } from "@/jobs/lead-digest-cron";
 import { registerLeadNotificationJobs } from "@/jobs/lead-notifications";
 import { registerMarketingLeadNotificationJobs } from "@/jobs/marketing-lead-notifications";
 import { registerOrderNotificationJobs } from "@/jobs/order-notifications";
+import { registerUserInvitationJobs } from "@/jobs/user-invitation";
 import { logger } from "@/lib/logger";
 import { getBoss } from "@/lib/queue";
 
@@ -25,6 +26,7 @@ export async function registerJobs(): Promise<void> {
   await registerInvoiceCron();
   await registerLeadDigestCron();
   await registerDocsPendingCron();
+  await registerUserInvitationJobs();
   logger.info(
     "pg-boss started, notification workers + compliance/invoice/lead-digest/docs-pending cron registered",
   );

@@ -5,6 +5,7 @@ import { db } from "@/db";
 import { user } from "@/db/schema/auth-schema";
 import {
   getUserContact,
+  listAllStaffForAdmin,
   listAssignableStaff,
   listExecutives,
   listStaffEmailsByRole,
@@ -86,5 +87,17 @@ describe("notification-related user lookups (integration)", () => {
     expect(emails).toContain(managerContact?.email);
     expect(emails).toContain(accountantContact?.email);
     expect(emails).not.toContain(execContact?.email);
+  });
+
+  it("listAllStaffForAdmin includes every role with id/name/email/role/banned/createdAt", async () => {
+    const roster = await listAllStaffForAdmin();
+    const manager = roster.find((row) => row.id === managerId);
+    const accountant = roster.find((row) => row.id === accountantId);
+    const exec = roster.find((row) => row.id === execId);
+
+    expect(manager).toMatchObject({ name: "Notify Test Manager", role: "manager", banned: false });
+    expect(accountant).toMatchObject({ role: "accountant" });
+    expect(exec).toMatchObject({ role: "executive" });
+    expect(manager?.createdAt).toBeInstanceOf(Date);
   });
 });
