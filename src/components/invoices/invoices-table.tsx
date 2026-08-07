@@ -2,6 +2,7 @@
 
 import { type ColumnDef, flexRender, getCoreRowModel, useReactTable } from "@tanstack/react-table";
 import Link from "next/link";
+import { InvoiceKindBadge } from "@/components/invoices/invoice-kind-badge";
 import { InvoiceStatusBadge } from "@/components/invoices/invoice-status-badge";
 import {
   Table,
@@ -26,9 +27,12 @@ const columns: ColumnDef<InvoiceRow>[] = [
     accessorKey: "invoiceNo",
     header: "Invoice #",
     cell: ({ row }) => (
-      <Link href={`/invoices/${row.original.id}`} className="font-medium hover:underline">
-        {row.original.invoiceNo}
-      </Link>
+      <div className="flex items-center gap-2">
+        <Link href={`/invoices/${row.original.id}`} className="font-medium hover:underline">
+          {row.original.invoiceNo}
+        </Link>
+        <InvoiceKindBadge kind={row.original.kind} />
+      </div>
     ),
   },
   {

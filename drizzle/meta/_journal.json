@@ -50,6 +50,48 @@
       "when": 1785431912314,
       "tag": "0006_classy_wasp",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1785565891777,
+      "tag": "0007_slippery_scream",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1785998839924,
+      "tag": "0008_add_enquiries",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1785998850817,
+      "tag": "0009_drop_leads",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1786016687026,
+      "tag": "0010_add_geography",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1786019003152,
+      "tag": "0011_add_service_catalog_extras",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1786078213084,
+      "tag": "0012_add_invoice_kind_proforma",
+      "breakpoints": true
     }
   ]
 }

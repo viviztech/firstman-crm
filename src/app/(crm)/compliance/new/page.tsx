@@ -1,4 +1,5 @@
 import { createComplianceItemAction } from "@/actions/compliance";
+import { toScope } from "@/actions/shared";
 import { ComplianceForm } from "@/components/compliance/compliance-form";
 import { requireRole } from "@/lib/session";
 import { listServiceOptions } from "@/services/catalog";
@@ -11,7 +12,7 @@ export default async function NewCompliancePage({
 }) {
   const user = await requireRole("super_admin", "manager", "executive");
   const { clientId } = await searchParams;
-  const scope = { userId: user.id, role: user.role };
+  const scope = await toScope(user);
 
   const [clients, services] = await Promise.all([listClientOptions(scope), listServiceOptions()]);
 

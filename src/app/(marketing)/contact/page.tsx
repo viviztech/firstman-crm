@@ -1,6 +1,6 @@
 import { Mail, MapPin, Phone } from "lucide-react";
 import type { Metadata } from "next";
-import { MarketingLeadForm } from "@/components/marketing/lead-form";
+import { MarketingEnquiryForm } from "@/components/marketing/enquiry-form";
 import { getCompanyProfile } from "@/services/company-profile";
 import { getPublicCatalog } from "@/services/marketing-catalog";
 
@@ -46,7 +46,7 @@ export default async function ContactPage() {
           </ul>
         </div>
 
-        <MarketingLeadForm services={services.map((s) => ({ id: s.id, name: s.name }))} />
+        <MarketingEnquiryForm services={services.map((s) => ({ id: s.id, name: s.name }))} />
       </div>
     </div>
   );

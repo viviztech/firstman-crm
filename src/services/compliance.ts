@@ -10,6 +10,7 @@ import {
   type complianceStatusEnum,
 } from "@/db/schema/compliance";
 import type { ActorScope } from "@/lib/scope";
+import { visibilityConditions } from "@/lib/scope";
 import { optionalTrimmed, optionalUuid } from "@/lib/validation/helpers";
 import { recordActivity } from "@/services/activity-log";
 import { createOrder } from "@/services/orders";
@@ -42,13 +43,25 @@ export type ComplianceItemEditInput = z.infer<typeof complianceItemEditSchema>;
 type ComplianceRecurrence = (typeof complianceRecurrenceEnum.enumValues)[number];
 type ComplianceStatus = (typeof complianceStatusEnum.enumValues)[number];
 
-/** Executives may only touch compliance items for a client assigned to them (spec 3). */
+/**
+ * Executives may only touch compliance items for a client in scope — internal-type by
+ * assignedTo, franchise-type by pincode territory (spec 3, ADR 0001).
+ */
 async function canAccessClient(clientId: string, scope: ActorScope): Promise<boolean> {
   if (scope.role !== "executive") return true;
   const client = await db.query.clients.findFirst({
     where: and(eq(clients.id, clientId), isNull(clients.deletedAt)),
+    columns: { assignedTo: true, pincode: true },
   });
-  return client?.assignedTo === scope.userId;
+  if (!client) return false;
+  if (scope.employeeType === "franchise") {
+    return (
+      scope.pincodes.length > 0 &&
+      client.pincode !== null &&
+      scope.pincodes.includes(client.pincode)
+    );
+  }
+  return client.assignedTo === scope.userId;
 }
 
 function computeNextDueDate(dueDate: Date, recurrence: ComplianceRecurrence): Date {
@@ -70,7 +83,12 @@ export async function listComplianceItems(
 ) {
   const page = Math.max(1, opts.page ?? 1);
   const conditions = [isNull(complianceItems.deletedAt)];
-  if (scope.role === "executive") conditions.push(eq(clients.assignedTo, scope.userId));
+  const scoped = visibilityConditions(scope, {
+    assignedToColumn: clients.assignedTo,
+    pincodeColumn: clients.pincode,
+    serviceIdColumn: complianceItems.serviceId,
+  });
+  if (scoped) conditions.push(scoped);
   if (opts.search) {
     const term = `%${opts.search}%`;
     const searchCondition = or(ilike(complianceItems.title, term), ilike(clients.name, term));
@@ -118,7 +136,12 @@ export async function listComplianceItemsForRange(scope: ActorScope, from: Date,
     gte(complianceItems.dueDate, from),
     lte(complianceItems.dueDate, to),
   ];
-  if (scope.role === "executive") conditions.push(eq(clients.assignedTo, scope.userId));
+  const scoped = visibilityConditions(scope, {
+    assignedToColumn: clients.assignedTo,
+    pincodeColumn: clients.pincode,
+    serviceIdColumn: complianceItems.serviceId,
+  });
+  if (scoped) conditions.push(scoped);
 
   return db
     .select({
@@ -146,7 +169,12 @@ export async function listUpcomingComplianceItems(scope: ActorScope, days = 14) 
     gte(complianceItems.dueDate, now),
     lte(complianceItems.dueDate, until),
   ];
-  if (scope.role === "executive") conditions.push(eq(clients.assignedTo, scope.userId));
+  const scoped = visibilityConditions(scope, {
+    assignedToColumn: clients.assignedTo,
+    pincodeColumn: clients.pincode,
+    serviceIdColumn: complianceItems.serviceId,
+  });
+  if (scoped) conditions.push(scoped);
 
   return db
     .select({
@@ -179,13 +207,27 @@ export async function getComplianceItem(id: string, scope: ActorScope) {
   const item = await db.query.complianceItems.findFirst({
     where: and(eq(complianceItems.id, id), isNull(complianceItems.deletedAt)),
     with: {
-      client: { columns: { id: true, name: true, phone: true, assignedTo: true } },
+      client: { columns: { id: true, name: true, phone: true, assignedTo: true, pincode: true } },
       service: { columns: { id: true, name: true } },
       order: { columns: { id: true, orderNo: true } },
     },
   });
   if (!item) return undefined;
-  if (scope.role === "executive" && item.client.assignedTo !== scope.userId) return undefined;
+  if (scope.role === "executive") {
+    const inTerritory =
+      scope.employeeType === "franchise"
+        ? scope.pincodes.length > 0 &&
+          item.client.pincode !== null &&
+          scope.pincodes.includes(item.client.pincode)
+        : item.client.assignedTo === scope.userId;
+    if (!inTerritory) return undefined;
+    if (
+      scope.serviceIds.length > 0 &&
+      (!item.serviceId || !scope.serviceIds.includes(item.serviceId))
+    ) {
+      return undefined;
+    }
+  }
   return item;
 }
 

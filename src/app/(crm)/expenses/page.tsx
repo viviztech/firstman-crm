@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { toScope } from "@/actions/shared";
 import { ExpenseFiltersForm } from "@/components/expenses/expense-filters-form";
 import { ExpensesTable } from "@/components/expenses/expenses-table";
 import { ListPagination } from "@/components/list-pagination";
@@ -14,10 +15,10 @@ export default async function ExpensesPage({
   const user = await requireRole("super_admin", "manager", "accountant");
   const { page, q } = await searchParams;
 
-  const result = await listExpenses(
-    { userId: user.id, role: user.role },
-    { page: page ? Number(page) : 1, search: q },
-  );
+  const result = await listExpenses(await toScope(user), {
+    page: page ? Number(page) : 1,
+    search: q,
+  });
 
   return (
     <div className="flex flex-col gap-4">

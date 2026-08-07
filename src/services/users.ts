@@ -2,6 +2,7 @@ import { eq, inArray, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { user } from "@/db/schema/auth-schema";
 import type { Role } from "@/lib/auth";
+import { listStaffProfileSummaries } from "@/services/staff";
 
 /** See catalog.ts's byNameCaseInsensitive — same cross-environment collation fix. */
 const byNameCaseInsensitive = sql`lower(${user.name})`;
@@ -40,17 +41,33 @@ export async function listStaffEmailsByRole(roles: Role[]): Promise<string[]> {
   return rows.map((row) => row.email);
 }
 
-/** Full staff roster for the admin user-management screen (spec 4.10) — super_admin only. */
+/**
+ * Full staff roster for the admin user-management screen (spec 4.10, extended by ADR 0001 with
+ * employeeType/pincodes/serviceIds) — super_admin only.
+ */
 export async function listAllStaffForAdmin() {
-  return db
-    .select({
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      banned: user.banned,
-      createdAt: user.createdAt,
-    })
-    .from(user)
-    .orderBy(byNameCaseInsensitive);
+  const [rows, profileSummaries] = await Promise.all([
+    db
+      .select({
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        banned: user.banned,
+        createdAt: user.createdAt,
+      })
+      .from(user)
+      .orderBy(byNameCaseInsensitive),
+    listStaffProfileSummaries(),
+  ]);
+
+  return rows.map((row) => {
+    const profile = profileSummaries.get(row.id);
+    return {
+      ...row,
+      employeeType: profile?.employeeType ?? "internal",
+      pincodes: profile?.pincodes ?? [],
+      serviceIds: profile?.serviceIds ?? [],
+    };
+  });
 }

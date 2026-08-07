@@ -1,4 +1,5 @@
 import { createInvoiceAction } from "@/actions/invoices";
+import { toScope } from "@/actions/shared";
 import { InvoiceForm } from "@/components/invoices/invoice-form";
 import { requireRole } from "@/lib/session";
 import { listClientOptions } from "@/services/clients";
@@ -11,7 +12,7 @@ export default async function NewInvoicePage({
 }) {
   const user = await requireRole("super_admin", "manager", "accountant");
   const { clientId, orderId } = await searchParams;
-  const scope = { userId: user.id, role: user.role };
+  const scope = await toScope(user);
 
   const [clients, orders] = await Promise.all([listClientOptions(scope), listOrderOptions(scope)]);
 

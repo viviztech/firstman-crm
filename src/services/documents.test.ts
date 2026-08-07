@@ -8,6 +8,7 @@ import { clients } from "@/db/schema/clients";
 import { documents } from "@/db/schema/documents";
 import { orders, orderTasks } from "@/db/schema/orders";
 import { localStorageDriver } from "@/lib/storage/local";
+import { makeScope } from "@/lib/test-scope";
 import {
   attachDocumentFile,
   createClientDocument,
@@ -26,9 +27,9 @@ describe("documents service (integration)", () => {
   const execAId = randomUUID();
   const execBId = randomUUID();
 
-  const managerScope = { userId: managerId, role: "manager" as const };
-  const execAScope = { userId: execAId, role: "executive" as const };
-  const execBScope = { userId: execBId, role: "executive" as const };
+  const managerScope = makeScope(managerId, "manager");
+  const execAScope = makeScope(execAId, "executive");
+  const execBScope = makeScope(execBId, "executive");
 
   let pvtLtdServiceId: string;
   const savedKeys: string[] = [];

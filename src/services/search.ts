@@ -1,17 +1,18 @@
-import { and, eq, ilike, isNull, or } from "drizzle-orm";
+import { and, eq, ilike, isNull, ne, or } from "drizzle-orm";
 import { db } from "@/db";
 import { clients } from "@/db/schema/clients";
+import { enquiries } from "@/db/schema/enquiries";
 import { invoices } from "@/db/schema/invoices";
-import { leads } from "@/db/schema/leads";
 import { orders } from "@/db/schema/orders";
 import type { ActorScope } from "@/lib/scope";
+import { visibilityConditions } from "@/lib/scope";
 
 const RESULT_LIMIT = 5;
 
 export type SearchResult = { id: string; label: string; sublabel: string; href: string };
 
 export type GlobalSearchResults = {
-  leads: SearchResult[];
+  enquiries: SearchResult[];
   clients: SearchResult[];
   orders: SearchResult[];
   invoices: SearchResult[];
@@ -20,29 +21,34 @@ export type GlobalSearchResults = {
 /**
  * cmdk global search palette (spec 4.9) — mirrors each module's own scoping rules exactly
  * (executive assignedTo-only, invoices closed to executives entirely) so search never
- * surfaces a record the caller couldn't otherwise open.
+ * surfaces a record the caller couldn't otherwise open. Lost enquiries are hidden everywhere,
+ * search included.
  */
 export async function globalSearch(scope: ActorScope, query: string): Promise<GlobalSearchResults> {
   const term = query.trim();
   if (term.length < 2) {
-    return { leads: [], clients: [], orders: [], invoices: [] };
+    return { enquiries: [], clients: [], orders: [], invoices: [] };
   }
   const like = `%${term}%`;
 
-  const canSeeLeads = scope.role !== "accountant";
+  const canSeeEnquiries = scope.role !== "accountant";
   const canSeeInvoices = scope.role !== "executive";
-  const executiveOnly = scope.role === "executive";
 
-  const [leadRows, clientRows, orderRows, invoiceRows] = await Promise.all([
-    canSeeLeads
+  const [enquiryRows, clientRows, orderRows, invoiceRows] = await Promise.all([
+    canSeeEnquiries
       ? db
-          .select({ id: leads.id, name: leads.name, phone: leads.phone })
-          .from(leads)
+          .select({ id: enquiries.id, name: enquiries.name, phone: enquiries.phone })
+          .from(enquiries)
           .where(
             and(
-              isNull(leads.deletedAt),
-              or(ilike(leads.name, like), ilike(leads.phone, like)),
-              executiveOnly ? eq(leads.assignedTo, scope.userId) : undefined,
+              isNull(enquiries.deletedAt),
+              ne(enquiries.status, "lost"),
+              or(ilike(enquiries.name, like), ilike(enquiries.phone, like)),
+              visibilityConditions(scope, {
+                assignedToColumn: enquiries.assignedTo,
+                pincodeColumn: enquiries.pincode,
+                serviceIdColumn: enquiries.serviceInterestedId,
+              }),
             ),
           )
           .limit(RESULT_LIMIT)
@@ -54,7 +60,10 @@ export async function globalSearch(scope: ActorScope, query: string): Promise<Gl
         and(
           isNull(clients.deletedAt),
           or(ilike(clients.name, like), ilike(clients.phone, like)),
-          executiveOnly ? eq(clients.assignedTo, scope.userId) : undefined,
+          visibilityConditions(scope, {
+            assignedToColumn: clients.assignedTo,
+            pincodeColumn: clients.pincode,
+          }),
         ),
       )
       .limit(RESULT_LIMIT),
@@ -70,7 +79,11 @@ export async function globalSearch(scope: ActorScope, query: string): Promise<Gl
         and(
           isNull(orders.deletedAt),
           or(ilike(orders.orderNo, like), ilike(clients.name, like)),
-          executiveOnly ? eq(orders.assignedTo, scope.userId) : undefined,
+          visibilityConditions(scope, {
+            assignedToColumn: orders.assignedTo,
+            pincodeColumn: clients.pincode,
+            serviceIdColumn: orders.serviceId,
+          }),
         ),
       )
       .limit(RESULT_LIMIT),
@@ -94,11 +107,11 @@ export async function globalSearch(scope: ActorScope, query: string): Promise<Gl
   ]);
 
   return {
-    leads: leadRows.map((row) => ({
+    enquiries: enquiryRows.map((row) => ({
       id: row.id,
       label: row.name,
       sublabel: row.phone,
-      href: `/leads/${row.id}`,
+      href: `/enquiries/${row.id}`,
     })),
     clients: clientRows.map((row) => ({
       id: row.id,

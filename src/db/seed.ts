@@ -1,28 +1,34 @@
 import "dotenv/config";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { user } from "@/db/schema/auth-schema";
 import { serviceCategories, services } from "@/db/schema/catalog";
 import { clients } from "@/db/schema/clients";
 import { complianceItems } from "@/db/schema/compliance";
+import { enquiries, enquiryFollowups } from "@/db/schema/enquiries";
 import { expenses } from "@/db/schema/expenses";
+import { districts, pincodes, states } from "@/db/schema/geography";
 import { invoices } from "@/db/schema/invoices";
-import { leadFollowups, leads } from "@/db/schema/leads";
 import { orders } from "@/db/schema/orders";
 import { CATALOG_SEED } from "@/db/seed-data/catalog";
 import { CLIENT_SEED } from "@/db/seed-data/clients";
 import { COMPLIANCE_SEED } from "@/db/seed-data/compliance";
+import { ENQUIRY_SEED, FOLLOWUP_SEED_INDEXES } from "@/db/seed-data/enquiries";
 import { EXPENSE_SEED } from "@/db/seed-data/expenses";
+import { parseGeographyCsv, STATE_SEED } from "@/db/seed-data/geography";
 import { INVOICE_SEED } from "@/db/seed-data/invoices";
-import { FOLLOWUP_SEED_INDEXES, LEAD_SEED } from "@/db/seed-data/leads";
 import { ORDER_SEED } from "@/db/seed-data/orders";
 import { auth, type Role } from "@/lib/auth";
 import { env } from "@/lib/env";
+import type { ActorScope } from "@/lib/scope";
 import {
   createComplianceItem,
   markComplianceItemFiled,
   rollComplianceStatuses,
 } from "@/services/compliance";
+import { closeEnquiryAsSale } from "@/services/enquiries";
 import { createExpense } from "@/services/expenses";
 import {
   cancelInvoice,
@@ -31,11 +37,21 @@ import {
   rollInvoiceStatusesOverdue,
   sendInvoice,
 } from "@/services/invoices";
-import { convertLeadToClient } from "@/services/leads";
 import { createOrder, updateOrderStatus } from "@/services/orders";
 
-/** A couple of seeded leads get genuinely converted so conversion-rate reports have non-zero data. */
-const WON_LEAD_PHONES = ["+919833100033", "+919900100010"] as const;
+/** A couple of seeded enquiries get genuinely closed as sales so conversion-rate reports have non-zero data. */
+const WON_ENQUIRY_PHONES = ["+919833100033", "+919900100010"] as const;
+
+/** The seed script always acts as an unrestricted super_admin (ADR 0001's employeeType/pincodes/serviceIds don't apply). */
+function actorScope(actorId: string): ActorScope {
+  return {
+    userId: actorId,
+    role: "super_admin",
+    employeeType: "internal",
+    pincodes: [],
+    serviceIds: [],
+  };
+}
 
 const STAFF: { role: Role; count: number }[] = [
   { role: "manager", count: 3 },
@@ -58,6 +74,82 @@ async function upsertUser(email: string, name: string, role: Role): Promise<stri
   await db.update(user).set({ role }).where(eq(user.id, result.user.id));
   console.log(`created ${email} -> ${role}`);
   return result.user.id;
+}
+
+const GEOGRAPHY_DISTRICT_CHUNK_SIZE = 500;
+const GEOGRAPHY_PINCODE_CHUNK_SIZE = 1000;
+
+function chunk<T>(items: T[], size: number): T[][] {
+  const chunks: T[][] = [];
+  for (let i = 0; i < items.length; i += size) {
+    chunks.push(items.slice(i, i + size));
+  }
+  return chunks;
+}
+
+/**
+ * Seeds the states/districts/pincodes master data. Batched with onConflictDoNothing rather than
+ * the row-by-row existence checks the rest of this file uses — at ~24k unique pincodes that
+ * pattern would be far too slow, and the batched form is still fully idempotent on reseed.
+ */
+async function seedGeography(): Promise<void> {
+  await db.insert(states).values(STATE_SEED).onConflictDoNothing({ target: states.name });
+
+  const stateRows = await db.select({ id: states.id, name: states.name }).from(states);
+  const stateIdByName = new Map(stateRows.map((row) => [row.name, row.id]));
+
+  const csvPath = join(process.cwd(), "src/db/seed-data/geography-source.csv");
+  const csvText = readFileSync(csvPath, "utf-8");
+  const geoRows = parseGeographyCsv(csvText);
+
+  const districtByKey = new Map<string, { stateId: string; name: string }>();
+  const skippedStates = new Set<string>();
+  for (const row of geoRows) {
+    const stateId = stateIdByName.get(row.state);
+    if (!stateId) {
+      skippedStates.add(row.state);
+      continue;
+    }
+    districtByKey.set(`${stateId}|||${row.district}`, { stateId, name: row.district });
+  }
+
+  const districtValues = Array.from(districtByKey.values());
+  for (const batch of chunk(districtValues, GEOGRAPHY_DISTRICT_CHUNK_SIZE)) {
+    await db
+      .insert(districts)
+      .values(batch)
+      .onConflictDoNothing({ target: [districts.stateId, districts.name] });
+  }
+
+  const districtRows = await db
+    .select({ id: districts.id, stateId: districts.stateId, name: districts.name })
+    .from(districts);
+  const districtIdByKey = new Map(
+    districtRows.map((row) => [`${row.stateId}|||${row.name}`, row.id]),
+  );
+
+  const pincodeValues: { pincode: string; districtId: string; stateId: string; city: string }[] =
+    [];
+  for (const row of geoRows) {
+    const stateId = stateIdByName.get(row.state);
+    if (!stateId) continue;
+    const districtId = districtIdByKey.get(`${stateId}|||${row.district}`);
+    if (!districtId) continue;
+    pincodeValues.push({ pincode: row.pincode, districtId, stateId, city: row.city });
+  }
+
+  for (const batch of chunk(pincodeValues, GEOGRAPHY_PINCODE_CHUNK_SIZE)) {
+    await db.insert(pincodes).values(batch).onConflictDoNothing({ target: pincodes.pincode });
+  }
+
+  if (skippedStates.size > 0) {
+    console.warn(
+      `geography seed: skipped unrecognized state names (not in STATE_SEED): ${[...skippedStates].join(", ")}`,
+    );
+  }
+  console.log(
+    `seeded geography: ${STATE_SEED.length} states, ${districtValues.length} districts, ${pincodeValues.length} pincodes`,
+  );
 }
 
 async function seedCatalog(actorId: string): Promise<void> {
@@ -139,12 +231,12 @@ async function seedClients(actorId: string, executiveIds: string[]): Promise<voi
   console.log(`seeded ${CLIENT_SEED.length} demo clients`);
 }
 
-async function seedLeads(actorId: string, executiveIds: string[]): Promise<void> {
+async function seedEnquiries(actorId: string, executiveIds: string[]): Promise<void> {
   const now = Date.now();
   const dayMs = 24 * 60 * 60 * 1000;
 
-  for (const [index, seed] of LEAD_SEED.entries()) {
-    const existing = await db.query.leads.findFirst({ where: eq(leads.phone, seed.phone) });
+  for (const [index, seed] of ENQUIRY_SEED.entries()) {
+    const existing = await db.query.enquiries.findFirst({ where: eq(enquiries.phone, seed.phone) });
     if (existing) continue;
 
     const serviceInterested = seed.serviceSlug
@@ -155,7 +247,7 @@ async function seedLeads(actorId: string, executiveIds: string[]): Promise<void>
       executiveIds.length > 0 ? executiveIds[index % executiveIds.length] : undefined;
 
     const [created] = await db
-      .insert(leads)
+      .insert(enquiries)
       .values({
         name: seed.name,
         phone: seed.phone,
@@ -178,8 +270,8 @@ async function seedLeads(actorId: string, executiveIds: string[]): Promise<void>
     if (!created) continue;
 
     if ((FOLLOWUP_SEED_INDEXES as readonly number[]).includes(index)) {
-      await db.insert(leadFollowups).values({
-        leadId: created.id,
+      await db.insert(enquiryFollowups).values({
+        enquiryId: created.id,
         userId: assignedTo ?? actorId,
         channel: "call",
         summary: "Initial outreach call — explained services and pricing.",
@@ -189,23 +281,42 @@ async function seedLeads(actorId: string, executiveIds: string[]): Promise<void>
       });
     }
   }
-  console.log(`seeded ${LEAD_SEED.length} demo leads`);
+  console.log(`seeded ${ENQUIRY_SEED.length} demo enquiries`);
 }
 
-async function seedLeadConversions(actorId: string): Promise<void> {
-  const actor = { userId: actorId, role: "super_admin" as const };
+async function seedEnquiryConversions(actorId: string): Promise<void> {
+  const actor = actorScope(actorId);
 
-  for (const phone of WON_LEAD_PHONES) {
-    const lead = await db.query.leads.findFirst({ where: eq(leads.phone, phone) });
-    if (!lead || lead.status === "won") continue;
+  for (const phone of WON_ENQUIRY_PHONES) {
+    const enquiry = await db.query.enquiries.findFirst({ where: eq(enquiries.phone, phone) });
+    if (!enquiry || enquiry.status === "won" || !enquiry.serviceInterestedId) continue;
 
-    await convertLeadToClient(lead.id, actor);
+    const service = await db.query.services.findFirst({
+      where: eq(services.id, enquiry.serviceInterestedId),
+    });
+    if (!service) continue;
+
+    await closeEnquiryAsSale(
+      enquiry.id,
+      {
+        name: enquiry.name,
+        phone: enquiry.phone,
+        email: enquiry.email ?? undefined,
+        address: undefined,
+        pincode: undefined,
+        serviceId: service.id,
+        quotedPricePaise: service.basePricePaise,
+        govtFeePaise: service.govtFeePaise ?? undefined,
+        comments: undefined,
+      },
+      actor,
+    );
   }
-  console.log(`converted ${WON_LEAD_PHONES.length} demo leads to won/client`);
+  console.log(`closed ${WON_ENQUIRY_PHONES.length} demo enquiries as sales`);
 }
 
 async function seedOrders(actorId: string, executiveIds: string[]): Promise<void> {
-  const actor = { userId: actorId, role: "super_admin" as const };
+  const actor = actorScope(actorId);
 
   for (const [index, seed] of ORDER_SEED.entries()) {
     const client = await db.query.clients.findFirst({ where: eq(clients.name, seed.clientName) });
@@ -243,7 +354,7 @@ async function seedOrders(actorId: string, executiveIds: string[]): Promise<void
 }
 
 async function seedCompliance(actorId: string): Promise<void> {
-  const actor = { userId: actorId, role: "super_admin" as const };
+  const actor = actorScope(actorId);
   const now = Date.now();
   const dayMs = 24 * 60 * 60 * 1000;
 
@@ -283,7 +394,7 @@ async function seedCompliance(actorId: string): Promise<void> {
 }
 
 async function seedInvoices(actorId: string): Promise<void> {
-  const actor = { userId: actorId, role: "super_admin" as const };
+  const actor = actorScope(actorId);
   const now = Date.now();
   const dayMs = 24 * 60 * 60 * 1000;
 
@@ -334,7 +445,7 @@ async function seedInvoices(actorId: string): Promise<void> {
 }
 
 async function seedExpenses(actorId: string): Promise<void> {
-  const actor = { userId: actorId, role: "super_admin" as const };
+  const actor = actorScope(actorId);
   const now = Date.now();
   const dayMs = 24 * 60 * 60 * 1000;
 
@@ -385,10 +496,11 @@ async function main(): Promise<void> {
     }
   }
 
+  await seedGeography();
   await seedCatalog(adminId);
   await seedClients(adminId, executiveIds);
-  await seedLeads(adminId, executiveIds);
-  await seedLeadConversions(adminId);
+  await seedEnquiries(adminId, executiveIds);
+  await seedEnquiryConversions(adminId);
   await seedOrders(adminId, executiveIds);
   await seedCompliance(adminId);
   await seedInvoices(adminId);

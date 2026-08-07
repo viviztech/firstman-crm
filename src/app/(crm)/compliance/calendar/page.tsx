@@ -11,6 +11,7 @@ import {
   subMonths,
 } from "date-fns";
 import Link from "next/link";
+import { toScope } from "@/actions/shared";
 import { Button } from "@/components/ui/button";
 import { requireRole } from "@/lib/session";
 import { listComplianceItemsForRange } from "@/services/compliance";
@@ -32,11 +33,7 @@ export default async function ComplianceCalendarPage({
   const gridStart = startOfWeek(monthStart);
   const gridEnd = endOfWeek(monthEnd);
 
-  const items = await listComplianceItemsForRange(
-    { userId: user.id, role: user.role },
-    gridStart,
-    gridEnd,
-  );
+  const items = await listComplianceItemsForRange(await toScope(user), gridStart, gridEnd);
 
   const itemsByDay = new Map<string, typeof items>();
   for (const item of items) {

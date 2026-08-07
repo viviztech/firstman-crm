@@ -1,7 +1,7 @@
 import { ArrowRight, ArrowUpRight, Banknote, MessageCircleMore, ShieldCheck } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { MarketingLeadForm } from "@/components/marketing/lead-form";
+import { MarketingEnquiryForm } from "@/components/marketing/enquiry-form";
 import { formatMoney } from "@/lib/money";
 import { getCompanyProfile } from "@/services/company-profile";
 import { getPublicCatalog } from "@/services/marketing-catalog";
@@ -132,7 +132,7 @@ export default async function MarketingHomePage() {
               Share a few details and we'll get back to you — usually the same day.
             </p>
           </div>
-          <MarketingLeadForm services={services.map((s) => ({ id: s.id, name: s.name }))} />
+          <MarketingEnquiryForm services={services.map((s) => ({ id: s.id, name: s.name }))} />
         </div>
       </section>
     </>

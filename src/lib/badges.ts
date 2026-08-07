@@ -1,13 +1,29 @@
+import type { recurrenceEnum, serviceRelationTypeEnum } from "@/db/schema/catalog";
 import type { complianceRecurrenceEnum, complianceStatusEnum } from "@/db/schema/compliance";
 import type { documentStatusEnum } from "@/db/schema/documents";
-import type { invoiceStatusEnum, paymentMethodEnum } from "@/db/schema/invoices";
-import type { leadSourceEnum, leadStatusEnum } from "@/db/schema/leads";
+import type { enquirySourceEnum, enquiryStatusEnum } from "@/db/schema/enquiries";
+import type { invoiceKindEnum, invoiceStatusEnum, paymentMethodEnum } from "@/db/schema/invoices";
 import type { orderStatusEnum, orderTaskStatusEnum } from "@/db/schema/orders";
 
-export type LeadStatus = (typeof leadStatusEnum.enumValues)[number];
-export type LeadSource = (typeof leadSourceEnum.enumValues)[number];
+export type ServiceRelationType = (typeof serviceRelationTypeEnum.enumValues)[number];
+export type ServiceRecurrence = (typeof recurrenceEnum.enumValues)[number];
 
-export const LEAD_STATUS_ORDER: LeadStatus[] = [
+export const SERVICE_RELATION_TYPE_LABEL: Record<ServiceRelationType, string> = {
+  upsell: "Upsell",
+  renewal: "Renewal",
+  prerequisite: "Prerequisite",
+};
+
+export const SERVICE_RECURRENCE_LABEL: Record<ServiceRecurrence, string> = {
+  monthly: "Monthly",
+  quarterly: "Quarterly",
+  yearly: "Yearly",
+};
+
+export type EnquiryStatus = (typeof enquiryStatusEnum.enumValues)[number];
+export type EnquirySource = (typeof enquirySourceEnum.enumValues)[number];
+
+export const ENQUIRY_STATUS_ORDER: EnquiryStatus[] = [
   "new",
   "contacted",
   "qualified",
@@ -17,7 +33,7 @@ export const LEAD_STATUS_ORDER: LeadStatus[] = [
   "lost",
 ];
 
-export const LEAD_STATUS_BADGE: Record<LeadStatus, { label: string; className: string }> = {
+export const ENQUIRY_STATUS_BADGE: Record<EnquiryStatus, { label: string; className: string }> = {
   new: {
     label: "New",
     className: "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300",
@@ -48,7 +64,7 @@ export const LEAD_STATUS_BADGE: Record<LeadStatus, { label: string; className: s
   },
 };
 
-export const LEAD_SOURCE_LABEL: Record<LeadSource, string> = {
+export const ENQUIRY_SOURCE_LABEL: Record<EnquirySource, string> = {
   whatsapp: "WhatsApp",
   website: "Website",
   meta_ads: "Meta Ads",
@@ -207,6 +223,19 @@ export const INVOICE_STATUS_BADGE: Record<InvoiceStatus, { label: string; classN
   cancelled: {
     label: "Cancelled",
     className: "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400",
+  },
+};
+
+export type InvoiceKind = (typeof invoiceKindEnum.enumValues)[number];
+
+export const INVOICE_KIND_BADGE: Record<InvoiceKind, { label: string; className: string }> = {
+  proforma: {
+    label: "Proforma",
+    className: "bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300",
+  },
+  tax: {
+    label: "Tax Invoice",
+    className: "bg-teal-100 text-teal-800 dark:bg-teal-950 dark:text-teal-300",
   },
 };
 

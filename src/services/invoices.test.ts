@@ -1,15 +1,20 @@
 import { randomUUID } from "node:crypto";
 import { addDays, subDays } from "date-fns";
-import { eq, ilike, inArray } from "drizzle-orm";
+import { and, eq, ilike, inArray } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { db } from "@/db";
 import { user } from "@/db/schema/auth-schema";
+import { services } from "@/db/schema/catalog";
 import { clients } from "@/db/schema/clients";
+import { documents } from "@/db/schema/documents";
 import { invoices, payments } from "@/db/schema/invoices";
+import { orders, orderTasks } from "@/db/schema/orders";
+import { makeScope } from "@/lib/test-scope";
 import {
   cancelInvoice,
   computeInvoiceTotals,
   createInvoice,
+  createProformaInvoiceInTx,
   deleteInvoice,
   getClientFinancialSummary,
   getCollectionsThisMonth,
@@ -25,6 +30,7 @@ import {
   sendInvoice,
   updateInvoice,
 } from "@/services/invoices";
+import { createOrder, updateOrderStatus } from "@/services/orders";
 
 async function makeTestClient(phone: string, actorId: string) {
   const [client] = await db
@@ -40,9 +46,9 @@ describe("invoices service (integration)", () => {
   const execId = randomUUID();
   const accountantId = randomUUID();
 
-  const managerScope = { userId: managerId, role: "manager" as const };
-  const execScope = { userId: execId, role: "executive" as const };
-  const accountantScope = { userId: accountantId, role: "accountant" as const };
+  const managerScope = makeScope(managerId, "manager");
+  const execScope = makeScope(execId, "executive");
+  const accountantScope = makeScope(accountantId, "accountant");
 
   beforeAll(async () => {
     await db.insert(user).values([
@@ -643,6 +649,157 @@ describe("invoices service (integration)", () => {
         status: "paid",
       });
       expect(wrongStatus.rows.map((row) => row.id)).not.toContain(invoice.id);
+    });
+  });
+
+  describe("final tax invoice generation (proforma paid + order completed)", () => {
+    let pvtLtdServiceId: string;
+
+    beforeAll(async () => {
+      const service = await db.query.services.findFirst({
+        where: eq(services.slug, "pvt-ltd-registration"),
+      });
+      if (!service) throw new Error("Seed catalog first — pvt-ltd-registration service not found");
+      pvtLtdServiceId = service.id;
+    });
+
+    afterAll(async () => {
+      const testOrders = await db
+        .select({ id: orders.id })
+        .from(orders)
+        .where(ilike(orders.notes, "invoice-final-test-marker%"));
+      const orderIds = testOrders.map((o) => o.id);
+      for (const id of orderIds) {
+        await db.delete(orderTasks).where(eq(orderTasks.orderId, id));
+        await db
+          .delete(documents)
+          .where(and(eq(documents.ownerType, "order"), eq(documents.ownerId, id)));
+      }
+
+      const testClients = await db
+        .select({ id: clients.id })
+        .from(clients)
+        .where(ilike(clients.phone, "+919876606%"));
+      const clientIds = testClients.map((c) => c.id);
+      if (clientIds.length > 0) {
+        const testInvoices = await db
+          .select({ id: invoices.id })
+          .from(invoices)
+          .where(inArray(invoices.clientId, clientIds));
+        const invoiceIds = testInvoices.map((i) => i.id);
+        if (invoiceIds.length > 0) {
+          await db.delete(payments).where(inArray(payments.invoiceId, invoiceIds));
+          await db.delete(invoices).where(inArray(invoices.id, invoiceIds));
+        }
+      }
+      await db.delete(orders).where(ilike(orders.notes, "invoice-final-test-marker%"));
+      await db.delete(clients).where(ilike(clients.phone, "+919876606%"));
+    });
+
+    async function makeOrderWithProforma(phone: string, marker: string) {
+      const client = await makeTestClient(phone, managerId);
+      const order = await createOrder(
+        {
+          clientId: client.id,
+          serviceId: pvtLtdServiceId,
+          quotedPricePaise: 100000,
+          notes: marker,
+        },
+        managerScope,
+      );
+      const proforma = await db.transaction((tx) =>
+        createProformaInvoiceInTx(
+          tx,
+          {
+            clientId: client.id,
+            orderId: order.id,
+            lineItems: [{ description: "Pvt Ltd Registration", qty: 1, ratePaise: 100000 }],
+            gstRate: 18,
+          },
+          managerScope,
+        ),
+      );
+      return { client, order, proforma };
+    }
+
+    it("generates the tax invoice once the order completes after the proforma is already paid in full", async () => {
+      const { order, proforma } = await makeOrderWithProforma(
+        "+919876606001",
+        "invoice-final-test-marker order-after-payment",
+      );
+      expect(proforma.kind).toBe("proforma");
+      expect(proforma.status).toBe("sent");
+
+      await recordPayment(proforma.id, { amountPaise: 118000, method: "upi" }, managerScope);
+      // Not completed yet — no tax invoice should exist.
+      expect(
+        await db.query.invoices.findFirst({
+          where: and(eq(invoices.proformaInvoiceId, proforma.id), eq(invoices.kind, "tax")),
+        }),
+      ).toBeUndefined();
+
+      await updateOrderStatus(order.id, "completed", managerScope);
+
+      const taxInvoice = await db.query.invoices.findFirst({
+        where: and(eq(invoices.proformaInvoiceId, proforma.id), eq(invoices.kind, "tax")),
+      });
+      expect(taxInvoice?.status).toBe("paid");
+      expect(taxInvoice?.totalPaise).toBe(proforma.totalPaise);
+      expect(taxInvoice?.clientId).toBe(proforma.clientId);
+      expect(taxInvoice?.orderId).toBe(order.id);
+    });
+
+    it("generates the tax invoice once the final payment lands after the order is already completed", async () => {
+      const { order, proforma } = await makeOrderWithProforma(
+        "+919876606002",
+        "invoice-final-test-marker payment-after-order",
+      );
+
+      await updateOrderStatus(order.id, "completed", managerScope);
+      expect(
+        await db.query.invoices.findFirst({
+          where: and(eq(invoices.proformaInvoiceId, proforma.id), eq(invoices.kind, "tax")),
+        }),
+      ).toBeUndefined();
+
+      await recordPayment(proforma.id, { amountPaise: 118000, method: "cash" }, managerScope);
+
+      const taxInvoice = await db.query.invoices.findFirst({
+        where: and(eq(invoices.proformaInvoiceId, proforma.id), eq(invoices.kind, "tax")),
+      });
+      expect(taxInvoice?.status).toBe("paid");
+    });
+
+    it("never generates a tax invoice while the order is incomplete, or while the proforma is only partially paid", async () => {
+      const { order, proforma } = await makeOrderWithProforma(
+        "+919876606003",
+        "invoice-final-test-marker incomplete",
+      );
+
+      await recordPayment(proforma.id, { amountPaise: 50000, method: "upi" }, managerScope);
+      await updateOrderStatus(order.id, "in_progress", managerScope);
+
+      expect(
+        await db.query.invoices.findFirst({
+          where: and(eq(invoices.proformaInvoiceId, proforma.id), eq(invoices.kind, "tax")),
+        }),
+      ).toBeUndefined();
+    });
+
+    it("is idempotent — only ever creates one tax invoice per proforma", async () => {
+      const { order, proforma } = await makeOrderWithProforma(
+        "+919876606004",
+        "invoice-final-test-marker idempotent",
+      );
+
+      await recordPayment(proforma.id, { amountPaise: 118000, method: "upi" }, managerScope);
+      await updateOrderStatus(order.id, "completed", managerScope);
+      await updateOrderStatus(order.id, "completed", managerScope);
+
+      const taxInvoices = await db.query.invoices.findMany({
+        where: and(eq(invoices.proformaInvoiceId, proforma.id), eq(invoices.kind, "tax")),
+      });
+      expect(taxInvoices).toHaveLength(1);
     });
   });
 });

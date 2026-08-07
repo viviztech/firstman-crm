@@ -50,7 +50,14 @@ export function ComplianceForm({
           <Label htmlFor="clientId">
             Client <span className="text-destructive">*</span>
           </Label>
-          <Select name="clientId" defaultValue={defaultClientId ?? clients[0]?.id}>
+          <Select
+            name="clientId"
+            defaultValue={defaultClientId ?? clients[0]?.id}
+            items={clients.map((client) => ({
+              value: client.id,
+              label: `${client.name} · ${client.phone}`,
+            }))}
+          >
             <SelectTrigger id="clientId" className="w-full">
               <SelectValue placeholder="Choose a client" />
             </SelectTrigger>
@@ -65,7 +72,10 @@ export function ComplianceForm({
         </div>
         <div className="flex flex-col gap-2">
           <Label htmlFor="serviceId">Related service</Label>
-          <Select name="serviceId">
+          <Select
+            name="serviceId"
+            items={services.map((service) => ({ value: service.id, label: service.name }))}
+          >
             <SelectTrigger id="serviceId" className="w-full">
               <SelectValue placeholder="None" />
             </SelectTrigger>
@@ -101,7 +111,14 @@ export function ComplianceForm({
         </div>
         <div className="flex flex-col gap-2">
           <Label htmlFor="recurrence">Recurrence</Label>
-          <Select name="recurrence" defaultValue="none">
+          <Select
+            name="recurrence"
+            defaultValue="none"
+            items={complianceRecurrenceEnum.enumValues.map((value) => ({
+              value,
+              label: COMPLIANCE_RECURRENCE_LABEL[value],
+            }))}
+          >
             <SelectTrigger id="recurrence" className="w-full">
               <SelectValue />
             </SelectTrigger>

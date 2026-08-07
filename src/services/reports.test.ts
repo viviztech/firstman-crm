@@ -6,17 +6,18 @@ import { user } from "@/db/schema/auth-schema";
 import { serviceCategories, services } from "@/db/schema/catalog";
 import { clients } from "@/db/schema/clients";
 import { complianceItems } from "@/db/schema/compliance";
+import { enquiries } from "@/db/schema/enquiries";
 import { invoices, payments } from "@/db/schema/invoices";
-import { leads } from "@/db/schema/leads";
 import { orders, orderTasks } from "@/db/schema/orders";
+import { makeScope } from "@/lib/test-scope";
+import { createEnquiry, updateEnquiryStatus } from "@/services/enquiries";
 import { createInvoice, recordPayment, sendInvoice } from "@/services/invoices";
-import { createLead, updateLeadStatus } from "@/services/leads";
 import { createOrder, updateOrderStatus } from "@/services/orders";
 import {
   getAgingReceivables,
   getComplianceFilingStatus,
   getConversionRateByExecutive,
-  getLeadSourcePerformance,
+  getEnquirySourcePerformance,
   getRevenueByService,
   summarizeAgingBuckets,
 } from "@/services/reports";
@@ -24,7 +25,7 @@ import {
 describe("reports service (integration)", () => {
   const managerId = randomUUID();
   const execId = randomUUID();
-  const managerScope = { userId: managerId, role: "manager" as const };
+  const managerScope = makeScope(managerId, "manager");
 
   let clientId: string;
   let reportsTestServiceId: string;
@@ -104,30 +105,30 @@ describe("reports service (integration)", () => {
 
     await db.delete(complianceItems).where(eq(complianceItems.clientId, clientId));
     await db.delete(clients).where(eq(clients.id, clientId));
-    await db.delete(leads).where(ilike(leads.phone, "+919876616%"));
+    await db.delete(enquiries).where(ilike(enquiries.phone, "+919876616%"));
     await db.delete(services).where(eq(services.id, reportsTestServiceId));
     await db.delete(serviceCategories).where(eq(serviceCategories.id, reportsTestCategoryId));
     await db.delete(user).where(eq(user.id, managerId));
     await db.delete(user).where(eq(user.id, execId));
   });
 
-  describe("getLeadSourcePerformance", () => {
-    it("counts leads per source, and won/lost/conversionRate correctly", async () => {
-      const won = await createLead(
-        { name: "Reports Lead Won", phone: "+919876616001", source: "referral" },
+  describe("getEnquirySourcePerformance", () => {
+    it("counts enquiries per source, and won/lost/conversionRate correctly", async () => {
+      const won = await createEnquiry(
+        { name: "Reports Enquiry Won", phone: "+919876616001", source: "referral" },
         managerScope,
       );
-      const lost = await createLead(
-        { name: "Reports Lead Lost", phone: "+919876616002", source: "referral" },
+      const lost = await createEnquiry(
+        { name: "Reports Enquiry Lost", phone: "+919876616002", source: "referral" },
         managerScope,
       );
-      await updateLeadStatus(
+      await updateEnquiryStatus(
         lost.id,
         { status: "lost", lostReason: "not interested" },
         managerScope,
       );
 
-      const rows = await getLeadSourcePerformance();
+      const rows = await getEnquirySourcePerformance();
       const referralRow = rows.find((row) => row.source === "referral");
       expect(referralRow).toBeDefined();
       expect(referralRow?.total).toBeGreaterThanOrEqual(2);
@@ -140,10 +141,10 @@ describe("reports service (integration)", () => {
   });
 
   describe("getConversionRateByExecutive", () => {
-    it("groups leads by assigned executive with won count and conversion rate", async () => {
-      await createLead(
+    it("groups enquiries by assigned executive with won count and conversion rate", async () => {
+      await createEnquiry(
         {
-          name: "Reports Lead Exec",
+          name: "Reports Enquiry Exec",
           phone: "+919876616003",
           source: "website",
           assignedTo: execId,

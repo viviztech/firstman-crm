@@ -61,7 +61,15 @@ function TaskRow({ orderId, task }: { orderId: string; task: OrderTaskRow }) {
           ) : null}
         </span>
       </div>
-      <Select value={task.status} onValueChange={handleChange} disabled={isPending}>
+      <Select
+        value={task.status}
+        onValueChange={handleChange}
+        disabled={isPending}
+        items={orderTaskStatusEnum.enumValues.map((value) => ({
+          value,
+          label: ORDER_TASK_STATUS_BADGE[value].label,
+        }))}
+      >
         <SelectTrigger className="w-36">
           <SelectValue />
         </SelectTrigger>

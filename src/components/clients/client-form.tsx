@@ -1,7 +1,9 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useActionState, useEffect } from "react";
+import type { FocusEvent } from "react";
+import { useActionState, useEffect, useState } from "react";
+import { lookupPincodeAction } from "@/actions/geography";
 import type { ActionResult } from "@/actions/shared";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,6 +35,7 @@ export type ClientFormDefaults = {
 };
 
 type StaffOption = { id: string; name: string };
+type StateOption = { id: string; name: string };
 
 /** Where to redirect after a successful submit — plain data, since functions can't cross the RSC boundary. */
 export type ClientFormRedirect = { mode: "create" } | { mode: "edit"; clientId: string };
@@ -41,6 +44,7 @@ export function ClientForm<T extends { id: string } | undefined>({
   action,
   role,
   staff,
+  states,
   defaultValues,
   submitLabel,
   redirectTo,
@@ -48,12 +52,15 @@ export function ClientForm<T extends { id: string } | undefined>({
   action: (prev: ActionResult<T> | undefined, formData: FormData) => Promise<ActionResult<T>>;
   role: Role;
   staff: StaffOption[];
+  states: StateOption[];
   defaultValues?: ClientFormDefaults;
   submitLabel: string;
   redirectTo: ClientFormRedirect;
 }) {
   const router = useRouter();
   const [state, formAction, isPending] = useActionState(action, undefined);
+  const [city, setCity] = useState(defaultValues?.city ?? "");
+  const [stateName, setStateName] = useState(defaultValues?.state ?? "");
 
   useEffect(() => {
     if (state?.ok) {
@@ -65,6 +72,16 @@ export function ClientForm<T extends { id: string } | undefined>({
     }
   }, [state, router, redirectTo]);
 
+  async function handlePincodeBlur(event: FocusEvent<HTMLInputElement>) {
+    const pincode = event.target.value.trim();
+    if (!/^\d{6}$/.test(pincode)) return;
+    const match = await lookupPincodeAction(pincode);
+    if (match) {
+      setCity(match.city);
+      setStateName(match.state);
+    }
+  }
+
   const canAssign = role !== "executive";
 
   return (
@@ -72,7 +89,14 @@ export function ClientForm<T extends { id: string } | undefined>({
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="flex flex-col gap-2">
           <Label htmlFor="type">Type</Label>
-          <Select name="type" defaultValue={defaultValues?.type ?? "individual"}>
+          <Select
+            name="type"
+            defaultValue={defaultValues?.type ?? "individual"}
+            items={[
+              { value: "individual", label: "Individual" },
+              { value: "business", label: "Business" },
+            ]}
+          >
             <SelectTrigger id="type" className="w-full">
               <SelectValue />
             </SelectTrigger>
@@ -146,23 +170,49 @@ export function ClientForm<T extends { id: string } | undefined>({
 
       <div className="grid gap-4 sm:grid-cols-3">
         <div className="flex flex-col gap-2">
+          <Label htmlFor="pincode">Pincode</Label>
+          <Input
+            id="pincode"
+            name="pincode"
+            defaultValue={defaultValues?.pincode ?? ""}
+            onBlur={handlePincodeBlur}
+            placeholder="560001"
+          />
+        </div>
+        <div className="flex flex-col gap-2">
           <Label htmlFor="city">City</Label>
-          <Input id="city" name="city" defaultValue={defaultValues?.city ?? ""} />
+          <Input id="city" name="city" value={city} onChange={(e) => setCity(e.target.value)} />
         </div>
         <div className="flex flex-col gap-2">
           <Label htmlFor="state">State</Label>
-          <Input id="state" name="state" defaultValue={defaultValues?.state ?? ""} />
-        </div>
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="pincode">Pincode</Label>
-          <Input id="pincode" name="pincode" defaultValue={defaultValues?.pincode ?? ""} />
+          <Select
+            name="state"
+            value={stateName}
+            onValueChange={(value) => setStateName(value ?? "")}
+            items={states.map((s) => ({ value: s.name, label: s.name }))}
+          >
+            <SelectTrigger id="state" className="w-full">
+              <SelectValue placeholder="Select a state" />
+            </SelectTrigger>
+            <SelectContent>
+              {states.map((s) => (
+                <SelectItem key={s.id} value={s.name}>
+                  {s.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
       {canAssign ? (
         <div className="flex flex-col gap-2">
           <Label htmlFor="assignedTo">Assigned to</Label>
-          <Select name="assignedTo" defaultValue={defaultValues?.assignedTo ?? undefined}>
+          <Select
+            name="assignedTo"
+            defaultValue={defaultValues?.assignedTo ?? undefined}
+            items={staff.map((member) => ({ value: member.id, label: member.name }))}
+          >
             <SelectTrigger id="assignedTo" className="w-full">
               <SelectValue placeholder="Unassigned" />
             </SelectTrigger>

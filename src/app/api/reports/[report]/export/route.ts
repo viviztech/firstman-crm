@@ -2,12 +2,12 @@ import ExcelJS from "exceljs";
 import { NextResponse } from "next/server";
 import { getApiUser } from "@/lib/api-auth";
 import type { Role } from "@/lib/auth";
-import { COMPLIANCE_STATUS_BADGE, LEAD_SOURCE_LABEL } from "@/lib/badges";
+import { COMPLIANCE_STATUS_BADGE, ENQUIRY_SOURCE_LABEL } from "@/lib/badges";
 import {
   getAgingReceivables,
   getComplianceFilingStatus,
   getConversionRateByExecutive,
-  getLeadSourcePerformance,
+  getEnquirySourcePerformance,
   getRevenueByService,
   summarizeAgingBuckets,
 } from "@/services/reports";
@@ -18,7 +18,7 @@ const MONEY_FORMAT = '"₹"#,##0.00';
 const PERCENT_FORMAT = "0.0%";
 
 const REPORT_KEYS = [
-  "leads-by-source",
+  "enquiries-by-source",
   "conversion-rate",
   "revenue-by-service",
   "aging-receivables",
@@ -33,19 +33,19 @@ function isReportKey(value: string): value is ReportKey {
 async function buildWorkbook(reportKey: ReportKey): Promise<ExcelJS.Workbook> {
   const workbook = new ExcelJS.Workbook();
 
-  if (reportKey === "leads-by-source") {
-    const rows = await getLeadSourcePerformance();
-    const sheet = workbook.addWorksheet("Lead source performance");
+  if (reportKey === "enquiries-by-source") {
+    const rows = await getEnquirySourcePerformance();
+    const sheet = workbook.addWorksheet("Enquiry source performance");
     sheet.columns = [
       { header: "Source", key: "source", width: 18 },
-      { header: "Total leads", key: "total", width: 14 },
+      { header: "Total enquiries", key: "total", width: 14 },
       { header: "Won", key: "won", width: 10 },
       { header: "Lost", key: "lost", width: 10 },
       { header: "Conversion rate", key: "conversionRate", width: 16 },
     ];
     for (const row of rows) {
       sheet.addRow({
-        source: LEAD_SOURCE_LABEL[row.source],
+        source: ENQUIRY_SOURCE_LABEL[row.source],
         total: row.total,
         won: row.won,
         lost: row.lost,
@@ -56,19 +56,19 @@ async function buildWorkbook(reportKey: ReportKey): Promise<ExcelJS.Workbook> {
   }
 
   if (reportKey === "conversion-rate") {
-    const bySource = await getLeadSourcePerformance();
+    const bySource = await getEnquirySourcePerformance();
     const byExecutive = await getConversionRateByExecutive();
 
     const sourceSheet = workbook.addWorksheet("By source");
     sourceSheet.columns = [
       { header: "Source", key: "source", width: 18 },
-      { header: "Total leads", key: "total", width: 14 },
+      { header: "Total enquiries", key: "total", width: 14 },
       { header: "Won", key: "won", width: 10 },
       { header: "Conversion rate", key: "conversionRate", width: 16 },
     ];
     for (const row of bySource) {
       sourceSheet.addRow({
-        source: LEAD_SOURCE_LABEL[row.source],
+        source: ENQUIRY_SOURCE_LABEL[row.source],
         total: row.total,
         won: row.won,
         conversionRate: row.conversionRate,
@@ -79,7 +79,7 @@ async function buildWorkbook(reportKey: ReportKey): Promise<ExcelJS.Workbook> {
     const execSheet = workbook.addWorksheet("By executive");
     execSheet.columns = [
       { header: "Executive", key: "executiveName", width: 22 },
-      { header: "Total leads", key: "total", width: 14 },
+      { header: "Total enquiries", key: "total", width: 14 },
       { header: "Won", key: "won", width: 10 },
       { header: "Conversion rate", key: "conversionRate", width: 16 },
     ];

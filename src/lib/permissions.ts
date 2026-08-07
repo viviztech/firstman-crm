@@ -3,7 +3,7 @@ import { defaultStatements } from "better-auth/plugins/admin/access";
 
 /**
  * These statements only cover better-auth's own admin-panel actions
- * (user/session management). Business-object permissions (leads, orders,
+ * (user/session management). Business-object permissions (enquiries, orders,
  * invoices, revenue reports) are enforced in src/services/* per spec 3 —
  * never trust this access-control layer for CRM data scoping.
  */

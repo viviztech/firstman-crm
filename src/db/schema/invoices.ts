@@ -1,5 +1,6 @@
 import { relations } from "drizzle-orm";
 import {
+  type AnyPgColumn,
   index,
   integer,
   jsonb,
@@ -22,6 +23,10 @@ export const invoiceStatusEnum = pgEnum("invoice_status", [
   "overdue",
   "cancelled",
 ]);
+
+/** proforma: issued at Sales conversion to collect advance payment, not a fiscal document.
+ *  tax: the final GST invoice, auto-generated once the order is completed and its proforma is paid in full. */
+export const invoiceKindEnum = pgEnum("invoice_kind", ["proforma", "tax"]);
 
 export const paymentMethodEnum = pgEnum("payment_method", [
   "upi",
@@ -54,6 +59,12 @@ export const invoices = pgTable(
     gstAmountPaise: integer("gst_amount_paise").notNull(),
     totalPaise: integer("total_paise").notNull(),
     status: invoiceStatusEnum("status").notNull().default("draft"),
+    kind: invoiceKindEnum("kind").notNull().default("tax"),
+    /** Set only on a `tax` invoice — the proforma it was auto-generated from once the order
+     *  completed and that proforma was paid in full. */
+    proformaInvoiceId: uuid("proforma_invoice_id").references((): AnyPgColumn => invoices.id, {
+      onDelete: "set null",
+    }),
     dueDate: timestamp("due_date", { withTimezone: true }).notNull(),
     sentAt: timestamp("sent_at", { withTimezone: true }),
   },
@@ -63,6 +74,7 @@ export const invoices = pgTable(
     index("invoices_order_id_idx").on(table.orderId),
     index("invoices_status_idx").on(table.status),
     index("invoices_due_date_idx").on(table.dueDate),
+    index("invoices_kind_idx").on(table.kind),
   ],
 );
 
@@ -86,6 +98,12 @@ export const invoicesRelations = relations(invoices, ({ one, many }) => ({
   client: one(clients, { fields: [invoices.clientId], references: [clients.id] }),
   order: one(orders, { fields: [invoices.orderId], references: [orders.id] }),
   payments: many(payments),
+  proformaInvoice: one(invoices, {
+    fields: [invoices.proformaInvoiceId],
+    references: [invoices.id],
+    relationName: "proformaToTax",
+  }),
+  taxInvoice: many(invoices, { relationName: "proformaToTax" }),
 }));
 
 export const paymentsRelations = relations(payments, ({ one }) => ({

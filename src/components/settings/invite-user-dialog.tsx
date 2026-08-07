@@ -82,7 +82,11 @@ export function InviteUserDialog() {
               <Label htmlFor="invite-role">
                 Role <span className="text-destructive">*</span>
               </Label>
-              <Select name="role" defaultValue="executive">
+              <Select
+                name="role"
+                defaultValue="executive"
+                items={ROLES.map((role) => ({ value: role, label: role.replace("_", " ") }))}
+              >
                 <SelectTrigger id="invite-role" className="w-full">
                   <SelectValue />
                 </SelectTrigger>

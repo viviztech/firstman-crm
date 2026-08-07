@@ -13,10 +13,15 @@ import {
 } from "@/components/ui/command";
 import type { GlobalSearchResults } from "@/services/search";
 
-const EMPTY_RESULTS: GlobalSearchResults = { leads: [], clients: [], orders: [], invoices: [] };
+const EMPTY_RESULTS: GlobalSearchResults = {
+  enquiries: [],
+  clients: [],
+  orders: [],
+  invoices: [],
+};
 
 const GROUPS: { key: keyof GlobalSearchResults; heading: string }[] = [
-  { key: "leads", heading: "Leads" },
+  { key: "enquiries", heading: "Enquiries" },
   { key: "clients", heading: "Clients" },
   { key: "orders", heading: "Orders" },
   { key: "invoices", heading: "Invoices" },
@@ -78,7 +83,7 @@ export function CommandPalette() {
 
       <CommandDialog open={open} onOpenChange={setOpen}>
         <CommandInput
-          placeholder="Search leads, clients, orders, invoices…"
+          placeholder="Search enquiries, clients, orders, invoices…"
           value={query}
           onValueChange={setQuery}
         />

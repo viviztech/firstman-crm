@@ -2,6 +2,7 @@ import { formatInTimeZone } from "date-fns-tz";
 import { and, desc, eq } from "drizzle-orm";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { toScope } from "@/actions/shared";
 import { DeleteClientButton } from "@/components/clients/delete-client-button";
 import { WhatsAppOptOutToggle } from "@/components/clients/whatsapp-opt-out-toggle";
 import { ComplianceStatusBadge } from "@/components/compliance/compliance-status-badge";
@@ -29,15 +30,16 @@ const STUB_TABS = [
   {
     value: "followups",
     label: "Follow-ups",
-    copy: "Client-level follow-ups aren't tracked separately — see the Leads module for lead follow-ups.",
+    copy: "Client-level follow-ups aren't tracked separately — see the Enquiries module for enquiry follow-ups.",
   },
 ];
 
 export default async function ClientProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const user = await requireUser();
   const { id } = await params;
+  const scope = await toScope(user);
 
-  const client = await getClient(id, { userId: user.id, role: user.role });
+  const client = await getClient(id, scope);
   if (!client) {
     notFound();
   }
@@ -52,7 +54,6 @@ export default async function ClientProfilePage({ params }: { params: Promise<{ 
   const canDelete = user.role === "super_admin" || user.role === "manager";
   const canViewFinancials = user.role !== "executive";
 
-  const scope = { userId: user.id, role: user.role };
   const [orders, clientDocuments, complianceItems, invoices, financialSummary] = await Promise.all([
     listOrdersForClient(id, scope),
     listDocumentsForOwner("client", id),

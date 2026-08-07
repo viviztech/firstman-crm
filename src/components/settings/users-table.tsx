@@ -1,6 +1,8 @@
 "use client";
 
 import { type ColumnDef, flexRender, getCoreRowModel, useReactTable } from "@tanstack/react-table";
+import { StaffEmployeeTypeSelect } from "@/components/settings/staff-employee-type-select";
+import { StaffScopeDialog } from "@/components/settings/staff-scope-dialog";
 import { UserBanToggle } from "@/components/settings/user-ban-toggle";
 import { UserRoleSelect } from "@/components/settings/user-role-select";
 import { Badge } from "@/components/ui/badge";
@@ -16,8 +18,9 @@ import type { Role } from "@/lib/roles";
 import type { listAllStaffForAdmin } from "@/services/users";
 
 type StaffRow = Awaited<ReturnType<typeof listAllStaffForAdmin>>[number];
+type ServiceOption = { id: string; name: string };
 
-function buildColumns(currentUserId: string): ColumnDef<StaffRow>[] {
+function buildColumns(currentUserId: string, services: ServiceOption[]): ColumnDef<StaffRow>[] {
   return [
     {
       accessorKey: "name",
@@ -39,6 +42,49 @@ function buildColumns(currentUserId: string): ColumnDef<StaffRow>[] {
           disabled={row.original.id === currentUserId}
         />
       ),
+    },
+    {
+      id: "employeeType",
+      header: "Type",
+      cell: ({ row }) =>
+        row.original.role === "executive" ? (
+          <StaffEmployeeTypeSelect
+            userId={row.original.id}
+            employeeType={row.original.employeeType}
+          />
+        ) : (
+          <span className="text-sm text-muted-foreground">—</span>
+        ),
+    },
+    {
+      id: "scope",
+      header: "Scope",
+      cell: ({ row }) =>
+        row.original.role === "executive" ? (
+          <div className="flex flex-col items-start gap-1">
+            {row.original.employeeType === "franchise" && row.original.pincodes.length > 0 ? (
+              <span className="text-xs text-muted-foreground">
+                {row.original.pincodes.join(", ")}
+              </span>
+            ) : null}
+            {row.original.serviceIds.length > 0 ? (
+              <span className="text-xs text-muted-foreground">
+                {row.original.serviceIds.length} service
+                {row.original.serviceIds.length === 1 ? "" : "s"}
+              </span>
+            ) : null}
+            <StaffScopeDialog
+              userId={row.original.id}
+              userName={row.original.name}
+              employeeType={row.original.employeeType}
+              pincodes={row.original.pincodes}
+              serviceIds={row.original.serviceIds}
+              services={services}
+            />
+          </div>
+        ) : (
+          <span className="text-sm text-muted-foreground">—</span>
+        ),
     },
     {
       id: "status",
@@ -64,10 +110,18 @@ function buildColumns(currentUserId: string): ColumnDef<StaffRow>[] {
   ];
 }
 
-export function UsersTable({ staff, currentUserId }: { staff: StaffRow[]; currentUserId: string }) {
+export function UsersTable({
+  staff,
+  currentUserId,
+  services,
+}: {
+  staff: StaffRow[];
+  currentUserId: string;
+  services: ServiceOption[];
+}) {
   const table = useReactTable({
     data: staff,
-    columns: buildColumns(currentUserId),
+    columns: buildColumns(currentUserId, services),
     getCoreRowModel: getCoreRowModel(),
   });
 

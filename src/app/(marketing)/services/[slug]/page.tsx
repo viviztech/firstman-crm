@@ -2,8 +2,8 @@ import { CheckCircle2 } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { MarketingEnquiryForm } from "@/components/marketing/enquiry-form";
 import { JsonLd } from "@/components/marketing/json-ld";
-import { MarketingLeadForm } from "@/components/marketing/lead-form";
 import { getAppUrl } from "@/lib/app-url";
 import { formatMoney } from "@/lib/money";
 import { getPublicCatalog, getPublicServiceBySlug } from "@/services/marketing-catalog";
@@ -150,7 +150,7 @@ export default async function ServiceDetailPage({ params }: { params: Promise<{ 
                 ~{service.estimatedDays} business days
               </p>
             </div>
-            <MarketingLeadForm
+            <MarketingEnquiryForm
               services={allServices.map((s) => ({ id: s.id, name: s.name }))}
               defaultServiceId={service.id}
             />

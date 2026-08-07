@@ -4,11 +4,12 @@ import { InviteUserDialog } from "@/components/settings/invite-user-dialog";
 import { UsersTable } from "@/components/settings/users-table";
 import { Button } from "@/components/ui/button";
 import { requireRole } from "@/lib/session";
+import { listServiceOptions } from "@/services/catalog";
 import { listAllStaffForAdmin } from "@/services/users";
 
 export default async function UsersSettingsPage() {
   const currentUser = await requireRole("super_admin");
-  const staff = await listAllStaffForAdmin();
+  const [staff, services] = await Promise.all([listAllStaffForAdmin(), listServiceOptions()]);
 
   return (
     <div className="flex flex-col gap-4">
@@ -32,7 +33,7 @@ export default async function UsersSettingsPage() {
         <InviteUserDialog />
       </div>
 
-      <UsersTable staff={staff} currentUserId={currentUser.id} />
+      <UsersTable staff={staff} currentUserId={currentUser.id} services={services} />
     </div>
   );
 }

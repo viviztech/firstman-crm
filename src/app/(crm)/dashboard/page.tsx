@@ -1,7 +1,8 @@
 import { formatInTimeZone } from "date-fns-tz";
 import Link from "next/link";
+import { toScope } from "@/actions/shared";
 import { ComplianceStatusBadge } from "@/components/compliance/compliance-status-badge";
-import { LeadsFunnelChart } from "@/components/dashboard/leads-funnel-chart";
+import { EnquiriesFunnelChart } from "@/components/dashboard/enquiries-funnel-chart";
 import { RevenueChart } from "@/components/dashboard/revenue-chart";
 import { OrderStatusBadge } from "@/components/orders/order-status-badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,7 +11,7 @@ import { env } from "@/lib/env";
 import { formatMoney } from "@/lib/money";
 import { requireUser } from "@/lib/session";
 import {
-  getLeadsThisMonthByStatus,
+  getEnquiriesThisMonthByStatus,
   getMyOpenTasks,
   getMyOrdersInProgress,
   getOrdersByStatusCounts,
@@ -18,14 +19,15 @@ import {
   getRevenueThisMonthVsLast,
   getTopServicesByRevenue,
 } from "@/services/analytics";
+import { listServiceOptions } from "@/services/catalog";
 import { listUpcomingComplianceItems } from "@/services/compliance";
+import { listFollowUpsDueForExecutive } from "@/services/enquiries";
 import { getExpensesThisMonth } from "@/services/expenses";
 import { getCollectionsThisMonth, getOutstandingInvoicesTotal } from "@/services/invoices";
-import { listFollowUpsDueForExecutive } from "@/services/leads";
 
 export default async function DashboardPage() {
   const user = await requireUser();
-  const scope = { userId: user.id, role: user.role };
+  const scope = await toScope(user);
 
   const showCompliance =
     user.role === "super_admin" || user.role === "manager" || user.role === "executive";
@@ -41,9 +43,9 @@ export default async function DashboardPage() {
     : [null, null, null];
 
   const showManagerStats = user.role === "super_admin" || user.role === "manager";
-  const [leadsByStatus, revenue, ordersByStatus, overdueTasks, topServices] = showManagerStats
+  const [enquiriesByStatus, revenue, ordersByStatus, overdueTasks, topServices] = showManagerStats
     ? await Promise.all([
-        getLeadsThisMonthByStatus(scope),
+        getEnquiriesThisMonthByStatus(scope),
         getRevenueThisMonthVsLast(),
         getOrdersByStatusCounts(scope),
         getOverdueTasks(scope, 8),
@@ -52,13 +54,19 @@ export default async function DashboardPage() {
     : [[], { thisMonthPaise: 0, lastMonthPaise: 0 }, [], [], []];
 
   const showExecutiveStats = user.role === "executive";
-  const [myFollowUps, myTasks, myOrders] = showExecutiveStats
+  const showTerritoryCard =
+    showExecutiveStats && (scope.employeeType === "franchise" || scope.serviceIds.length > 0);
+  const [myFollowUps, myTasks, myOrders, assignedServices] = showExecutiveStats
     ? await Promise.all([
         listFollowUpsDueForExecutive(user.id),
         getMyOpenTasks(user.id),
         getMyOrdersInProgress(user.id),
+        scope.serviceIds.length > 0 ? listServiceOptions() : Promise.resolve([]),
       ])
-    : [[], [], []];
+    : [[], [], [], []];
+  const assignedServiceNames = assignedServices
+    .filter((service) => scope.serviceIds.includes(service.id))
+    .map((service) => service.name);
 
   const ordersByStatusMap = new Map(ordersByStatus.map((row) => [row.status, row.count]));
 
@@ -115,11 +123,11 @@ export default async function DashboardPage() {
           <Card>
             <CardHeader>
               <CardTitle className="text-sm font-medium text-muted-foreground">
-                Leads this month by status
+                Enquiries this month by status
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <LeadsFunnelChart data={leadsByStatus} />
+              <EnquiriesFunnelChart data={enquiriesByStatus} />
             </CardContent>
           </Card>
           <Card>
@@ -204,6 +212,27 @@ export default async function DashboardPage() {
         </div>
       ) : null}
 
+      {showTerritoryCard ? (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Your scope</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-1 text-sm">
+            {scope.employeeType === "franchise" ? (
+              <span>
+                Territory:{" "}
+                {scope.pincodes.length > 0
+                  ? scope.pincodes.join(", ")
+                  : "No pincodes allocated yet"}
+              </span>
+            ) : null}
+            {scope.serviceIds.length > 0 ? (
+              <span>Services: {assignedServiceNames.join(", ")}</span>
+            ) : null}
+          </CardContent>
+        </Card>
+      ) : null}
+
       {showExecutiveStats ? (
         <div className="grid gap-4 md:grid-cols-3">
           <Card>
@@ -216,14 +245,14 @@ export default async function DashboardPage() {
               {myFollowUps.length === 0 ? (
                 <p className="text-muted-foreground">Nothing due today.</p>
               ) : (
-                myFollowUps.map((lead) => (
+                myFollowUps.map((enquiry) => (
                   <Link
-                    key={lead.id}
-                    href={`/leads/${lead.id}`}
+                    key={enquiry.id}
+                    href={`/enquiries/${enquiry.id}`}
                     className="flex flex-col rounded-lg border p-2 hover:bg-muted/50"
                   >
-                    <span className="font-medium">{lead.name}</span>
-                    <span className="text-xs text-muted-foreground">{lead.phone}</span>
+                    <span className="font-medium">{enquiry.name}</span>
+                    <span className="text-xs text-muted-foreground">{enquiry.phone}</span>
                   </Link>
                 ))
               )}

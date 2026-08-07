@@ -28,8 +28,8 @@ export const NAV_ITEMS: NavItem[] = [
     roles: ["super_admin", "manager", "executive", "accountant"],
   },
   {
-    title: "Leads",
-    href: "/leads",
+    title: "Enquiries",
+    href: "/enquiries",
     icon: UsersRound,
     roles: ["super_admin", "manager", "executive"],
   },

@@ -3,25 +3,25 @@ import { db } from "@/db";
 import { user } from "@/db/schema/auth-schema";
 import { services } from "@/db/schema/catalog";
 import { complianceItems } from "@/db/schema/compliance";
+import { enquiries } from "@/db/schema/enquiries";
 import { invoices, payments } from "@/db/schema/invoices";
-import { leads } from "@/db/schema/leads";
 import { orders } from "@/db/schema/orders";
 import { sumPaise } from "@/lib/money";
 
 const OPEN_INVOICE_STATUSES = ["sent", "partially_paid", "overdue"] as const;
 
-/** Report: leads and win rate per source (spec 4.9). */
-export async function getLeadSourcePerformance() {
+/** Report: enquiries and win rate per source (spec 4.9). Aggregate counts only — reports are exempt from the "lost is hidden everywhere" rule that applies to individual enquiry records. */
+export async function getEnquirySourcePerformance() {
   const rows = await db
     .select({
-      source: leads.source,
+      source: enquiries.source,
       total: count(),
-      won: sql<number>`count(*) filter (where ${leads.status} = 'won')`.mapWith(Number),
-      lost: sql<number>`count(*) filter (where ${leads.status} = 'lost')`.mapWith(Number),
+      won: sql<number>`count(*) filter (where ${enquiries.status} = 'won')`.mapWith(Number),
+      lost: sql<number>`count(*) filter (where ${enquiries.status} = 'lost')`.mapWith(Number),
     })
-    .from(leads)
-    .where(isNull(leads.deletedAt))
-    .groupBy(leads.source);
+    .from(enquiries)
+    .where(isNull(enquiries.deletedAt))
+    .groupBy(enquiries.source);
 
   return rows.map((row) => ({
     source: row.source,
@@ -32,19 +32,19 @@ export async function getLeadSourcePerformance() {
   }));
 }
 
-/** Report: conversion rate grouped by the executive a lead is assigned to (spec 4.9). */
+/** Report: conversion rate grouped by the executive an enquiry is assigned to (spec 4.9). */
 export async function getConversionRateByExecutive() {
   const rows = await db
     .select({
-      executiveId: leads.assignedTo,
+      executiveId: enquiries.assignedTo,
       executiveName: user.name,
       total: count(),
-      won: sql<number>`count(*) filter (where ${leads.status} = 'won')`.mapWith(Number),
+      won: sql<number>`count(*) filter (where ${enquiries.status} = 'won')`.mapWith(Number),
     })
-    .from(leads)
-    .innerJoin(user, eq(leads.assignedTo, user.id))
-    .where(isNull(leads.deletedAt))
-    .groupBy(leads.assignedTo, user.name);
+    .from(enquiries)
+    .innerJoin(user, eq(enquiries.assignedTo, user.id))
+    .where(isNull(enquiries.deletedAt))
+    .groupBy(enquiries.assignedTo, user.name);
 
   return rows.map((row) => ({
     executiveId: row.executiveId,

@@ -6,12 +6,14 @@ import { documents } from "@/db/schema/documents";
 import { orderStatusEnum, orders, orderTaskStatusEnum, orderTasks } from "@/db/schema/orders";
 import { inferDocumentKind } from "@/lib/document-kind";
 import type { ActorScope } from "@/lib/scope";
+import { visibilityConditions } from "@/lib/scope";
 import { optionalDateTime, optionalTrimmed } from "@/lib/validation/helpers";
 import { recordActivity } from "@/services/activity-log";
 import { listDocumentsForOwner } from "@/services/documents";
+import { generateFinalInvoiceIfEligibleInTx } from "@/services/invoices";
 import { getSettingForUpdate, setSetting } from "@/services/settings";
 
-type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
+export type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const PAGE_SIZE = 20;
@@ -52,12 +54,25 @@ export const orderTaskStatusUpdateSchema = z.object({
   status: z.enum(orderTaskStatusEnum.enumValues),
 });
 
+/**
+ * Executives only ever see/act on orders in scope — internal-type by assignedTo, franchise-type
+ * by pincode territory (resolved via the client, orders carry no pincode of their own), both
+ * further narrowed by service assignment if configured (spec 3, ADR 0001).
+ */
 function scopeCondition(scope: ActorScope) {
-  return scope.role === "executive" ? eq(orders.assignedTo, scope.userId) : undefined;
+  return visibilityConditions(scope, {
+    assignedToColumn: orders.assignedTo,
+    clientIdColumn: orders.clientId,
+    serviceIdColumn: orders.serviceId,
+  });
 }
 
+/** Internal-type executives can't assign orders to anyone but themselves; franchise-type staff
+ * (territory-shared) can assign within their team (ADR 0001). */
 function enforceAssignment(assignedTo: string | undefined, actor: ActorScope) {
-  return actor.role === "executive" ? actor.userId : assignedTo;
+  return actor.role === "executive" && actor.employeeType === "internal"
+    ? actor.userId
+    : assignedTo;
 }
 
 async function generateOrderNo(tx: Transaction, actor: ActorScope): Promise<string> {
@@ -215,75 +230,82 @@ export async function listOrdersWithPendingDocs() {
   return openOrders.filter((order) => pendingIds.has(order.id));
 }
 
-/** Creates an order and, in the same transaction, generates its task checklist and document checklist (spec 4.4). */
-export async function createOrder(input: OrderInput, actor: ActorScope) {
-  return db.transaction(async (tx) => {
-    const service = await tx.query.services.findFirst({ where: eq(services.id, input.serviceId) });
-    if (!service) throw new Error("Service not found");
+/**
+ * Creates an order and, in the same transaction, generates its task checklist and document
+ * checklist (spec 4.4). Extracted from `createOrder` so callers that already hold a transaction
+ * (e.g. the enquiry Sales action, which also converts the enquiry to a client) can compose it
+ * instead of nesting a second `db.transaction`.
+ */
+export async function createOrderInTx(tx: Transaction, input: OrderInput, actor: ActorScope) {
+  const service = await tx.query.services.findFirst({ where: eq(services.id, input.serviceId) });
+  if (!service) throw new Error("Service not found");
 
-    const assignedTo = enforceAssignment(input.assignedTo, actor);
-    const startedAt = input.startedAt ?? new Date();
-    const dueAt = new Date(startedAt.getTime() + service.estimatedDays * DAY_MS);
-    const orderNo = await generateOrderNo(tx, actor);
+  const assignedTo = enforceAssignment(input.assignedTo, actor);
+  const startedAt = input.startedAt ?? new Date();
+  const dueAt = new Date(startedAt.getTime() + service.estimatedDays * DAY_MS);
+  const orderNo = await generateOrderNo(tx, actor);
 
-    const [order] = await tx
-      .insert(orders)
-      .values({
-        orderNo,
-        clientId: input.clientId,
-        serviceId: input.serviceId,
-        quotedPricePaise: input.quotedPricePaise,
-        govtFeePaise: input.govtFeePaise,
+  const [order] = await tx
+    .insert(orders)
+    .values({
+      orderNo,
+      clientId: input.clientId,
+      serviceId: input.serviceId,
+      quotedPricePaise: input.quotedPricePaise,
+      govtFeePaise: input.govtFeePaise,
+      assignedTo,
+      startedAt,
+      dueAt,
+      notes: input.notes,
+      createdBy: actor.userId,
+      updatedBy: actor.userId,
+    })
+    .returning();
+  if (!order) throw new Error("Failed to create order");
+
+  if (service.checklistTemplate.length > 0) {
+    await tx.insert(orderTasks).values(
+      service.checklistTemplate.map((item, index) => ({
+        orderId: order.id,
+        title: item.title,
         assignedTo,
-        startedAt,
-        dueAt,
-        notes: input.notes,
+        dueAt: new Date(startedAt.getTime() + item.dayOffset * DAY_MS),
+        sort: index,
         createdBy: actor.userId,
         updatedBy: actor.userId,
-      })
-      .returning();
-    if (!order) throw new Error("Failed to create order");
-
-    if (service.checklistTemplate.length > 0) {
-      await tx.insert(orderTasks).values(
-        service.checklistTemplate.map((item, index) => ({
-          orderId: order.id,
-          title: item.title,
-          assignedTo,
-          dueAt: new Date(startedAt.getTime() + item.dayOffset * DAY_MS),
-          sort: index,
-          createdBy: actor.userId,
-          updatedBy: actor.userId,
-        })),
-      );
-    }
-
-    if (service.requiredDocuments.length > 0) {
-      await tx.insert(documents).values(
-        service.requiredDocuments.map((label) => ({
-          ownerType: "order" as const,
-          ownerId: order.id,
-          kind: inferDocumentKind(label),
-          label,
-          createdBy: actor.userId,
-          updatedBy: actor.userId,
-        })),
-      );
-    }
-
-    await recordActivity(
-      {
-        actorId: actor.userId,
-        entityType: "order",
-        entityId: order.id,
-        action: "created",
-        diff: { orderNo, serviceId: input.serviceId, clientId: input.clientId },
-      },
-      tx,
+      })),
     );
+  }
 
-    return order;
-  });
+  if (service.requiredDocuments.length > 0) {
+    await tx.insert(documents).values(
+      service.requiredDocuments.map((label) => ({
+        ownerType: "order" as const,
+        ownerId: order.id,
+        kind: inferDocumentKind(label),
+        label,
+        createdBy: actor.userId,
+        updatedBy: actor.userId,
+      })),
+    );
+  }
+
+  await recordActivity(
+    {
+      actorId: actor.userId,
+      entityType: "order",
+      entityId: order.id,
+      action: "created",
+      diff: { orderNo, serviceId: input.serviceId, clientId: input.clientId },
+    },
+    tx,
+  );
+
+  return order;
+}
+
+export async function createOrder(input: OrderInput, actor: ActorScope) {
+  return db.transaction((tx) => createOrderInTx(tx, input, actor));
 }
 
 export async function updateOrder(id: string, input: OrderEditInput, actor: ActorScope) {
@@ -353,6 +375,13 @@ export async function updateOrderStatus(
       },
       tx,
     );
+
+    // The final tax invoice only ever fires once both halves are true (order completed + its
+    // proforma paid in full) — this covers the "job finished after payment" ordering; recordPayment
+    // covers the reverse (spec 4.7 extension).
+    if (status === "completed") {
+      await generateFinalInvoiceIfEligibleInTx(tx, updated.id, actor);
+    }
 
     return updated;
   });

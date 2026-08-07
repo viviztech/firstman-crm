@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { toScope } from "@/actions/shared";
 import { InvoiceFiltersForm } from "@/components/invoices/invoice-filters-form";
 import { InvoicesTable } from "@/components/invoices/invoices-table";
 import { ListPagination } from "@/components/list-pagination";
@@ -14,10 +15,11 @@ export default async function InvoicesPage({
   const user = await requireRole("super_admin", "manager", "accountant");
   const { page, q, status } = await searchParams;
 
-  const result = await listInvoices(
-    { userId: user.id, role: user.role },
-    { page: page ? Number(page) : 1, search: q, status },
-  );
+  const result = await listInvoices(await toScope(user), {
+    page: page ? Number(page) : 1,
+    search: q,
+    status,
+  });
 
   return (
     <div className="flex flex-col gap-4">

@@ -65,6 +65,10 @@ export function InvoiceForm({
               setClientId(value);
               setOrderId("");
             }}
+            items={clients.map((client) => ({
+              value: client.id,
+              label: `${client.name} · ${client.phone}`,
+            }))}
           >
             <SelectTrigger id="clientId" className="w-full">
               <SelectValue placeholder="Choose a client" />
@@ -84,6 +88,7 @@ export function InvoiceForm({
             name="orderId"
             value={orderId || undefined}
             onValueChange={(value) => setOrderId(value ?? "")}
+            items={availableOrders.map((order) => ({ value: order.id, label: order.orderNo }))}
           >
             <SelectTrigger id="orderId" className="w-full">
               <SelectValue placeholder="None" />

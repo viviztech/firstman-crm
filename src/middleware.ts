@@ -9,7 +9,7 @@ import { type NextRequest, NextResponse } from "next/server";
  */
 const PROTECTED_PREFIXES = [
   "/dashboard",
-  "/leads",
+  "/enquiries",
   "/clients",
   "/orders",
   "/catalog",

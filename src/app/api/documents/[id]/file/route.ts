@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { toScope } from "@/actions/shared";
 import { getApiUser } from "@/lib/api-auth";
 import type { Role } from "@/lib/auth";
 import { detectFileKind, MAX_UPLOAD_BYTES } from "@/lib/file-validation";
@@ -45,11 +46,7 @@ export async function POST(
     );
   }
 
-  const updated = await attachDocumentFile(
-    id,
-    { buffer, detectedKind },
-    { userId: user.id, role: user.role },
-  );
+  const updated = await attachDocumentFile(id, { buffer, detectedKind }, await toScope(user));
   if (!updated) {
     return NextResponse.json(
       { error: "Not found, or you do not have access to it" },

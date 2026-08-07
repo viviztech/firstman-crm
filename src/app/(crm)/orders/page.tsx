@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { toScope } from "@/actions/shared";
 import { ListPagination } from "@/components/list-pagination";
 import { OrderFiltersForm } from "@/components/orders/order-filters-form";
 import { OrdersTable } from "@/components/orders/orders-table";
@@ -14,10 +15,11 @@ export default async function OrdersPage({
   const user = await requireUser();
   const { page, q, status } = await searchParams;
 
-  const result = await listOrders(
-    { userId: user.id, role: user.role },
-    { page: page ? Number(page) : 1, search: q, status },
-  );
+  const result = await listOrders(await toScope(user), {
+    page: page ? Number(page) : 1,
+    search: q,
+    status,
+  });
 
   const canCreate = user.role !== "accountant";
 

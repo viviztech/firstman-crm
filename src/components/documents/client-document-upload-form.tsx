@@ -62,7 +62,11 @@ export function ClientDocumentUploadForm({ clientId }: { clientId: string }) {
     >
       <div className="flex flex-col gap-2">
         <Label htmlFor="kind">Kind</Label>
-        <Select name="kind" defaultValue="other">
+        <Select
+          name="kind"
+          defaultValue="other"
+          items={documentKindEnum.enumValues.map((value) => ({ value, label: KIND_LABEL[value] }))}
+        >
           <SelectTrigger id="kind" className="w-40">
             <SelectValue />
           </SelectTrigger>

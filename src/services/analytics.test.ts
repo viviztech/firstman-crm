@@ -6,11 +6,12 @@ import { user } from "@/db/schema/auth-schema";
 import { serviceCategories, services } from "@/db/schema/catalog";
 import { clients } from "@/db/schema/clients";
 import { documents } from "@/db/schema/documents";
+import { enquiries } from "@/db/schema/enquiries";
 import { invoices, payments } from "@/db/schema/invoices";
-import { leads } from "@/db/schema/leads";
 import { orders, orderTasks } from "@/db/schema/orders";
+import { makeScope } from "@/lib/test-scope";
 import {
-  getLeadsThisMonthByStatus,
+  getEnquiriesThisMonthByStatus,
   getMyOpenTasks,
   getMyOrdersInProgress,
   getOrdersByStatusCounts,
@@ -18,8 +19,8 @@ import {
   getRevenueThisMonthVsLast,
   getTopServicesByRevenue,
 } from "@/services/analytics";
+import { createEnquiry } from "@/services/enquiries";
 import { createInvoice, recordPayment, sendInvoice } from "@/services/invoices";
-import { createLead } from "@/services/leads";
 import { createOrder, updateOrderStatus } from "@/services/orders";
 
 async function makeTestClient(phone: string, actorId: string) {
@@ -36,8 +37,8 @@ describe("analytics service (integration)", () => {
   const execAId = randomUUID();
   const execBId = randomUUID();
 
-  const managerScope = { userId: managerId, role: "manager" as const };
-  const execAScope = { userId: execAId, role: "executive" as const };
+  const managerScope = makeScope(managerId, "manager");
+  const execAScope = makeScope(execAId, "executive");
 
   let pvtLtdServiceId: string;
   let dedicatedServiceId: string;
@@ -135,7 +136,7 @@ describe("analytics service (integration)", () => {
     }
 
     await db.delete(clients).where(ilike(clients.phone, "+919876614%"));
-    await db.delete(leads).where(ilike(leads.phone, "+919876614%"));
+    await db.delete(enquiries).where(ilike(enquiries.phone, "+919876614%"));
     await db.delete(services).where(eq(services.id, dedicatedServiceId));
     await db.delete(serviceCategories).where(eq(serviceCategories.id, dedicatedCategoryId));
     await db.delete(user).where(eq(user.id, managerId));
@@ -143,22 +144,22 @@ describe("analytics service (integration)", () => {
     await db.delete(user).where(eq(user.id, execBId));
   });
 
-  describe("getLeadsThisMonthByStatus", () => {
-    it("counts leads created in the given month by status, scoped to the executive when applicable", async () => {
+  describe("getEnquiriesThisMonthByStatus", () => {
+    it("counts enquiries created in the given month by status, scoped to the executive when applicable", async () => {
       const now = new Date();
 
-      await createLead(
+      await createEnquiry(
         {
-          name: "Analytics Lead A",
+          name: "Analytics Enquiry A",
           phone: "+919876614001",
           source: "website",
           assignedTo: execAId,
         },
         managerScope,
       );
-      await createLead(
+      await createEnquiry(
         {
-          name: "Analytics Lead B",
+          name: "Analytics Enquiry B",
           phone: "+919876614002",
           source: "website",
           assignedTo: execBId,
@@ -166,11 +167,11 @@ describe("analytics service (integration)", () => {
         managerScope,
       );
 
-      const managerRows = await getLeadsThisMonthByStatus(managerScope, now);
+      const managerRows = await getEnquiriesThisMonthByStatus(managerScope, now);
       const newCount = managerRows.find((row) => row.status === "new")?.count ?? 0;
       expect(newCount).toBeGreaterThanOrEqual(2);
 
-      const execRows = await getLeadsThisMonthByStatus(execAScope, now);
+      const execRows = await getEnquiriesThisMonthByStatus(execAScope, now);
       const execNewCount = execRows.find((row) => row.status === "new")?.count ?? 0;
       expect(execNewCount).toBeGreaterThanOrEqual(1);
       expect(execNewCount).toBeLessThan(newCount);

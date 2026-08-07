@@ -2,8 +2,10 @@ import { formatInTimeZone } from "date-fns-tz";
 import { and, desc, eq } from "drizzle-orm";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { toScope } from "@/actions/shared";
 import { CancelInvoiceButton } from "@/components/invoices/cancel-invoice-button";
 import { DeleteInvoiceButton } from "@/components/invoices/delete-invoice-button";
+import { InvoiceKindBadge } from "@/components/invoices/invoice-kind-badge";
 import { InvoiceStatusBadge } from "@/components/invoices/invoice-status-badge";
 import { RecordPaymentDialog } from "@/components/invoices/record-payment-dialog";
 import { SendInvoiceButton } from "@/components/invoices/send-invoice-button";
@@ -30,7 +32,7 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
   const user = await requireRole("super_admin", "manager", "accountant");
   const { id } = await params;
 
-  const invoice = await getInvoice(id, { userId: user.id, role: user.role });
+  const invoice = await getInvoice(id, await toScope(user));
   if (!invoice) {
     notFound();
   }
@@ -60,6 +62,7 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-semibold">{invoice.invoiceNo}</h1>
+            <InvoiceKindBadge kind={invoice.kind} />
             <InvoiceStatusBadge status={invoice.status} />
           </div>
           <p className="text-sm text-muted-foreground">
@@ -75,6 +78,12 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
               </>
             ) : null}
           </p>
+          {invoice.kind === "proforma" ? (
+            <p className="text-xs text-muted-foreground">
+              Advance-payment request only — not a tax invoice. The final GST invoice is generated
+              automatically once the order is completed and this proforma is paid in full.
+            </p>
+          ) : null}
         </div>
         <div className="flex flex-wrap justify-end gap-2">
           <Button

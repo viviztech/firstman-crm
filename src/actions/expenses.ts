@@ -28,7 +28,7 @@ export async function createExpenseAction(
     return { ok: false, error: firstIssueMessage(parsed.error) };
   }
 
-  const created = await createExpense(parsed.data, toScope(currentUser));
+  const created = await createExpense(parsed.data, await toScope(currentUser));
   if (!created) {
     return { ok: false, error: "You do not have permission to create expenses." };
   }
@@ -52,7 +52,7 @@ export async function updateExpenseAction(
     return { ok: false, error: firstIssueMessage(parsed.error) };
   }
 
-  const updated = await updateExpense(id, parsed.data, toScope(currentUser));
+  const updated = await updateExpense(id, parsed.data, await toScope(currentUser));
   if (!updated) {
     return { ok: false, error: "Expense not found, or you do not have access to it." };
   }
@@ -67,7 +67,7 @@ export async function deleteExpenseAction(id: string): Promise<ActionResult> {
     return { ok: false, error: "You do not have permission to delete expenses." };
   }
 
-  const deleted = await deleteExpense(id, toScope(currentUser));
+  const deleted = await deleteExpense(id, await toScope(currentUser));
   if (!deleted) {
     return { ok: false, error: "Expense not found." };
   }

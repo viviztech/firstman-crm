@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { updateInvoiceAction } from "@/actions/invoices";
+import { toScope } from "@/actions/shared";
 import { InvoiceEditForm } from "@/components/invoices/invoice-edit-form";
 import { requireRole } from "@/lib/session";
 import { getInvoice } from "@/services/invoices";
@@ -8,7 +9,7 @@ import { listOrdersForClient } from "@/services/orders";
 export default async function EditInvoicePage({ params }: { params: Promise<{ id: string }> }) {
   const user = await requireRole("super_admin", "manager", "accountant");
   const { id } = await params;
-  const scope = { userId: user.id, role: user.role };
+  const scope = await toScope(user);
 
   const invoice = await getInvoice(id, scope);
   if (invoice?.status !== "draft") {

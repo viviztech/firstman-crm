@@ -4,9 +4,9 @@ import { requireRole } from "@/lib/session";
 
 const REPORTS = [
   {
-    href: "/reports/leads-by-source",
-    title: "Lead source performance",
-    description: "Leads, wins, and conversion rate by source.",
+    href: "/reports/enquiries-by-source",
+    title: "Enquiry source performance",
+    description: "Enquiries, wins, and conversion rate by source.",
   },
   {
     href: "/reports/conversion-rate",

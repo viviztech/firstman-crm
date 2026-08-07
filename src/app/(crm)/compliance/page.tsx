@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { toScope } from "@/actions/shared";
 import { ComplianceFiltersForm } from "@/components/compliance/compliance-filters-form";
 import { ComplianceTable } from "@/components/compliance/compliance-table";
 import { ListPagination } from "@/components/list-pagination";
@@ -14,10 +15,11 @@ export default async function CompliancePage({
   const user = await requireRole("super_admin", "manager", "executive");
   const { page, q, status } = await searchParams;
 
-  const result = await listComplianceItems(
-    { userId: user.id, role: user.role },
-    { page: page ? Number(page) : 1, search: q, status },
-  );
+  const result = await listComplianceItems(await toScope(user), {
+    page: page ? Number(page) : 1,
+    search: q,
+    status,
+  });
 
   return (
     <div className="flex flex-col gap-4">

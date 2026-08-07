@@ -41,7 +41,12 @@ export function UserRoleSelect({
   }
 
   return (
-    <Select value={value} onValueChange={handleChange} disabled={disabled || isPending}>
+    <Select
+      value={value}
+      onValueChange={handleChange}
+      disabled={disabled || isPending}
+      items={ROLES.map((r) => ({ value: r, label: r.replace("_", " ") }))}
+    >
       <SelectTrigger className="w-40" size="sm">
         <SelectValue />
       </SelectTrigger>

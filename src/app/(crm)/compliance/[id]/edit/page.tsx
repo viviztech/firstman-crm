@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { updateComplianceItemAction } from "@/actions/compliance";
+import { toScope } from "@/actions/shared";
 import { ComplianceEditForm } from "@/components/compliance/compliance-edit-form";
 import { requireRole } from "@/lib/session";
 import { listServiceOptions } from "@/services/catalog";
@@ -10,7 +11,7 @@ export default async function EditCompliancePage({ params }: { params: Promise<{
   const { id } = await params;
 
   const [item, services] = await Promise.all([
-    getComplianceItem(id, { userId: user.id, role: user.role }),
+    getComplianceItem(id, await toScope(user)),
     listServiceOptions(),
   ]);
 

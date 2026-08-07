@@ -9,11 +9,12 @@ import { documents } from "@/db/schema/documents";
 import { messageLogs } from "@/db/schema/message-logs";
 import { orders } from "@/db/schema/orders";
 import { runDocsPendingReminderJob } from "@/jobs/docs-pending-cron";
+import { makeScope } from "@/lib/test-scope";
 import { createOrder } from "@/services/orders";
 
 describe("runDocsPendingReminderJob (integration)", () => {
   const managerId = randomUUID();
-  const managerScope = { userId: managerId, role: "manager" as const };
+  const managerScope = makeScope(managerId, "manager");
   let pvtLtdServiceId: string;
 
   beforeAll(async () => {

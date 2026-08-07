@@ -1,4 +1,5 @@
 import { createOrderAction } from "@/actions/orders";
+import { toScope } from "@/actions/shared";
 import { OrderForm } from "@/components/orders/order-form";
 import { requireRole } from "@/lib/session";
 import { listServicesForOrders } from "@/services/catalog";
@@ -7,7 +8,7 @@ import { listAssignableStaff } from "@/services/users";
 
 export default async function NewOrderPage() {
   const user = await requireRole("super_admin", "manager", "executive");
-  const scope = { userId: user.id, role: user.role };
+  const scope = await toScope(user);
 
   const [clients, services, staff] = await Promise.all([
     listClientOptions(scope),

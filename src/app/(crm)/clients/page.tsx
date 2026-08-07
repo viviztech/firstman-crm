@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { toScope } from "@/actions/shared";
 import { ClientSearchForm } from "@/components/clients/client-search-form";
 import { ClientsTable } from "@/components/clients/clients-table";
 import { ListPagination } from "@/components/list-pagination";
@@ -14,10 +15,10 @@ export default async function ClientsPage({
   const user = await requireUser();
   const { page, q } = await searchParams;
 
-  const result = await listClients(
-    { userId: user.id, role: user.role },
-    { page: page ? Number(page) : 1, search: q },
-  );
+  const result = await listClients(await toScope(user), {
+    page: page ? Number(page) : 1,
+    search: q,
+  });
 
   return (
     <div className="flex flex-col gap-4">

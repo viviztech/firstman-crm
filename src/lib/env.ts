@@ -20,7 +20,7 @@ const envSchema = z.object({
   WHATSAPP_PHONE_NUMBER_ID: z.string().default(""),
   WHATSAPP_BUSINESS_ID: z.string().default(""),
 
-  LEADS_API_TOKEN: z.string().min(16),
+  ENQUIRIES_API_TOKEN: z.string().min(16),
 
   STORAGE_DRIVER: z.enum(["local", "s3"]).default("local"),
   S3_ENDPOINT: z.string().optional(),

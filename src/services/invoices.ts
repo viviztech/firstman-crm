@@ -1,4 +1,4 @@
-import { endOfMonth, startOfMonth } from "date-fns";
+import { addDays, endOfMonth, startOfMonth } from "date-fns";
 import { and, count, desc, eq, gte, ilike, inArray, isNull, lte, or } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/db";
@@ -10,6 +10,7 @@ import {
   paymentMethodEnum,
   payments,
 } from "@/db/schema/invoices";
+import { orders } from "@/db/schema/orders";
 import type { Role } from "@/lib/auth";
 import { sumPaise } from "@/lib/money";
 import type { ActorScope } from "@/lib/scope";
@@ -17,7 +18,7 @@ import { optionalTrimmed, optionalUuid } from "@/lib/validation/helpers";
 import { recordActivity } from "@/services/activity-log";
 import { getSetting, getSettingForUpdate, setSetting } from "@/services/settings";
 
-type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
+export type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 const PAGE_SIZE = 20;
 const OPEN_STATUSES = ["sent", "partially_paid", "overdue"] as const;
@@ -137,6 +138,7 @@ export async function listInvoices(
     id: invoices.id,
     invoiceNo: invoices.invoiceNo,
     status: invoices.status,
+    kind: invoices.kind,
     totalPaise: invoices.totalPaise,
     dueDate: invoices.dueDate,
     sentAt: invoices.sentAt,
@@ -286,6 +288,132 @@ export async function createInvoice(input: InvoiceInput, actor: ActorScope) {
   });
 }
 
+/**
+ * Issues the proforma invoice generated as part of the enquiry Sales action (spec 4.1/4.7
+ * extension): a non-fiscal advance-payment request, sent immediately rather than left in
+ * draft. Composed into the caller's transaction (mirrors `createOrderInTx`) so it lands
+ * atomically alongside the client/order it belongs to.
+ */
+export async function createProformaInvoiceInTx(
+  tx: Transaction,
+  input: {
+    clientId: string;
+    orderId: string;
+    lineItems: InvoiceLineItemInput[];
+    gstRate: number;
+    dueDate?: Date;
+  },
+  actor: ActorScope,
+) {
+  const totals = computeInvoiceTotals(input.lineItems, input.gstRate);
+  const invoiceNo = await generateInvoiceNo(tx, actor);
+
+  const [created] = await tx
+    .insert(invoices)
+    .values({
+      invoiceNo,
+      clientId: input.clientId,
+      orderId: input.orderId,
+      lineItems: totals.lineItems,
+      subtotalPaise: totals.subtotalPaise,
+      gstRate: input.gstRate,
+      gstAmountPaise: totals.gstAmountPaise,
+      totalPaise: totals.totalPaise,
+      status: "sent",
+      kind: "proforma",
+      dueDate: input.dueDate ?? addDays(new Date(), 7),
+      sentAt: new Date(),
+      createdBy: actor.userId,
+      updatedBy: actor.userId,
+    })
+    .returning();
+  if (!created) throw new Error("Failed to create proforma invoice");
+
+  await recordActivity(
+    {
+      actorId: actor.userId,
+      entityType: "invoice",
+      entityId: created.id,
+      action: "created",
+      diff: { invoiceNo, kind: "proforma", totalPaise: totals.totalPaise },
+    },
+    tx,
+  );
+
+  return created;
+}
+
+/**
+ * The final GST invoice is never created directly by a user — it's auto-generated once both
+ * halves of the condition are true: the order is `completed` and its proforma invoice is
+ * `paid` in full. Called from both directions (order completion and payment recording) since
+ * either can be the one that arrives last; idempotent (a proforma only ever spawns one tax
+ * invoice) so calling it from both is safe. Line items/totals are copied verbatim from the
+ * proforma — the money was already collected against it, so no new `payments` rows are
+ * created here (that would double-count in collections totals); the tax invoice is inserted
+ * already `paid`, with the proforma as its payment trail of record.
+ */
+export async function generateFinalInvoiceIfEligibleInTx(
+  tx: Transaction,
+  orderId: string,
+  actor: ActorScope,
+) {
+  const order = await tx.query.orders.findFirst({ where: eq(orders.id, orderId) });
+  if (order?.status !== "completed") return null;
+
+  const proforma = await tx.query.invoices.findFirst({
+    where: and(
+      eq(invoices.orderId, orderId),
+      eq(invoices.kind, "proforma"),
+      isNull(invoices.deletedAt),
+    ),
+    orderBy: (invoice, { desc: descFn }) => [descFn(invoice.createdAt)],
+  });
+  if (proforma?.status !== "paid") return null;
+
+  const existingTaxInvoice = await tx.query.invoices.findFirst({
+    where: and(eq(invoices.proformaInvoiceId, proforma.id), eq(invoices.kind, "tax")),
+  });
+  if (existingTaxInvoice) return existingTaxInvoice;
+
+  const invoiceNo = await generateInvoiceNo(tx, actor);
+
+  const [created] = await tx
+    .insert(invoices)
+    .values({
+      invoiceNo,
+      clientId: proforma.clientId,
+      orderId: proforma.orderId,
+      lineItems: proforma.lineItems,
+      subtotalPaise: proforma.subtotalPaise,
+      gstRate: proforma.gstRate,
+      gstAmountPaise: proforma.gstAmountPaise,
+      totalPaise: proforma.totalPaise,
+      status: "paid",
+      kind: "tax",
+      proformaInvoiceId: proforma.id,
+      dueDate: new Date(),
+      sentAt: new Date(),
+      createdBy: actor.userId,
+      updatedBy: actor.userId,
+    })
+    .returning();
+  if (!created) throw new Error("Failed to create final invoice");
+
+  await recordActivity(
+    {
+      actorId: actor.userId,
+      entityType: "invoice",
+      entityId: created.id,
+      action: "created_from_proforma",
+      diff: { invoiceNo, proformaInvoiceId: proforma.id, orderId },
+    },
+    tx,
+  );
+
+  return created;
+}
+
 /** Only draft invoices can be edited — once sent, the numbers must stay fixed. */
 export async function updateInvoice(id: string, input: InvoiceEditInput, actor: ActorScope) {
   if (!canAccessInvoices(actor)) return null;
@@ -397,6 +525,10 @@ export async function recordPayment(invoiceId: string, input: PaymentInput, acto
       },
       tx,
     );
+
+    if (newStatus === "paid" && invoice.kind === "proforma" && invoice.orderId) {
+      await generateFinalInvoiceIfEligibleInTx(tx, invoice.orderId, actor);
+    }
 
     return { payment, invoice: updatedInvoice };
   });

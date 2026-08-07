@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { toScope } from "@/actions/shared";
 import { getApiUser } from "@/lib/api-auth";
 import { logger } from "@/lib/logger";
 import { verifyDownloadToken } from "@/lib/signed-url";
@@ -20,7 +21,7 @@ export async function GET(
     return NextResponse.json({ error: "Link expired or invalid" }, { status: 403 });
   }
 
-  const document = await getDocumentForDownload(id, { userId: user.id, role: user.role });
+  const document = await getDocumentForDownload(id, await toScope(user));
   if (!document?.path) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }

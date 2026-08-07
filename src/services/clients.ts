@@ -3,7 +3,13 @@ import { z } from "zod";
 import { db } from "@/db";
 import { clients } from "@/db/schema/clients";
 import type { ActorScope } from "@/lib/scope";
-import { optionalEmailSchema, optionalTrimmed, pincodeSchema } from "@/lib/validation/helpers";
+import { visibilityConditions } from "@/lib/scope";
+import {
+  optionalEmailSchema,
+  optionalTrimmed,
+  optionalUuid,
+  pincodeSchema,
+} from "@/lib/validation/helpers";
 import { indianPhoneSchema } from "@/lib/validation/phone";
 import { optionalGstinSchema, optionalPanSchema } from "@/lib/validation/tax-ids";
 import { recordActivity } from "@/services/activity-log";
@@ -22,20 +28,28 @@ export const clientInputSchema = z.object({
   pincode: pincodeSchema,
   assignedTo: optionalTrimmed(),
   referralSource: optionalTrimmed(200),
+  referralPartnerId: optionalUuid,
 });
 
 export type ClientInput = z.infer<typeof clientInputSchema>;
 
 const PAGE_SIZE = 20;
 
-/** Executives only ever see/act on clients assigned to them — never trust the UI filter alone (spec 3). */
+/**
+ * Executives only ever see/act on clients in scope — internal-type by assignedTo, franchise-type
+ * by pincode territory, both further narrowed by service assignment if configured (spec 3, ADR 0001).
+ */
 function scopeCondition(scope: ActorScope) {
-  return scope.role === "executive" ? eq(clients.assignedTo, scope.userId) : undefined;
+  return visibilityConditions(scope, {
+    assignedToColumn: clients.assignedTo,
+    pincodeColumn: clients.pincode,
+  });
 }
 
-/** Executives can't assign clients to anyone but themselves, regardless of what the form submits. */
+/** Internal-type executives can't assign clients to anyone but themselves; franchise-type staff
+ * (territory-shared) can assign within their team, regardless of what the form submits (ADR 0001). */
 function enforceAssignment(input: ClientInput, actor: ActorScope): ClientInput {
-  if (actor.role === "executive") {
+  if (actor.role === "executive" && actor.employeeType === "internal") {
     return { ...input, assignedTo: actor.userId };
   }
   return input;

@@ -14,7 +14,7 @@ export async function verifyDocumentAction(id: string): Promise<ActionResult> {
     return { ok: false, error: "You do not have permission to verify documents." };
   }
 
-  const updated = await verifyDocument(id, toScope(currentUser));
+  const updated = await verifyDocument(id, await toScope(currentUser));
   if (!updated) {
     return { ok: false, error: "Document not found, has no file yet, or you lack access to it." };
   }
@@ -35,7 +35,7 @@ export async function rejectDocumentAction(id: string, reason: string): Promise<
     return { ok: false, error: firstIssueMessage(parsed.error) };
   }
 
-  const updated = await rejectDocument(id, parsed.data.reason, toScope(currentUser));
+  const updated = await rejectDocument(id, parsed.data.reason, await toScope(currentUser));
   if (!updated) {
     return { ok: false, error: "Document not found, or you do not have access to it." };
   }

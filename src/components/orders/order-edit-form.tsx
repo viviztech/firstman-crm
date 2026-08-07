@@ -4,8 +4,8 @@ import { useRouter } from "next/navigation";
 import { useActionState, useEffect } from "react";
 import type { ActionResult } from "@/actions/shared";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { MoneyInput } from "@/components/ui/money-input";
 import {
   Select,
   SelectContent,
@@ -52,25 +52,21 @@ export function OrderEditForm({
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="flex flex-col gap-2">
           <Label htmlFor="quotedPricePaise">
-            Quoted price (paise) <span className="text-destructive">*</span>
+            Quoted price (₹) <span className="text-destructive">*</span>
           </Label>
-          <Input
+          <MoneyInput
             id="quotedPricePaise"
             name="quotedPricePaise"
-            type="number"
-            min={0}
             required
-            defaultValue={defaultValues.quotedPricePaise}
+            defaultValuePaise={defaultValues.quotedPricePaise}
           />
         </div>
         <div className="flex flex-col gap-2">
-          <Label htmlFor="govtFeePaise">Govt. fee (paise)</Label>
-          <Input
+          <Label htmlFor="govtFeePaise">Govt. fee (₹)</Label>
+          <MoneyInput
             id="govtFeePaise"
             name="govtFeePaise"
-            type="number"
-            min={0}
-            defaultValue={defaultValues.govtFeePaise ?? ""}
+            defaultValuePaise={defaultValues.govtFeePaise}
           />
         </div>
       </div>
@@ -78,7 +74,11 @@ export function OrderEditForm({
       {canAssign ? (
         <div className="flex flex-col gap-2">
           <Label htmlFor="assignedTo">Assigned to</Label>
-          <Select name="assignedTo" defaultValue={defaultValues.assignedTo ?? undefined}>
+          <Select
+            name="assignedTo"
+            defaultValue={defaultValues.assignedTo ?? undefined}
+            items={staff.map((member) => ({ value: member.id, label: member.name }))}
+          >
             <SelectTrigger id="assignedTo" className="w-full">
               <SelectValue placeholder="Unassigned" />
             </SelectTrigger>

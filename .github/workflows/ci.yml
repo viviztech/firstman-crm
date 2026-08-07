@@ -33,7 +33,7 @@ jobs:
       SMTP_HOST: localhost
       SMTP_PORT: 1025
       MAIL_FROM: "FirstMan Corporate Services <no-reply@firstman.in>"
-      LEADS_API_TOKEN: ci-only-leads-token-do-not-use-in-prod
+      ENQUIRIES_API_TOKEN: ci-only-enquiries-token-do-not-use-in-prod
       STORAGE_DRIVER: local
       TZ_DISPLAY: Asia/Kolkata
 

@@ -4,6 +4,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { db } from "@/db";
 import { user } from "@/db/schema/auth-schema";
 import { clients } from "@/db/schema/clients";
+import { makeScope } from "@/lib/test-scope";
 import {
   type ClientInput,
   clientInputSchema,
@@ -31,9 +32,9 @@ describe("clients service — executive scoping (integration)", () => {
   const execAId = randomUUID();
   const execBId = randomUUID();
 
-  const managerScope = { userId: managerId, role: "manager" as const };
-  const execAScope = { userId: execAId, role: "executive" as const };
-  const execBScope = { userId: execBId, role: "executive" as const };
+  const managerScope = makeScope(managerId, "manager");
+  const execAScope = makeScope(execAId, "executive");
+  const execBScope = makeScope(execBId, "executive");
 
   beforeAll(async () => {
     await db.insert(user).values([

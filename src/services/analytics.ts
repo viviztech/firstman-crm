@@ -2,29 +2,35 @@ import { endOfMonth, startOfMonth, subMonths } from "date-fns";
 import { and, asc, count, eq, gte, isNull, lt, lte, ne, or, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { services } from "@/db/schema/catalog";
+import { enquiries } from "@/db/schema/enquiries";
 import { payments } from "@/db/schema/invoices";
-import { leads } from "@/db/schema/leads";
 import { orders, orderTasks } from "@/db/schema/orders";
 import { sumPaise } from "@/lib/money";
 import type { ActorScope } from "@/lib/scope";
+import { visibilityConditions } from "@/lib/scope";
 
-/** Manager/Admin dashboard: leads created this month, grouped by status. */
-export async function getLeadsThisMonthByStatus(scope: ActorScope, now: Date = new Date()) {
+/** Manager/Admin dashboard: enquiries created this month, grouped by status. Lost enquiries are hidden everywhere, this funnel included. */
+export async function getEnquiriesThisMonthByStatus(scope: ActorScope, now: Date = new Date()) {
   const monthStart = startOfMonth(now);
   const monthEnd = endOfMonth(now);
 
   const rows = await db
-    .select({ status: leads.status, count: count() })
-    .from(leads)
+    .select({ status: enquiries.status, count: count() })
+    .from(enquiries)
     .where(
       and(
-        isNull(leads.deletedAt),
-        gte(leads.createdAt, monthStart),
-        lte(leads.createdAt, monthEnd),
-        scope.role === "executive" ? eq(leads.assignedTo, scope.userId) : undefined,
+        isNull(enquiries.deletedAt),
+        ne(enquiries.status, "lost"),
+        gte(enquiries.createdAt, monthStart),
+        lte(enquiries.createdAt, monthEnd),
+        visibilityConditions(scope, {
+          assignedToColumn: enquiries.assignedTo,
+          pincodeColumn: enquiries.pincode,
+          serviceIdColumn: enquiries.serviceInterestedId,
+        }),
       ),
     )
-    .groupBy(leads.status);
+    .groupBy(enquiries.status);
 
   return rows.map((row) => ({ status: row.status, count: row.count }));
 }
@@ -63,7 +69,11 @@ export async function getOrdersByStatusCounts(scope: ActorScope) {
     .where(
       and(
         isNull(orders.deletedAt),
-        scope.role === "executive" ? eq(orders.assignedTo, scope.userId) : undefined,
+        visibilityConditions(scope, {
+          assignedToColumn: orders.assignedTo,
+          clientIdColumn: orders.clientId,
+          serviceIdColumn: orders.serviceId,
+        }),
       ),
     )
     .groupBy(orders.status);
@@ -71,14 +81,20 @@ export async function getOrdersByStatusCounts(scope: ActorScope) {
   return rows.map((row) => ({ status: row.status, count: row.count }));
 }
 
-/** Manager/Admin dashboard: order tasks past their due date and not yet done. */
+/**
+ * Manager/Admin dashboard: order tasks past their due date and not yet done. Only assignedTo-scoped
+ * (no franchise territory filter) — orderTasks has no client link to resolve pincode against, and
+ * this widget is only ever called with a manager/admin scope from the dashboard (ADR 0001).
+ */
 export async function getOverdueTasks(scope: ActorScope, limit = 10, now: Date = new Date()) {
   return db.query.orderTasks.findMany({
     where: and(
       isNull(orderTasks.deletedAt),
       ne(orderTasks.status, "done"),
       lt(orderTasks.dueAt, now),
-      scope.role === "executive" ? eq(orderTasks.assignedTo, scope.userId) : undefined,
+      scope.role === "executive" && scope.employeeType === "internal"
+        ? eq(orderTasks.assignedTo, scope.userId)
+        : undefined,
     ),
     orderBy: [asc(orderTasks.dueAt)],
     limit,
@@ -105,7 +121,11 @@ export async function getTopServicesByRevenue(scope: ActorScope, limit = 5) {
       and(
         isNull(orders.deletedAt),
         ne(orders.status, "cancelled"),
-        scope.role === "executive" ? eq(orders.assignedTo, scope.userId) : undefined,
+        visibilityConditions(scope, {
+          assignedToColumn: orders.assignedTo,
+          clientIdColumn: orders.clientId,
+          serviceIdColumn: orders.serviceId,
+        }),
       ),
     )
     .groupBy(orders.serviceId, services.name)

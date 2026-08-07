@@ -55,7 +55,7 @@ export async function createInvoiceAction(
     return { ok: false, error: firstIssueMessage(parsed.error) };
   }
 
-  const created = await createInvoice(parsed.data, toScope(currentUser));
+  const created = await createInvoice(parsed.data, await toScope(currentUser));
   if (!created) {
     return { ok: false, error: "You do not have permission to create invoices." };
   }
@@ -84,7 +84,7 @@ export async function updateInvoiceAction(
     return { ok: false, error: firstIssueMessage(parsed.error) };
   }
 
-  const updated = await updateInvoice(id, parsed.data, toScope(currentUser));
+  const updated = await updateInvoice(id, parsed.data, await toScope(currentUser));
   if (!updated) {
     return {
       ok: false,
@@ -103,7 +103,7 @@ export async function sendInvoiceAction(id: string): Promise<ActionResult> {
     return { ok: false, error: "You do not have permission to send invoices." };
   }
 
-  const updated = await sendInvoice(id, toScope(currentUser));
+  const updated = await sendInvoice(id, await toScope(currentUser));
   if (!updated) {
     return {
       ok: false,
@@ -137,7 +137,7 @@ export async function recordPaymentAction(
     return { ok: false, error: firstIssueMessage(parsed.error) };
   }
 
-  const result = await recordPayment(invoiceId, parsed.data, toScope(currentUser));
+  const result = await recordPayment(invoiceId, parsed.data, await toScope(currentUser));
   if (!result) {
     return {
       ok: false,
@@ -165,7 +165,7 @@ export async function cancelInvoiceAction(id: string): Promise<ActionResult> {
   }
 
   try {
-    const updated = await cancelInvoice(id, toScope(currentUser));
+    const updated = await cancelInvoice(id, await toScope(currentUser));
     if (!updated) {
       return {
         ok: false,
@@ -190,7 +190,7 @@ export async function deleteInvoiceAction(id: string): Promise<ActionResult> {
     return { ok: false, error: "You do not have permission to delete invoices." };
   }
 
-  const deleted = await deleteInvoice(id, toScope(currentUser));
+  const deleted = await deleteInvoice(id, await toScope(currentUser));
   if (!deleted) {
     return { ok: false, error: "Only draft invoices can be deleted." };
   }

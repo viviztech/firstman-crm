@@ -15,13 +15,13 @@ async function settle(page: import("@playwright/test").Page) {
 }
 
 /**
- * Full critical path per spec §5 Phase 8: login → create lead → convert → order → invoice → payment.
- * One continuous flow (not independent tests) since each step depends on the record the previous
- * step created.
+ * Full critical path per spec §5 Phase 8: login → create enquiry → Sales (client + order) →
+ * invoice → payment. One continuous flow (not independent tests) since each step depends on
+ * the record the previous step created.
  */
-test("critical path: login, create lead, convert, order, invoice, payment", async ({ page }) => {
+test("critical path: login, create enquiry, close sale, invoice, payment", async ({ page }) => {
   const uniqueSuffix = `7${String(Date.now()).slice(-9)}`;
-  const leadName = `E2E Test Lead ${uniqueSuffix.slice(-6)}`;
+  const enquiryName = `E2E Test Enquiry ${uniqueSuffix.slice(-6)}`;
 
   await test.step("login", async () => {
     await page.goto("/login");
@@ -33,34 +33,33 @@ test("critical path: login, create lead, convert, order, invoice, payment", asyn
     await settle(page);
   });
 
-  await test.step("create lead", async () => {
-    await page.goto("/leads/new");
+  await test.step("create enquiry", async () => {
+    await page.goto("/enquiries/new");
     await settle(page);
-    await page.getByLabel("Name").fill(leadName);
+    await page.getByLabel("Name").fill(enquiryName);
     await page.getByLabel("Phone").fill(uniqueSuffix);
-    await page.getByRole("button", { name: "Create lead" }).click();
-    await expect(page).toHaveURL(/\/leads\/[0-9a-f-]+$/);
+    await page.getByRole("button", { name: "Create enquiry" }).click();
+    await expect(page).toHaveURL(/\/enquiries\/[0-9a-f-]+$/);
     await settle(page);
-    await expect(page.getByRole("heading", { name: leadName })).toBeVisible();
+    await expect(page.getByRole("heading", { name: enquiryName })).toBeVisible();
   });
 
-  await test.step("convert lead to client", async () => {
-    await expect(page.getByRole("button", { name: "Convert to client" })).toBeVisible();
-    await page.getByRole("button", { name: "Convert to client" }).click();
+  await test.step("close the enquiry as a sale (creates client + order)", async () => {
+    await expect(page.getByRole("button", { name: "Sales" })).toBeVisible();
+    await page.getByRole("button", { name: "Sales" }).click();
     const dialog = page.getByRole("dialog");
-    await expect(dialog.getByRole("button", { name: "Convert", exact: true })).toBeVisible();
-    await dialog.getByRole("button", { name: "Convert", exact: true }).click();
+    await dialog.locator("#sales-service").click();
+    await page.getByRole("option", { name: "Private Limited Company Registration" }).click();
+    await dialog.getByRole("button", { name: "Close sale" }).click();
     await expect(page).toHaveURL(/\/clients\/[0-9a-f-]+$/);
     await settle(page);
-    await expect(page.getByRole("heading", { name: leadName })).toBeVisible();
+    await expect(page.getByRole("heading", { name: enquiryName })).toBeVisible();
   });
 
-  await test.step("create an order for the new client", async () => {
-    await page.goto("/orders/new");
-    await settle(page);
-    await page.locator("#clientId").click();
-    await page.getByRole("option", { name: new RegExp(leadName) }).click();
-    await page.getByRole("button", { name: "Create order" }).click();
+  await test.step("open the order created by the sale", async () => {
+    await page.getByRole("tab", { name: "Orders" }).click();
+    await page.waitForTimeout(300);
+    await page.getByRole("link", { name: /^FM-/ }).first().click();
     await expect(page).toHaveURL(/\/orders\/[0-9a-f-]+$/);
     await settle(page);
   });
@@ -75,7 +74,7 @@ test("critical path: login, create lead, convert, order, invoice, payment", asyn
 
     await page.getByPlaceholder("Description").fill("E2E consultation fee");
     await page.getByPlaceholder("Qty").fill("1");
-    await page.getByPlaceholder("Rate (paise)").fill("100000");
+    await page.getByPlaceholder("Rate (₹)").fill("1000");
     await page.locator("#dueDate").fill("2026-12-31");
     await page.getByRole("button", { name: "Create invoice" }).click();
     await expect(page).toHaveURL(/\/invoices\/[0-9a-f-]+$/);

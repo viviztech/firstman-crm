@@ -2,6 +2,7 @@ import { formatInTimeZone } from "date-fns-tz";
 import { and, desc, eq } from "drizzle-orm";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { toScope } from "@/actions/shared";
 import { ComplianceStatusBadge } from "@/components/compliance/compliance-status-badge";
 import { CreateOrderFromComplianceButton } from "@/components/compliance/create-order-from-compliance-button";
 import { DeleteComplianceItemButton } from "@/components/compliance/delete-compliance-item-button";
@@ -23,7 +24,7 @@ export default async function ComplianceDetailPage({
   const user = await requireRole("super_admin", "manager", "executive");
   const { id } = await params;
 
-  const item = await getComplianceItem(id, { userId: user.id, role: user.role });
+  const item = await getComplianceItem(id, await toScope(user));
   if (!item) {
     notFound();
   }

@@ -34,7 +34,7 @@ export async function createOrderAction(
     return { ok: false, error: firstIssueMessage(parsed.error) };
   }
 
-  const created = await createOrder(parsed.data, toScope(currentUser));
+  const created = await createOrder(parsed.data, await toScope(currentUser));
   revalidatePath("/orders");
   return { ok: true, data: { id: created.id } };
 }
@@ -54,7 +54,7 @@ export async function updateOrderAction(
     return { ok: false, error: firstIssueMessage(parsed.error) };
   }
 
-  const updated = await updateOrder(id, parsed.data, toScope(currentUser));
+  const updated = await updateOrder(id, parsed.data, await toScope(currentUser));
   if (!updated) {
     return { ok: false, error: "Order not found, or you do not have access to it." };
   }
@@ -75,7 +75,7 @@ export async function updateOrderStatusAction(id: string, status: string): Promi
     return { ok: false, error: firstIssueMessage(parsed.error) };
   }
 
-  const updated = await updateOrderStatus(id, parsed.data.status, toScope(currentUser));
+  const updated = await updateOrderStatus(id, parsed.data.status, await toScope(currentUser));
   if (!updated) {
     return { ok: false, error: "Order not found, or you do not have access to it." };
   }
@@ -110,7 +110,7 @@ export async function updateOrderTaskStatusAction(
     orderId,
     taskId,
     parsed.data.status,
-    toScope(currentUser),
+    await toScope(currentUser),
   );
   if (!updated) {
     return { ok: false, error: "Task not found, or you do not have access to it." };
@@ -126,7 +126,7 @@ export async function deleteOrderAction(id: string): Promise<ActionResult> {
     return { ok: false, error: "You do not have permission to delete orders." };
   }
 
-  const deleted = await deleteOrder(id, toScope(currentUser));
+  const deleted = await deleteOrder(id, await toScope(currentUser));
   if (!deleted) {
     return { ok: false, error: "Order not found." };
   }

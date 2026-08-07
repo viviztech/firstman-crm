@@ -27,7 +27,7 @@ function Command({ className, ...props }: React.ComponentProps<typeof CommandPri
 
 function CommandDialog({
   title = "Command Palette",
-  description = "Search across leads, clients, orders, and invoices",
+  description = "Search across enquiries, clients, orders, and invoices",
   children,
   open,
   onOpenChange,

@@ -31,7 +31,7 @@ export async function createComplianceItemAction(
     return { ok: false, error: firstIssueMessage(parsed.error) };
   }
 
-  const created = await createComplianceItem(parsed.data, toScope(currentUser));
+  const created = await createComplianceItem(parsed.data, await toScope(currentUser));
   if (!created) {
     return { ok: false, error: "Client not found, or you do not have access to it." };
   }
@@ -55,7 +55,7 @@ export async function updateComplianceItemAction(
     return { ok: false, error: firstIssueMessage(parsed.error) };
   }
 
-  const updated = await updateComplianceItem(id, parsed.data, toScope(currentUser));
+  const updated = await updateComplianceItem(id, parsed.data, await toScope(currentUser));
   if (!updated) {
     return { ok: false, error: "Compliance item not found, or you do not have access to it." };
   }
@@ -71,7 +71,7 @@ export async function markComplianceItemFiledAction(id: string): Promise<ActionR
     return { ok: false, error: "You do not have permission to update compliance items." };
   }
 
-  const result = await markComplianceItemFiled(id, toScope(currentUser));
+  const result = await markComplianceItemFiled(id, await toScope(currentUser));
   if (!result) {
     return { ok: false, error: "Compliance item not found, already filed, or you lack access." };
   }
@@ -91,7 +91,7 @@ export async function createOrderFromComplianceItemAction(
 
   let order: Awaited<ReturnType<typeof createOrderFromComplianceItem>>;
   try {
-    order = await createOrderFromComplianceItem(id, toScope(currentUser));
+    order = await createOrderFromComplianceItem(id, await toScope(currentUser));
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to create order.";
     return { ok: false, error: message };
@@ -112,7 +112,7 @@ export async function deleteComplianceItemAction(id: string): Promise<ActionResu
     return { ok: false, error: "You do not have permission to delete compliance items." };
   }
 
-  const deleted = await deleteComplianceItem(id, toScope(currentUser));
+  const deleted = await deleteComplianceItem(id, await toScope(currentUser));
   if (!deleted) {
     return { ok: false, error: "Compliance item not found." };
   }

@@ -1,11 +1,11 @@
 # FirstMan CRM
 
 A CRM for **FirstMan Corporate Services** (Indian corporate services: company
-registration, GST, compliance, trademarks, licenses) — leads, clients, orders,
+registration, GST, compliance, trademarks, licenses) — enquiries, clients, orders,
 compliance calendar, invoicing, and WhatsApp/email notifications.
 
 This build follows the phased spec in `CLAUDE.md`. All 9 phases (0–8) are
-implemented: auth/roles, service catalog, clients, leads (kanban + public
+implemented: auth/roles, service catalog, clients, enquiries (kanban + public
 API), orders with auto-generated task/document checklists, document uploads,
 a compliance calendar with nightly rollover/reminders, invoicing + payments +
 PDF, WhatsApp/email notifications, and role-aware dashboards/reports/global
@@ -49,7 +49,7 @@ middleware.ts (route guards + security headers)  pg-boss (Postgres-backed queue)
   `src/components/nav-config.ts` + `app-sidebar.tsx`.
 - **Jobs:** pg-boss, bootstrapped in `src/lib/queue.ts` and started from
   `src/instrumentation.ts` on server boot. Workers live in `src/jobs/*`: WhatsApp/email
-  notification sends (lead assigned, order status change, docs-pending, invoice
+  notification sends (enquiry assigned, order status change, docs-pending, invoice
   sent/paid), nightly compliance-status rollover + T-15/T-7/T-1 reminders, the
   morning per-executive follow-up digest, and the daily overdue-invoices digest —
   every job is idempotent with retry/backoff and logs to `message_logs` /
@@ -111,8 +111,8 @@ See `.env.example` for the full list with placeholder values. Notable ones:
 - `BETTER_AUTH_SECRET` / `BETTER_AUTH_URL` — auth config; secret must be ≥32 chars.
 - `WHATSAPP_TOKEN` / `WHATSAPP_PHONE_NUMBER_ID` / `WHATSAPP_BUSINESS_ID` — leave
   blank in dev to use a console/log driver (wired up in Phase 7).
-- `LEADS_API_TOKEN` — bearer token for the public `POST /api/v1/leads` endpoint
-  (Phase 2).
+- `ENQUIRIES_API_TOKEN` — bearer token for the public `POST /api/v1/enquiries`
+  endpoint (Phase 2).
 - `SENTRY_DSN` / `NEXT_PUBLIC_SENTRY_DSN` — leave blank to disable Sentry.
 
 All env vars are validated at boot with Zod (`src/lib/env.ts`) — the app throws on
@@ -177,13 +177,13 @@ deploy — see Non-negotiables in `CLAUDE.md`.
   and constraints are exercised for real. Coverage threshold is 80% on
   `src/services` (lines/functions/branches/statements) — current numbers: 97.1%
   lines, 95.2% functions, 93.0% statements, 83.4% branches. Every state
-  transition called out in `CLAUDE.md` §2 has a test (lead conversion, order
-  status change, invoice payment, compliance rollover), and time-dependent logic
-  (compliance rollover, digests, aging-receivables buckets) is tested with
+  transition called out in `CLAUDE.md` §2 has a test (enquiry sales conversion,
+  order status change, invoice payment, compliance rollover), and time-dependent
+  logic (compliance rollover, digests, aging-receivables buckets) is tested with
   `vi.setSystemTime`/explicit `now` params rather than real wall-clock time.
 - **E2E** (Playwright): `tests/e2e/*.spec.ts` — `login.spec.ts` (unauthenticated
   redirect + successful login) and `critical-path.spec.ts`, the full spec §5
-  smoke flow: login → create lead → convert to client → create order → create
+  smoke flow: login → create enquiry → close sale (client + order) → create
   invoice → send invoice → record payment. Runs against `next dev` on a
   dedicated port (see Assumption #6) with `fullyParallel: false` / `workers: 1`
   — a cold Turbopack dev server compiles each route serially on first hit, so
@@ -220,7 +220,7 @@ prescribe an exact answer:
    expects `role` as a plain string internally, so we didn't fight it into a
    `pgEnum`. The `Role` union type (`src/lib/auth.ts`) and Zod validation are the
    actual enforcement; the `roleEnum` pgEnum in `src/db/schema/_shared.ts` is there
-   for future domain tables (leads, orders, etc. all need a role-ish enum too) and
+   for future domain tables (enquiries, orders, etc. all need a role-ish enum too) and
    is unrelated to `user.role`.
 5. **`activity_logs` is append-only**: it deliberately skips the shared
    `updatedAt`/`deletedAt`/`createdBy`/`updatedBy` columns from
@@ -256,10 +256,10 @@ prescribe an exact answer:
    service, which is there for teams without a local install.
 10. **Internal staff notifications are email-only, never WhatsApp**: better-auth's
     `user` table (`src/db/schema/auth-schema.ts`, CLI-generated — see #4) has no
-    phone column, and better-auth's schema isn't one we hand-edit. So "new lead
+    phone column, and better-auth's schema isn't one we hand-edit. So "new enquiry
     assigned" and the T-15 compliance internal-task reminder, which spec 4.1/4.6
     describe as WhatsApp alerts to staff, go out by email instead
-    (`src/jobs/lead-notifications.ts`, `src/jobs/compliance-notifications.ts`).
+    (`src/jobs/enquiry-notifications.ts`, `src/jobs/compliance-notifications.ts`).
     Client-facing notifications (order status, compliance reminders, invoices,
     docs-pending) still send WhatsApp + email as specified, since `clients.phone`
     exists. If staff WhatsApp becomes a real requirement, it needs a phone field
@@ -292,6 +292,89 @@ prescribe an exact answer:
     one file's `afterAll` cleanup delete a row another file's test was
     mid-transaction with.) Both fixes are pushed; confirm the resulting CI run
     before treating this as fully resolved.
+12. **Employee types, franchise territories, service-scoped panels (ADR
+    0001, `docs/adr/0001-employee-types-and-territory-scoping.md`)**: extends
+    spec §3's fixed 4-role model with an orthogonal `employeeType`
+    (`internal`/`franchise`) on a new `staff_profiles` table, franchise
+    pincode territories (`staff_pincode_allocations`), per-staff service
+    assignments (`staff_service_assignments`), and non-login referral
+    partners (`referral_partners`) for the third "external associate"
+    employee type. `staff_profiles` deliberately lives off the better-auth-
+    owned `user` table rather than as columns on it — the same reasoning as
+    Assumption #4's `roleEnum`/#10's "needs a phone field added to a separate
+    staff-profile table" note, both of which anticipated exactly this. A user
+    with no `staff_profiles` row (or no service-assignment rows) behaves
+    exactly as before this change — unrestricted/internal — so no backfill
+    migration was needed for existing seeded/prod users.
+13. **Leads renamed to Enquiries, with a Sales/Followup/Lost action workflow**:
+    the entire module (table, columns, routes, public API, pg-boss queues,
+    WhatsApp template key, settings keys) was renamed from `lead(s)` to
+    `enquiry`/`enquiries` — a clean-break rename via two additive/subtractive
+    migrations (`0008_add_enquiries.sql`, `0009_drop_leads.sql`) since the app
+    had no production data to preserve. The detail screen was redesigned
+    around three primary actions instead of a generic status dropdown: **Sales**
+    (`closeEnquiryAsSale` — reviews/corrects contact details, picks a service +
+    price, and creates a client *and* an order in one transaction, composing
+    `convertEnquiryToClientInTx` with `services/orders.ts`'s new
+    `createOrderInTx`), **Followup** (logs the next follow-up and optionally
+    hands it to another executive — one-time via the new
+    `enquiries.nextFollowUpAssignedTo` column, which only redirects the
+    *pending* follow-up, or permanent via `assignedTo` itself), and **Lost**
+    (requires a reason, then excluded from every list/kanban/search/dashboard
+    query for every role via `ne(enquiries.status, "lost")` — not deleted, so a
+    new super_admin-only `hardDeleteEnquiry` + Settings → Lost enquiries screen
+    exists to purge it later). Two schema fields were added beyond the rename:
+    `address` (the Sales screen needed to show/edit it, and the enquiry didn't
+    previously capture one) and `convertedOrderId` (mirrors the existing
+    `convertedClientId` traceability field). The public API path/token and the
+    WhatsApp template key were renamed freely (confirmed nothing external calls
+    them yet); a live integration would need coordinated renaming instead.
+14. **Geography master data (states → districts → pincodes)**: seeded from
+    [kishorek/India-Codes](https://raw.githubusercontent.com/kishorek/India-Codes/master/csv/pincodes.csv),
+    a GitHub mirror of the India Post pincode directory (committed as
+    `src/db/seed-data/geography-source.csv`, ~24k unique pincodes after
+    dedup) — spot-checked against known pincodes before use, not taken on
+    faith. Two real gaps in that source, both handled explicitly rather than
+    silently: it predates Telangana's 2014 split from Andhra Pradesh (fixed
+    at import time — India Post kept the old "AP circle" pincode numbering
+    500000–509999 after the split, so any pincode in that range tagged
+    "Andhra Pradesh" is reassigned to Telangana, in
+    `applyTelanganaSplit()`); and it predates Ladakh's 2019 split from Jammu
+    & Kashmir, which has **no** reliable pincode-range rule, so it's left
+    unfixed — Ladakh's `states` row exists (for GSTIN validation/dropdowns)
+    but has zero seeded districts/pincodes for now, and its GST code (38) is
+    still correct regardless. `states` itself is a hand-verified list (not
+    derived from the CSV) cross-checked against ClearTax's published GST
+    state code table. The existing free-text `city`/`state`/`pincode`
+    columns on `clients`/`enquiries` were deliberately **not** converted to
+    foreign keys — a pincode blur triggers `lookupPincodeAction` to
+    autofill city/state client-side, but the columns stay plain text so an
+    unrecognized or new pincode never blocks data entry.
+15. **Sales conversion issues a proforma invoice + job card; the tax invoice
+    is auto-generated on completion + full payment**: extending spec 4.1/4.7,
+    `closeEnquiryAsSale` now also creates a proforma invoice (`invoices.kind
+    = "proforma"`, via the new `createProformaInvoiceInTx`) in the same
+    transaction as the client/order — a non-fiscal advance-payment request,
+    issued (`status: "sent"`) immediately rather than left in draft. No new
+    schema/entity was added for the "job card": an order's auto-generated
+    task + document checklist (spec 4.4) already *is* the job card's data
+    model, so a job card is simply that order rendered as a PDF
+    (`services/job-card-pdf.tsx`, served from `/api/orders/[id]/job-card`
+    behind a session — not a signed link, since it's an internal document
+    never sent to clients). The final GST tax invoice
+    (`invoices.kind = "tax"`) is never created directly by a user — it's
+    auto-generated by `generateFinalInvoiceIfEligibleInTx` only once both
+    halves of the condition are true: the order is `completed` and its
+    proforma is `paid` in full. That function is called from both
+    directions (`updateOrderStatus` and `recordPayment`) since either can
+    be the one that arrives last, and is idempotent (`proformaInvoiceId`
+    uniquely identifies the one tax invoice a proforma can spawn). The tax
+    invoice copies its line items/total from the proforma and is inserted
+    already `paid`, with no new `payments` rows — the proforma is the
+    payment trail of record, so duplicating rows onto the tax invoice would
+    double-count in collections totals. The proforma's GST rate defaults to
+    the `defaultGstRate` setting (18 if unset) — no settings-page UI was
+    added for it yet, just the existing key/value `settings` store.
 
 ## Phase checklists (per `CLAUDE.md` §5)
 
@@ -315,16 +398,23 @@ prescribe an exact answer:
 - [x] Executive scoping (`assignedTo = session.userId`) enforced at the
       service layer and covered by a test (`src/services/clients.test.ts`).
 
-**Phase 2 — Leads**
-- [x] Leads CRUD, kanban board (`@dnd-kit`, optimistic status updates), and a
+**Phase 2 — Enquiries**
+- [x] Enquiry CRUD, kanban board (`@dnd-kit`, optimistic status updates), and a
       filterable table view.
 - [x] Follow-ups, overdue indicator, manual + round-robin assignment.
-- [x] `convertLeadToClient` is one DB transaction (client + optional order +
-      lead status → `won`); direct `status: "won"` writes are rejected
-      (`updateLeadStatus` throws — see `leads.test.ts`).
-- [x] `POST /api/v1/leads` — bearer token auth, rate-limited
+- [x] Detail screen shows the capture fields (Source, Service, Name, Phone,
+      Email, Comments) with three primary actions: **Sales** (review contact +
+      service/price, then `closeEnquiryAsSale` converts to a client *and*
+      creates an order in one DB transaction — direct `status: "won"` writes
+      are rejected, `updateEnquiryStatus` throws), **Followup** (log the next
+      follow-up and optionally hand it to another executive, one-time or
+      permanent), and **Lost** (requires a reason, then hidden from every
+      list/kanban/search/dashboard for every role — not deleted, just hidden;
+      permanently purgeable from Settings → Lost enquiries, super_admin only).
+      See `enquiries.test.ts`.
+- [x] `POST /api/v1/enquiries` — bearer token auth, rate-limited
       (`src/lib/rate-limit.ts`), enqueues a (log-driver) WhatsApp alert to the
-      assigned executive; covered by `src/app/api/v1/leads/route.test.ts`.
+      assigned executive; covered by `src/app/api/v1/enquiries/route.test.ts`.
 
 **Phase 3 — Orders & Tasks**
 - [x] Creating an order auto-generates its `order_tasks` checklist and document
@@ -367,7 +457,7 @@ prescribe an exact answer:
 - [x] `src/services/whatsapp.ts` wraps the Meta Cloud API with a console/log
       driver fallback when `WHATSAPP_TOKEN` is empty — every send goes through
       a pg-boss job (retry + backoff), never called inline in a request.
-- [x] Every spec 4.8 notification event wired and enqueuing: lead assigned,
+- [x] Every spec 4.8 notification event wired and enqueuing: enquiry assigned,
       morning per-executive follow-up digest, order status change, weekly
       docs-pending reminder, compliance T-15/7/1, invoice sent/paid, overdue
       invoices digest.
@@ -377,22 +467,22 @@ prescribe an exact answer:
       webhook is a documented v2 item, not built — no webhook infra in v1).
 
 **Phase 8 — Dashboards, Reports & Polish**
-- [x] Role-aware dashboard: manager/admin gets the leads funnel, revenue
+- [x] Role-aware dashboard: manager/admin gets the enquiries funnel, revenue
       this-month-vs-last, orders-by-status, overdue tasks, and top-services
       widgets; executive gets follow-ups-today, my-open-tasks, and
       my-orders-in-progress; accountant's outstanding/collections/expenses
       widgets carry over from Phase 7.
 - [x] 5 reports (`src/services/reports.ts`) each with an exceljs export via
-      `/api/reports/[report]/export`: lead source performance, conversion rate
+      `/api/reports/[report]/export`: enquiry source performance, conversion rate
       by source and by executive, revenue by service, aging receivables
       (bucketed, nets out partial payments), compliance filing status.
-- [x] cmdk global search (⌘K/Ctrl+K) across leads/clients/orders/invoices,
+- [x] cmdk global search (⌘K/Ctrl+K) across enquiries/clients/orders/invoices,
       mirroring each module's own role-scoping exactly (`src/services/search.ts`).
 - [x] Full demo seed is fully navigable — verified via `db:migrate && db:seed`
       against a **fresh** database, then a scripted browser smoke test
       (login as each role, dashboard widgets, all 5 report pages + Excel
       export downloads, command palette) with zero console errors.
-- [x] Playwright critical-path smoke suite (login → lead → convert → order →
+- [x] Playwright critical-path smoke suite (login → enquiry → close sale → order →
       invoice → send → pay) passes, 2 consecutive clean runs.
 - [x] `src/services/analytics.ts`, `reports.ts`, and `search.ts` all have
       dedicated integration test suites; full suite (220 tests) + 80%

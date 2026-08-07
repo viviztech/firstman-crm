@@ -6,6 +6,7 @@ import type { ActionResult } from "@/actions/shared";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { MoneyInput } from "@/components/ui/money-input";
 import {
   Select,
   SelectContent,
@@ -45,10 +46,6 @@ export function OrderForm({
   const router = useRouter();
   const [state, formAction, isPending] = useActionState(action, undefined);
   const [selectedServiceId, setSelectedServiceId] = useState<string | undefined>(services[0]?.id);
-  const [quotedPricePaise, setQuotedPricePaise] = useState(
-    String(services[0]?.basePricePaise ?? ""),
-  );
-  const [govtFeePaise, setGovtFeePaise] = useState(String(services[0]?.govtFeePaise ?? ""));
 
   useEffect(() => {
     if (state?.ok) {
@@ -62,11 +59,6 @@ export function OrderForm({
   function handleServiceChange(value: string | null) {
     if (!value) return;
     setSelectedServiceId(value);
-    const service = services.find((candidate) => candidate.id === value);
-    if (service) {
-      setQuotedPricePaise(String(service.basePricePaise));
-      setGovtFeePaise(String(service.govtFeePaise ?? ""));
-    }
   }
 
   return (
@@ -76,7 +68,14 @@ export function OrderForm({
           <Label htmlFor="clientId">
             Client <span className="text-destructive">*</span>
           </Label>
-          <Select name="clientId" defaultValue={clients[0]?.id}>
+          <Select
+            name="clientId"
+            defaultValue={clients[0]?.id}
+            items={clients.map((client) => ({
+              value: client.id,
+              label: `${client.name} · ${client.phone}`,
+            }))}
+          >
             <SelectTrigger id="clientId" className="w-full">
               <SelectValue placeholder="Choose a client" />
             </SelectTrigger>
@@ -93,7 +92,12 @@ export function OrderForm({
           <Label htmlFor="serviceId">
             Service <span className="text-destructive">*</span>
           </Label>
-          <Select name="serviceId" value={selectedServiceId} onValueChange={handleServiceChange}>
+          <Select
+            name="serviceId"
+            value={selectedServiceId}
+            onValueChange={handleServiceChange}
+            items={services.map((service) => ({ value: service.id, label: service.name }))}
+          >
             <SelectTrigger id="serviceId" className="w-full">
               <SelectValue placeholder="Choose a service" />
             </SelectTrigger>
@@ -116,27 +120,23 @@ export function OrderForm({
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="flex flex-col gap-2">
           <Label htmlFor="quotedPricePaise">
-            Quoted price (paise) <span className="text-destructive">*</span>
+            Quoted price (₹) <span className="text-destructive">*</span>
           </Label>
-          <Input
+          <MoneyInput
+            key={selectedServiceId}
             id="quotedPricePaise"
             name="quotedPricePaise"
-            type="number"
-            min={0}
             required
-            value={quotedPricePaise}
-            onChange={(event) => setQuotedPricePaise(event.target.value)}
+            defaultValuePaise={selectedService?.basePricePaise}
           />
         </div>
         <div className="flex flex-col gap-2">
-          <Label htmlFor="govtFeePaise">Govt. fee (paise)</Label>
-          <Input
+          <Label htmlFor="govtFeePaise">Govt. fee (₹)</Label>
+          <MoneyInput
+            key={selectedServiceId}
             id="govtFeePaise"
             name="govtFeePaise"
-            type="number"
-            min={0}
-            value={govtFeePaise}
-            onChange={(event) => setGovtFeePaise(event.target.value)}
+            defaultValuePaise={selectedService?.govtFeePaise}
           />
         </div>
       </div>
@@ -149,7 +149,10 @@ export function OrderForm({
         {canAssign ? (
           <div className="flex flex-col gap-2">
             <Label htmlFor="assignedTo">Assigned to</Label>
-            <Select name="assignedTo">
+            <Select
+              name="assignedTo"
+              items={staff.map((member) => ({ value: member.id, label: member.name }))}
+            >
               <SelectTrigger id="assignedTo" className="w-full">
                 <SelectValue placeholder="Unassigned" />
               </SelectTrigger>

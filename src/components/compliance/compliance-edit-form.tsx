@@ -55,7 +55,11 @@ export function ComplianceEditForm({
     <form action={formAction} className="flex max-w-2xl flex-col gap-4">
       <div className="flex flex-col gap-2">
         <Label htmlFor="serviceId">Related service</Label>
-        <Select name="serviceId" defaultValue={defaultValues.serviceId ?? undefined}>
+        <Select
+          name="serviceId"
+          defaultValue={defaultValues.serviceId ?? undefined}
+          items={services.map((service) => ({ value: service.id, label: service.name }))}
+        >
           <SelectTrigger id="serviceId" className="w-full">
             <SelectValue placeholder="None" />
           </SelectTrigger>
@@ -100,7 +104,14 @@ export function ComplianceEditForm({
         </div>
         <div className="flex flex-col gap-2">
           <Label htmlFor="recurrence">Recurrence</Label>
-          <Select name="recurrence" defaultValue={defaultValues.recurrence}>
+          <Select
+            name="recurrence"
+            defaultValue={defaultValues.recurrence}
+            items={complianceRecurrenceEnum.enumValues.map((value) => ({
+              value,
+              label: COMPLIANCE_RECURRENCE_LABEL[value],
+            }))}
+          >
             <SelectTrigger id="recurrence" className="w-full">
               <SelectValue />
             </SelectTrigger>

@@ -1,11 +1,12 @@
 import { createExpenseAction } from "@/actions/expenses";
+import { toScope } from "@/actions/shared";
 import { ExpenseForm } from "@/components/expenses/expense-form";
 import { requireRole } from "@/lib/session";
 import { listOrderOptions } from "@/services/orders";
 
 export default async function NewExpensePage() {
   const user = await requireRole("super_admin", "manager", "accountant");
-  const orders = await listOrderOptions({ userId: user.id, role: user.role });
+  const orders = await listOrderOptions(await toScope(user));
 
   return (
     <div className="flex flex-col gap-4">

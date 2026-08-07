@@ -31,7 +31,15 @@ export function OrderStatusSelect({ orderId, status }: { orderId: string; status
   }
 
   return (
-    <Select value={status} onValueChange={handleChange} disabled={isPending}>
+    <Select
+      value={status}
+      onValueChange={handleChange}
+      disabled={isPending}
+      items={orderStatusEnum.enumValues.map((value) => ({
+        value,
+        label: ORDER_STATUS_BADGE[value].label,
+      }))}
+    >
       <SelectTrigger className="w-48">
         <SelectValue />
       </SelectTrigger>

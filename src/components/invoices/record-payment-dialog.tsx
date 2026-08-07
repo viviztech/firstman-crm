@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { MoneyInput } from "@/components/ui/money-input";
 import {
   Select,
   SelectContent,
@@ -56,22 +57,28 @@ export function RecordPaymentDialog({
         <form action={formAction} className="flex flex-col gap-4">
           <div className="flex flex-col gap-2">
             <Label htmlFor="amountPaise">
-              Amount (paise) <span className="text-destructive">*</span>
+              Amount (₹) <span className="text-destructive">*</span>
             </Label>
-            <Input
+            <MoneyInput
               id="amountPaise"
               name="amountPaise"
-              type="number"
-              min={1}
+              min={0.01}
               required
-              defaultValue={balancePaise}
+              defaultValuePaise={balancePaise}
             />
           </div>
           <div className="flex flex-col gap-2">
             <Label htmlFor="method">
               Method <span className="text-destructive">*</span>
             </Label>
-            <Select name="method" defaultValue="upi">
+            <Select
+              name="method"
+              defaultValue="upi"
+              items={paymentMethodEnum.enumValues.map((value) => ({
+                value,
+                label: PAYMENT_METHOD_LABEL[value],
+              }))}
+            >
               <SelectTrigger id="method" className="w-full">
                 <SelectValue />
               </SelectTrigger>

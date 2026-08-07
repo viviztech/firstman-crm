@@ -7,14 +7,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { LEAD_SOURCE_LABEL } from "@/lib/badges";
+import { ENQUIRY_SOURCE_LABEL } from "@/lib/badges";
 import { requireRole } from "@/lib/session";
-import { getConversionRateByExecutive, getLeadSourcePerformance } from "@/services/reports";
+import { getConversionRateByExecutive, getEnquirySourcePerformance } from "@/services/reports";
 
 export default async function ConversionRateReportPage() {
   await requireRole("super_admin", "manager", "accountant");
   const [bySource, byExecutive] = await Promise.all([
-    getLeadSourcePerformance(),
+    getEnquirySourcePerformance(),
     getConversionRateByExecutive(),
   ]);
 
@@ -42,7 +42,7 @@ export default async function ConversionRateReportPage() {
               <TableBody>
                 {bySource.map((row) => (
                   <TableRow key={row.source}>
-                    <TableCell>{LEAD_SOURCE_LABEL[row.source]}</TableCell>
+                    <TableCell>{ENQUIRY_SOURCE_LABEL[row.source]}</TableCell>
                     <TableCell className="text-right">{row.total}</TableCell>
                     <TableCell className="text-right">{row.won}</TableCell>
                     <TableCell className="text-right">

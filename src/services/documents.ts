@@ -30,7 +30,23 @@ type OwnerType = "client" | "order";
 
 type UploadedFile = { buffer: Buffer; detectedKind: DetectedFileKind };
 
-/** Executives may only touch documents belonging to a client/order assigned to them (spec 3). */
+/**
+ * Executives may only touch documents belonging to a client/order in scope — internal-type by
+ * assignedTo, franchise-type by pincode territory (spec 3, ADR 0001).
+ */
+function isOwnerInTerritory(
+  owner: { assignedTo: string | null; pincode: string | null } | undefined,
+  scope: ActorScope,
+): boolean {
+  if (!owner) return false;
+  if (scope.employeeType === "franchise") {
+    return (
+      scope.pincodes.length > 0 && owner.pincode !== null && scope.pincodes.includes(owner.pincode)
+    );
+  }
+  return owner.assignedTo === scope.userId;
+}
+
 async function canAccessOwner(
   ownerType: OwnerType,
   ownerId: string,
@@ -41,14 +57,18 @@ async function canAccessOwner(
   if (ownerType === "client") {
     const client = await db.query.clients.findFirst({
       where: and(eq(clients.id, ownerId), isNull(clients.deletedAt)),
+      columns: { assignedTo: true, pincode: true },
     });
-    return client?.assignedTo === scope.userId;
+    return isOwnerInTerritory(client, scope);
   }
 
   const order = await db.query.orders.findFirst({
     where: and(eq(orders.id, ownerId), isNull(orders.deletedAt)),
+    columns: { assignedTo: true },
+    with: { client: { columns: { pincode: true } } },
   });
-  return order?.assignedTo === scope.userId;
+  if (!order) return false;
+  return isOwnerInTerritory({ assignedTo: order.assignedTo, pincode: order.client.pincode }, scope);
 }
 
 function storageKeyFor(ownerType: OwnerType, ownerId: string, kind: DetectedFileKind): string {

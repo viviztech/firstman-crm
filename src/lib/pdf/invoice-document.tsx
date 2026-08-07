@@ -1,12 +1,13 @@
 import { Document, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
 import { formatInTimeZone } from "date-fns-tz";
-import type { InvoiceLineItem } from "@/db/schema/invoices";
+import type { InvoiceLineItem, invoiceKindEnum } from "@/db/schema/invoices";
 import { env } from "@/lib/env";
 import { formatMoney } from "@/lib/money";
 import type { CompanyProfile } from "@/services/company-profile";
 
 export type InvoicePdfData = {
   invoiceNo: string;
+  kind: (typeof invoiceKindEnum.enumValues)[number];
   dueDate: Date;
   lineItems: InvoiceLineItem[];
   subtotalPaise: number;
@@ -96,12 +97,20 @@ export function InvoiceDocument({
             {company.gstin ? <Text style={styles.small}>GSTIN: {company.gstin}</Text> : null}
           </View>
           <View>
-            <Text style={styles.docTitle}>INVOICE</Text>
+            <Text style={styles.docTitle}>
+              {invoice.kind === "proforma" ? "PROFORMA INVOICE" : "TAX INVOICE"}
+            </Text>
             <Text style={styles.small}>{invoice.invoiceNo}</Text>
             <Text style={styles.small}>Due {formatDate(invoice.dueDate)}</Text>
             {invoice.order ? <Text style={styles.small}>Order {invoice.order.orderNo}</Text> : null}
           </View>
         </View>
+        {invoice.kind === "proforma" ? (
+          <Text style={[styles.small, { marginBottom: 8 }]}>
+            This is an advance-payment request, not a tax invoice. A GST tax invoice will follow
+            once the order is complete and this amount is paid in full.
+          </Text>
+        ) : null}
 
         <View style={styles.section}>
           <Text style={styles.label}>BILLED TO</Text>

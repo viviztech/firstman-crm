@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { updateExpenseAction } from "@/actions/expenses";
+import { toScope } from "@/actions/shared";
 import { ExpenseEditForm } from "@/components/expenses/expense-edit-form";
 import { requireRole } from "@/lib/session";
 import { getExpense } from "@/services/expenses";
@@ -8,7 +9,7 @@ import { listOrderOptions } from "@/services/orders";
 export default async function EditExpensePage({ params }: { params: Promise<{ id: string }> }) {
   const user = await requireRole("super_admin", "manager", "accountant");
   const { id } = await params;
-  const scope = { userId: user.id, role: user.role };
+  const scope = await toScope(user);
 
   const [expense, orders] = await Promise.all([getExpense(id, scope), listOrderOptions(scope)]);
   if (!expense) {

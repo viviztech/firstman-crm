@@ -2,7 +2,9 @@ import { formatInTimeZone } from "date-fns-tz";
 import { and, desc, eq } from "drizzle-orm";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { toScope } from "@/actions/shared";
 import { DocumentChecklist } from "@/components/documents/document-checklist";
+import { InvoiceKindBadge } from "@/components/invoices/invoice-kind-badge";
 import { InvoiceStatusBadge } from "@/components/invoices/invoice-status-badge";
 import { DeleteOrderButton } from "@/components/orders/delete-order-button";
 import { OrderStatusSelect } from "@/components/orders/order-status-select";
@@ -13,21 +15,27 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { db } from "@/db";
 import { activityLogs } from "@/db/schema/activity-logs";
+import { SERVICE_RELATION_TYPE_LABEL } from "@/lib/badges";
 import { env } from "@/lib/env";
 import { formatMoney } from "@/lib/money";
 import { requireUser } from "@/lib/session";
 import { getDocumentDownloadUrl } from "@/lib/signed-url";
+import { listServiceRelations } from "@/services/catalog";
 import { listInvoicesForOrder } from "@/services/invoices";
 import { getOrder } from "@/services/orders";
 
 export default async function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const user = await requireUser();
   const { id } = await params;
+  const scope = await toScope(user);
 
-  const order = await getOrder(id, { userId: user.id, role: user.role });
+  const order = await getOrder(id, scope);
   if (!order) {
     notFound();
   }
+
+  const canManage = user.role !== "accountant";
+  const relatedServices = canManage ? await listServiceRelations(order.service.id) : [];
 
   const activity = await db.query.activityLogs.findMany({
     where: and(eq(activityLogs.entityType, "order"), eq(activityLogs.entityId, id)),
@@ -35,12 +43,10 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
     limit: 20,
   });
 
-  const canManage = user.role !== "accountant";
   const canDelete = user.role === "super_admin" || user.role === "manager";
   const canViewFinancials = user.role !== "executive";
   const isOverdue = !order.completedAt && new Date(order.dueAt) < new Date();
 
-  const scope = { userId: user.id, role: user.role };
   const invoices = canViewFinancials ? await listInvoicesForOrder(id, scope) : [];
 
   return (
@@ -59,18 +65,27 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
           </p>
           <OrderStatusTimeline status={order.status} />
         </div>
-        {canManage ? (
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              nativeButton={false}
-              render={<Link href={`/orders/${id}/edit`} />}
-            >
-              Edit
-            </Button>
-            {canDelete ? <DeleteOrderButton orderId={id} orderNo={order.orderNo} /> : null}
-          </div>
-        ) : null}
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            nativeButton={false}
+            render={<a href={`/api/orders/${id}/job-card`} target="_blank" rel="noreferrer" />}
+          >
+            Job card (PDF)
+          </Button>
+          {canManage ? (
+            <>
+              <Button
+                variant="outline"
+                nativeButton={false}
+                render={<Link href={`/orders/${id}/edit`} />}
+              >
+                Edit
+              </Button>
+              {canDelete ? <DeleteOrderButton orderId={id} orderNo={order.orderNo} /> : null}
+            </>
+          ) : null}
+        </div>
       </div>
 
       <Tabs defaultValue="overview">
@@ -128,6 +143,30 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                 <CardContent className="text-sm whitespace-pre-wrap">{order.notes}</CardContent>
               </Card>
             ) : null}
+            {relatedServices.length > 0 ? (
+              <Card className="sm:col-span-2">
+                <CardHeader>
+                  <CardTitle className="text-sm text-muted-foreground">
+                    You might also suggest
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="flex flex-col gap-2 text-sm">
+                  {relatedServices.map((relation) => (
+                    <div key={relation.id} className="flex items-center justify-between">
+                      <span>
+                        {relation.relatedService.name}{" "}
+                        <span className="text-xs text-muted-foreground">
+                          ({SERVICE_RELATION_TYPE_LABEL[relation.relationType]})
+                        </span>
+                      </span>
+                      <span className="text-muted-foreground">
+                        {formatMoney(relation.relatedService.basePricePaise)}
+                      </span>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            ) : null}
           </div>
         </TabsContent>
 
@@ -172,7 +211,10 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                       className="flex items-center justify-between rounded-lg border p-3 text-sm hover:bg-muted/50"
                     >
                       <div className="flex flex-col">
-                        <span className="font-medium">{invoice.invoiceNo}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">{invoice.invoiceNo}</span>
+                          <InvoiceKindBadge kind={invoice.kind} />
+                        </div>
                         <span className="text-muted-foreground">
                           Due {formatInTimeZone(invoice.dueDate, env.TZ_DISPLAY, "d MMM yyyy")}
                         </span>

@@ -5,12 +5,13 @@ import { db } from "@/db";
 import { user } from "@/db/schema/auth-schema";
 import { clients } from "@/db/schema/clients";
 import { invoices } from "@/db/schema/invoices";
+import { makeScope } from "@/lib/test-scope";
 import { renderInvoicePdf } from "@/services/invoice-pdf";
 import { createInvoice } from "@/services/invoices";
 
 describe("renderInvoicePdf (integration)", () => {
   const managerId = randomUUID();
-  const managerScope = { userId: managerId, role: "manager" as const };
+  const managerScope = makeScope(managerId, "manager");
 
   beforeAll(async () => {
     await db.insert(user).values({

@@ -6,6 +6,7 @@ import type { ActionResult } from "@/actions/shared";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { MoneyInput } from "@/components/ui/money-input";
 import {
   Select,
   SelectContent,
@@ -60,14 +61,17 @@ export function ExpenseForm({
 
       <div className="flex flex-col gap-2">
         <Label htmlFor="amountPaise">
-          Amount (paise) <span className="text-destructive">*</span>
+          Amount (₹) <span className="text-destructive">*</span>
         </Label>
-        <Input id="amountPaise" name="amountPaise" type="number" min={1} required />
+        <MoneyInput id="amountPaise" name="amountPaise" required />
       </div>
 
       <div className="flex flex-col gap-2">
         <Label htmlFor="orderId">Related order</Label>
-        <Select name="orderId">
+        <Select
+          name="orderId"
+          items={orders.map((order) => ({ value: order.id, label: order.orderNo }))}
+        >
           <SelectTrigger id="orderId" className="w-full">
             <SelectValue placeholder="None" />
           </SelectTrigger>

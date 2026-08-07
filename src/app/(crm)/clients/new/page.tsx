@@ -1,11 +1,12 @@
 import { createClientAction } from "@/actions/clients";
 import { ClientForm } from "@/components/clients/client-form";
 import { requireRole } from "@/lib/session";
+import { listStates } from "@/services/geography";
 import { listAssignableStaff } from "@/services/users";
 
 export default async function NewClientPage() {
   const user = await requireRole("super_admin", "manager", "executive");
-  const staff = await listAssignableStaff();
+  const [staff, states] = await Promise.all([listAssignableStaff(), listStates()]);
 
   return (
     <div className="flex flex-col gap-4">
@@ -14,6 +15,7 @@ export default async function NewClientPage() {
         action={createClientAction}
         role={user.role}
         staff={staff}
+        states={states}
         submitLabel="Create client"
         redirectTo={{ mode: "create" }}
       />

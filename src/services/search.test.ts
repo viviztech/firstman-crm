@@ -5,11 +5,12 @@ import { db } from "@/db";
 import { user } from "@/db/schema/auth-schema";
 import { services } from "@/db/schema/catalog";
 import { clients } from "@/db/schema/clients";
+import { enquiries } from "@/db/schema/enquiries";
 import { invoices, payments } from "@/db/schema/invoices";
-import { leads } from "@/db/schema/leads";
 import { orders, orderTasks } from "@/db/schema/orders";
+import { makeScope } from "@/lib/test-scope";
+import { createEnquiry } from "@/services/enquiries";
 import { createInvoice } from "@/services/invoices";
-import { createLead } from "@/services/leads";
 import { createOrder } from "@/services/orders";
 import { globalSearch } from "@/services/search";
 
@@ -21,10 +22,10 @@ describe("search service (integration)", () => {
   const execBId = randomUUID();
   const accountantId = randomUUID();
 
-  const managerScope = { userId: managerId, role: "manager" as const };
-  const execAScope = { userId: execAId, role: "executive" as const };
-  const execBScope = { userId: execBId, role: "executive" as const };
-  const accountantScope = { userId: accountantId, role: "accountant" as const };
+  const managerScope = makeScope(managerId, "manager");
+  const execAScope = makeScope(execAId, "executive");
+  const execBScope = makeScope(execBId, "executive");
+  const accountantScope = makeScope(accountantId, "accountant");
 
   let clientId: string;
 
@@ -60,9 +61,9 @@ describe("search service (integration)", () => {
       },
     ]);
 
-    await createLead(
+    await createEnquiry(
       {
-        name: `${MARKER} Lead`,
+        name: `${MARKER} Enquiry`,
         phone: "+919876615001",
         source: "website",
         assignedTo: execAId,
@@ -125,18 +126,18 @@ describe("search service (integration)", () => {
     await db.delete(invoices).where(eq(invoices.clientId, clientId));
 
     await db.delete(clients).where(eq(clients.id, clientId));
-    await db.delete(leads).where(ilike(leads.phone, "+919876615%"));
+    await db.delete(enquiries).where(ilike(enquiries.phone, "+919876615%"));
     await db.delete(user).where(eq(user.id, managerId));
     await db.delete(user).where(eq(user.id, execAId));
     await db.delete(user).where(eq(user.id, execBId));
     await db.delete(user).where(eq(user.id, accountantId));
   });
 
-  it("returns matching leads, clients, orders, and invoices for a manager", async () => {
+  it("returns matching enquiries, clients, orders, and invoices for a manager", async () => {
     const results = await globalSearch(managerScope, MARKER);
-    expect(results.leads).toHaveLength(1);
-    expect(results.leads[0]?.label).toBe(`${MARKER} Lead`);
-    expect(results.leads[0]?.href).toBe(`/leads/${results.leads[0]?.id}`);
+    expect(results.enquiries).toHaveLength(1);
+    expect(results.enquiries[0]?.label).toBe(`${MARKER} Enquiry`);
+    expect(results.enquiries[0]?.href).toBe(`/enquiries/${results.enquiries[0]?.id}`);
 
     expect(results.clients).toHaveLength(1);
     expect(results.clients[0]?.label).toBe(`${MARKER} Client`);
@@ -148,14 +149,14 @@ describe("search service (integration)", () => {
     expect(results.invoices[0]?.sublabel).toBe(`${MARKER} Client`);
   });
 
-  it("scopes leads/clients/orders to the executive's own assigned records", async () => {
+  it("scopes enquiries/clients/orders to the executive's own assigned records", async () => {
     const ownResults = await globalSearch(execAScope, MARKER);
-    expect(ownResults.leads).toHaveLength(1);
+    expect(ownResults.enquiries).toHaveLength(1);
     expect(ownResults.clients).toHaveLength(1);
     expect(ownResults.orders).toHaveLength(1);
 
     const otherResults = await globalSearch(execBScope, MARKER);
-    expect(otherResults.leads).toHaveLength(0);
+    expect(otherResults.enquiries).toHaveLength(0);
     expect(otherResults.clients).toHaveLength(0);
     expect(otherResults.orders).toHaveLength(0);
   });
@@ -165,9 +166,9 @@ describe("search service (integration)", () => {
     expect(results.invoices).toHaveLength(0);
   });
 
-  it("blocks leads entirely for accountants but allows clients, orders, invoices", async () => {
+  it("blocks enquiries entirely for accountants but allows clients, orders, invoices", async () => {
     const results = await globalSearch(accountantScope, MARKER);
-    expect(results.leads).toHaveLength(0);
+    expect(results.enquiries).toHaveLength(0);
     expect(results.clients).toHaveLength(1);
     expect(results.orders).toHaveLength(1);
     expect(results.invoices).toHaveLength(1);
@@ -175,6 +176,6 @@ describe("search service (integration)", () => {
 
   it("returns empty results for queries shorter than 2 characters", async () => {
     const results = await globalSearch(managerScope, "a");
-    expect(results).toEqual({ leads: [], clients: [], orders: [], invoices: [] });
+    expect(results).toEqual({ enquiries: [], clients: [], orders: [], invoices: [] });
   });
 });

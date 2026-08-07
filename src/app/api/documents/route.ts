@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { toScope } from "@/actions/shared";
 import { getApiUser } from "@/lib/api-auth";
 import type { Role } from "@/lib/auth";
 import { detectFileKind, MAX_UPLOAD_BYTES } from "@/lib/file-validation";
@@ -56,7 +57,7 @@ export async function POST(request: Request): Promise<NextResponse> {
   const created = await createClientDocument(
     parsed.data,
     { buffer, detectedKind },
-    { userId: user.id, role: user.role },
+    await toScope(user),
   );
   if (!created) {
     return NextResponse.json(

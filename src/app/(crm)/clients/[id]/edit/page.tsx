@@ -1,17 +1,20 @@
 import { notFound } from "next/navigation";
 import { updateClientAction } from "@/actions/clients";
+import { toScope } from "@/actions/shared";
 import { ClientForm } from "@/components/clients/client-form";
 import { requireRole } from "@/lib/session";
 import { getClient } from "@/services/clients";
+import { listStates } from "@/services/geography";
 import { listAssignableStaff } from "@/services/users";
 
 export default async function EditClientPage({ params }: { params: Promise<{ id: string }> }) {
   const user = await requireRole("super_admin", "manager", "executive");
   const { id } = await params;
 
-  const [client, staff] = await Promise.all([
-    getClient(id, { userId: user.id, role: user.role }),
+  const [client, staff, states] = await Promise.all([
+    getClient(id, await toScope(user)),
     listAssignableStaff(),
+    listStates(),
   ]);
 
   if (!client) {
@@ -25,6 +28,7 @@ export default async function EditClientPage({ params }: { params: Promise<{ id:
         action={updateClientAction.bind(null, id)}
         role={user.role}
         staff={staff}
+        states={states}
         submitLabel="Save changes"
         redirectTo={{ mode: "edit", clientId: id }}
         defaultValues={{

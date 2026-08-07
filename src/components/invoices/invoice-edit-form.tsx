@@ -52,7 +52,11 @@ export function InvoiceEditForm({
     <form action={formAction} className="flex max-w-2xl flex-col gap-4">
       <div className="flex flex-col gap-2 sm:max-w-xs">
         <Label htmlFor="orderId">Linked order</Label>
-        <Select name="orderId" defaultValue={defaultValues.orderId ?? undefined}>
+        <Select
+          name="orderId"
+          defaultValue={defaultValues.orderId ?? undefined}
+          items={orders.map((order) => ({ value: order.id, label: order.orderNo }))}
+        >
           <SelectTrigger id="orderId" className="w-full">
             <SelectValue placeholder="None" />
           </SelectTrigger>

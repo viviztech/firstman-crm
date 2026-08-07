@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { updateOrderAction } from "@/actions/orders";
+import { toScope } from "@/actions/shared";
 import { OrderEditForm } from "@/components/orders/order-edit-form";
 import { requireRole } from "@/lib/session";
 import { getOrder } from "@/services/orders";
@@ -10,7 +11,7 @@ export default async function EditOrderPage({ params }: { params: Promise<{ id: 
   const { id } = await params;
 
   const [order, staff] = await Promise.all([
-    getOrder(id, { userId: user.id, role: user.role }),
+    getOrder(id, await toScope(user)),
     listAssignableStaff(),
   ]);
 

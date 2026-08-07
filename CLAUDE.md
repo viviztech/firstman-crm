@@ -10,7 +10,7 @@ You are building a complete CRM for **FirstMan Corporate Services**, an Indian c
 - **Database:** PostgreSQL 16
 - **ORM:** Drizzle ORM + drizzle-kit migrations (no Prisma)
 - **Auth & Roles:** better-auth with email/password + admin plugin; roles enforced via middleware and per-query scopes
-- **UI:** Tailwind CSS 4 + shadcn/ui; TanStack Table for data tables; Recharts for dashboard charts; @dnd-kit for the leads kanban
+- **UI:** Tailwind CSS 4 + shadcn/ui; TanStack Table for data tables; Recharts for dashboard charts; @dnd-kit for the enquiries kanban
 - **Data layer:** Server Components + Server Actions for mutations; Zod validation on every action input; TanStack Query only where client-side interactivity demands it
 - **Background jobs & scheduling:** **pg-boss** (Postgres-backed queue — no Redis needed) for queued notifications, plus pg-boss cron for nightly/scheduled jobs
 - **Email:** Nodemailer (SMTP) with React Email templates
@@ -29,8 +29,8 @@ You are building a complete CRM for **FirstMan Corporate Services**, an Indian c
 - Enums as Postgres `pgEnum` + shared TS union types with badge color maps for the UI.
 - **Audit log:** `activity_logs` table (actor, entity type, entity id, action, diff JSON) written by a helper called in every mutating server action on core entities.
 - Project structure: `src/db/schema/*` (Drizzle schemas per module), `src/services/*` (business logic — server actions stay thin), `src/actions/*`, `src/app/(crm)/*` (authenticated app), `src/jobs/*` (pg-boss workers), `src/lib/*`.
-- Seed script: demo admin (`admin@firstman.in`, password from env), 3 staff users per role, full service catalog, 20 realistic fake leads/clients with orders and invoices.
-- Vitest coverage minimum 80% on `src/services`. Every state transition (lead conversion, order status change, invoice payment, compliance rollover) has a test.
+- Seed script: demo admin (`admin@firstman.in`, password from env), 3 staff users per role, full service catalog, 20 realistic fake enquiries/clients with orders and invoices.
+- Vitest coverage minimum 80% on `src/services`. Every state transition (enquiry sales conversion, order status change, invoice payment, compliance rollover) has a test.
 
 ---
 
@@ -38,7 +38,7 @@ You are building a complete CRM for **FirstMan Corporate Services**, an Indian c
 
 ### Version control & workflow
 - Git from the first commit. **Conventional Commits** (`feat:`, `fix:`, `chore:`, `refactor:`, `test:`, `docs:`) — enforced by commitlint + husky hook.
-- Trunk-based with short-lived feature branches per phase (`phase-2-leads`); merge only when the phase checklist and CI pass. Tag each completed phase (`v0.2.0-phase2`).
+- Trunk-based with short-lived feature branches per phase (`phase-2-enquiries`); merge only when the phase checklist and CI pass. Tag each completed phase (`v0.2.0-phase2`).
 - Never commit generated files, `.env`, or `storage/`. Maintain a correct `.gitignore` from Phase 0.
 
 ### Code quality & type safety
@@ -51,7 +51,7 @@ You are building a complete CRM for **FirstMan Corporate Services**, an Indian c
 ### Security (OWASP-aligned)
 - Every server action and route handler: authenticate → authorize → validate (Zod) → execute. No exceptions, including "internal" endpoints.
 - Parameterized queries only (Drizzle guarantees this — never use raw SQL string interpolation).
-- Rate limiting on auth routes and the public leads API; generic error messages on auth failures (no user enumeration).
+- Rate limiting on auth routes and the public enquiries API; generic error messages on auth failures (no user enumeration).
 - Security headers via middleware: CSP, X-Frame-Options DENY, X-Content-Type-Options, Referrer-Policy, HSTS in production.
 - File uploads: magic-byte validation, randomized stored filenames, files served only via signed URLs, never from a public path.
 - Secrets only via env, validated at boot; audit `npm audit` in CI (fail on high/critical).
@@ -60,7 +60,7 @@ You are building a complete CRM for **FirstMan Corporate Services**, an Indian c
 ### Testing discipline (test pyramid)
 - Unit tests (Vitest) on every service function — fast, isolated, no DB where avoidable.
 - Integration tests against a real Postgres (testcontainers or docker-compose test DB) for transactions, scopes, and jobs.
-- Playwright E2E smoke suite for the critical path only (login → lead → convert → order → invoice → payment).
+- Playwright E2E smoke suite for the critical path only (login → enquiry → close sale → order → invoice → payment).
 - Tests are written **with** each feature in the same phase — never deferred to a "testing phase". A phase without its tests is incomplete.
 - Time-dependent logic (compliance rollovers, digests) tested with frozen clocks (`vi.setSystemTime`).
 
@@ -96,7 +96,7 @@ You are building a complete CRM for **FirstMan Corporate Services**, an Indian c
 |---|---|
 | `super_admin` | Everything, settings, user management |
 | `manager` | All records, reports, assign work, approve invoices |
-| `executive` | Own assigned leads/orders/tasks only; cannot delete; cannot see revenue reports |
+| `executive` | Own assigned enquiries/orders/tasks only; cannot delete; cannot see revenue reports |
 | `accountant` | Invoices, payments, expenses, reports; read-only on orders |
 
 Enforce at three layers: middleware route guards, server-action authorization checks, and Drizzle query scopes (executives get `assignedTo = session.userId` applied at the service layer — never trust the UI filter alone).
@@ -105,13 +105,16 @@ Enforce at three layers: middleware route guards, server-action authorization ch
 
 ## 4. Core Modules & Data Model
 
-### 4.1 Leads
-`leads`: name, phone (unique, indexed, E.164), email nullable, city, source enum (whatsapp, website, meta_ads, google, referral, walk_in, other), serviceInterestedId FK, status enum (new, contacted, qualified, proposal_sent, negotiation, won, lost), lostReason nullable, assignedTo FK users, nextFollowUpAt timestamp, notes.
+### 4.1 Enquiries
+`enquiries`: name, phone (unique, indexed, E.164), email nullable, address nullable, city, source enum (whatsapp, website, meta_ads, google, referral, walk_in, other), serviceInterestedId FK, status enum (new, contacted, qualified, proposal_sent, negotiation, won, lost), lostReason nullable, assignedTo FK users, nextFollowUpAt timestamp, nextFollowUpAssignedTo FK users nullable, notes, convertedClientId/convertedOrderId nullable.
 - Kanban board (dnd-kit, optimistic updates, status change persisted via server action) + standard filterable table view.
-- `lead_followups`: leadId, userId, channel enum (call, whatsapp, email, meeting), summary, followedUpAt, nextFollowUpAt.
+- Detail screen shows the capture fields (Source, Service, Name, Phone, Email, Comments) with three primary actions below:
+  - **Sales:** reviews/edits Name, Phone, Email, Address, Pincode, shows Source, picks a Service with its price (editable), comments, then Close/Submit — creates/links a `clients` record **and** an `orders` record in one DB transaction; enquiry status → won.
+  - **Followup:** sets the next follow-up date/time, then Self or Others (if Others, one-time — hands off only the pending follow-up via `nextFollowUpAssignedTo` — or permanent, which changes `assignedTo` itself), then comments.
+  - **Lost:** requires a reason; the enquiry is then hidden from every list/kanban/search/dashboard for every role — not deleted, just excluded from every scoped query — with a super_admin-only "permanently delete" screen to purge it later.
+- `enquiry_followups`: enquiryId, userId, channel enum (call, whatsapp, email, meeting), summary, followedUpAt, nextFollowUpAt, handoffType enum (self, one_time, permanent), handoffTo FK users nullable.
 - Overdue follow-up indicator (red badge when nextFollowUpAt < now).
-- **Convert to Client action:** creates/links a `clients` record + optionally an `orders` record in one DB transaction; lead status → won.
-- Public API endpoint `POST /api/v1/leads` (bearer token from env, rate-limited) so the marketing website pushes leads directly; enqueues WhatsApp alert to assigned staff.
+- Public API endpoint `POST /api/v1/enquiries` (bearer token from env, rate-limited) so the marketing website pushes enquiries directly; enqueues WhatsApp alert to assigned staff.
 - Optional round-robin auto-assignment among executives (toggle in settings).
 
 ### 4.2 Clients
@@ -153,18 +156,18 @@ Seed the real catalog: Pvt Ltd / LLP / OPC / Partnership / Proprietorship regist
 
 ### 4.8 Communication Layer
 `src/services/whatsapp.ts`: wraps Meta Cloud API — sendTemplate, sendText (24h session), sendDocument. Config via env (WHATSAPP_TOKEN, WHATSAPP_PHONE_NUMBER_ID, template name mappings in settings). ALL sends go through pg-boss jobs with retry/backoff; log to `message_logs` (channel, to, template, payload, status, error). When WHATSAPP_TOKEN is empty, use a console/log driver so dev works offline. Never call the API inside a request/action — always enqueue.
-Notification events (all queued): new lead assigned, morning follow-up digest per executive, order status changed (to client), weekly docs-pending reminder (to client), compliance reminders (T-15/7/1), invoice sent / payment received (to client), overdue invoices digest (internal). Honor opt-out: any inbound "STOP" (webhook later; manual flag now) sets client.whatsappOptedOut.
+Notification events (all queued): new enquiry assigned, morning follow-up digest per executive, order status changed (to client), weekly docs-pending reminder (to client), compliance reminders (T-15/7/1), invoice sent / payment received (to client), overdue invoices digest (internal). Honor opt-out: any inbound "STOP" (webhook later; manual flag now) sets client.whatsappOptedOut.
 
 ### 4.9 Dashboard & Reports
 Role-aware dashboard:
-- Manager/Admin: leads this month by status (funnel), revenue this month vs last (chart), orders by status, overdue tasks, upcoming compliance (14 days), top services by revenue.
+- Manager/Admin: enquiries this month by status (funnel), revenue this month vs last (chart), orders by status, overdue tasks, upcoming compliance (14 days), top services by revenue.
 - Executive: my follow-ups today, my open tasks, my orders in progress.
 - Accountant: outstanding invoices total, collections this month, expenses this month.
-Reports page (each with exceljs export): lead source performance, conversion rate by source and by executive, revenue by service, aging receivables, compliance filing status.
-Global search (cmdk palette) across leads, clients, orders, invoices.
+Reports page (each with exceljs export): enquiry source performance, conversion rate by source and by executive, revenue by service, aging receivables, compliance filing status.
+Global search (cmdk palette) across enquiries, clients, orders, invoices.
 
 ### 4.10 Settings
-`settings` key/value jsonb table + settings pages: company profile (name, address, GSTIN, logo upload), invoice prefix & default GST rate, WhatsApp template name mappings, reminder day offsets, lead auto-assignment toggle, user management (invite, role change, deactivate).
+`settings` key/value jsonb table + settings pages: company profile (name, address, GSTIN, logo upload), invoice prefix & default GST rate, WhatsApp template name mappings, reminder day offsets, enquiry auto-assignment toggle, user management (invite, role change, deactivate).
 
 ---
 
@@ -174,7 +177,7 @@ Global search (cmdk palette) across leads, clients, orders, invoices.
 
 **Phase 1 — Catalog + Clients:** Service categories/services schemas + seeded real catalog; clients CRUD with tabbed profile shell. → Check: catalog visible, client create/edit works, executive scoping enforced in a test.
 
-**Phase 2 — Leads:** Leads CRUD, kanban board, follow-ups, assignment + optional round-robin, convert-to-client transactional action, public API endpoint with token auth + rate limiting. → Check: API creates lead and enqueues (logged) notification job; conversion test passes.
+**Phase 2 — Enquiries:** Enquiry CRUD, kanban board, follow-ups (with self/others one-time/permanent handoff), assignment + optional round-robin, Sales action (client + order in one transaction) and Lost action (hides the enquiry everywhere, purgeable later), public API endpoint with token auth + rate limiting. → Check: API creates an enquiry and enqueues (logged) notification job; Sales conversion test passes.
 
 **Phase 3 — Orders & Tasks:** Orders with auto task/doc checklist generation, status timeline, task management, docs-pending badge. → Check: creating an order for "Pvt Ltd Registration" spawns its checklist in one transaction.
 
@@ -186,7 +189,7 @@ Global search (cmdk palette) across leads, clients, orders, invoices.
 
 **Phase 7 — Communication:** WhatsApp service, message_logs, wire every notification event, morning digests via cron, opt-out flag respected. → Check: all events enqueue jobs; message_logs rows created with log driver.
 
-**Phase 8 — Dashboards, Reports & Polish:** All widgets, reports with exports, cmdk global search, full demo seed, README with setup + Coolify deployment instructions, Playwright smoke suite (login → create lead → convert → order → invoice → payment), final test pass. → Check: fresh `db:push && db:seed` produces a fully navigable demo CRM.
+**Phase 8 — Dashboards, Reports & Polish:** All widgets, reports with exports, cmdk global search, full demo seed, README with setup + Coolify deployment instructions, Playwright smoke suite (login → create enquiry → close sale → order → invoice → payment), final test pass. → Check: fresh `db:push && db:seed` produces a fully navigable demo CRM.
 
 ---
 
@@ -201,7 +204,7 @@ Global search (cmdk palette) across leads, clients, orders, invoices.
 
 ## 7. Environment Variables (.env.example)
 
-DATABASE_URL, BETTER_AUTH_SECRET, BETTER_AUTH_URL, ADMIN_DEFAULT_PASSWORD, SMTP_HOST/PORT/USER/PASS, MAIL_FROM, WHATSAPP_TOKEN, WHATSAPP_PHONE_NUMBER_ID, WHATSAPP_BUSINESS_ID, LEADS_API_TOKEN, STORAGE_DRIVER=local, S3_* (optional), TZ_DISPLAY=Asia/Kolkata.
+DATABASE_URL, BETTER_AUTH_SECRET, BETTER_AUTH_URL, ADMIN_DEFAULT_PASSWORD, SMTP_HOST/PORT/USER/PASS, MAIL_FROM, WHATSAPP_TOKEN, WHATSAPP_PHONE_NUMBER_ID, WHATSAPP_BUSINESS_ID, ENQUIRIES_API_TOKEN, STORAGE_DRIVER=local, S3_* (optional), TZ_DISPLAY=Asia/Kolkata.
 
 ---
 

@@ -7,6 +7,7 @@ import { services } from "@/db/schema/catalog";
 import { clients } from "@/db/schema/clients";
 import { documents } from "@/db/schema/documents";
 import { orders, orderTasks } from "@/db/schema/orders";
+import { makeScope } from "@/lib/test-scope";
 import {
   createOrder,
   deleteOrder,
@@ -38,9 +39,9 @@ describe("orders service (integration)", () => {
   const execAId = randomUUID();
   const execBId = randomUUID();
 
-  const managerScope = { userId: managerId, role: "manager" as const };
-  const execAScope = { userId: execAId, role: "executive" as const };
-  const execBScope = { userId: execBId, role: "executive" as const };
+  const managerScope = makeScope(managerId, "manager");
+  const execAScope = makeScope(execAId, "executive");
+  const execBScope = makeScope(execBId, "executive");
 
   let pvtLtdServiceId: string;
 

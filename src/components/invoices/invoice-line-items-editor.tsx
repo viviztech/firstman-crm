@@ -11,19 +11,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { formatMoney } from "@/lib/money";
+import { formatMoney, paiseToRupees, rupeesToPaise } from "@/lib/money";
 
-type LineItemRow = { id: string; description: string; qty: string; ratePaise: string };
+type LineItemRow = { id: string; description: string; qty: string; rateRupees: string };
 
 function emptyRow(): LineItemRow {
-  return { id: crypto.randomUUID(), description: "", qty: "1", ratePaise: "0" };
+  return { id: crypto.randomUUID(), description: "", qty: "1", rateRupees: "0" };
 }
 
 function computeAmount(item: LineItemRow): number {
   const qty = Number(item.qty);
-  const rate = Number(item.ratePaise);
-  if (!Number.isFinite(qty) || !Number.isFinite(rate)) return 0;
-  return Math.round(qty * rate);
+  const ratePaise = Number(rupeesToPaise(item.rateRupees) || "0");
+  if (!Number.isFinite(qty) || !Number.isFinite(ratePaise)) return 0;
+  return Math.round(qty * ratePaise);
 }
 
 export function InvoiceLineItemsEditor({
@@ -39,7 +39,7 @@ export function InvoiceLineItemsEditor({
           id: crypto.randomUUID(),
           description: item.description,
           qty: String(item.qty),
-          ratePaise: String(item.ratePaise),
+          rateRupees: paiseToRupees(item.ratePaise),
         }))
       : [emptyRow()],
   );
@@ -67,7 +67,7 @@ export function InvoiceLineItemsEditor({
       .map((item) => ({
         description: item.description,
         qty: item.qty,
-        ratePaise: item.ratePaise,
+        ratePaise: rupeesToPaise(item.rateRupees) || "0",
       })),
   );
 
@@ -99,9 +99,10 @@ export function InvoiceLineItemsEditor({
                 className="col-span-3"
                 type="number"
                 min={0}
-                placeholder="Rate (paise)"
-                value={item.ratePaise}
-                onChange={(event) => updateItem(item.id, { ratePaise: event.target.value })}
+                step="0.01"
+                placeholder="Rate (₹)"
+                value={item.rateRupees}
+                onChange={(event) => updateItem(item.id, { rateRupees: event.target.value })}
               />
               <Button
                 type="button"
@@ -129,6 +130,10 @@ export function InvoiceLineItemsEditor({
             name="gstRate"
             value={gstRate}
             onValueChange={(value) => value && setGstRate(value)}
+            items={[
+              { value: "0", label: "0%" },
+              { value: "18", label: "18%" },
+            ]}
           >
             <SelectTrigger id="gstRate" className="w-full">
               <SelectValue />
