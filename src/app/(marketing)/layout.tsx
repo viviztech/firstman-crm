@@ -29,7 +29,7 @@ export default async function MarketingLayout({ children }: { children: ReactNod
           ...(profile.legalName ? { legalName: profile.legalName } : {}),
           url: getAppUrl("/"),
           areaServed: profile.areasServed,
-          ...(profile.logoUrl ? { logo: getAppUrl(profile.logoUrl) } : {}),
+          logo: getAppUrl("/brand/firstman-logo.png"),
           ...(profile.address ? { address: profile.address } : {}),
           ...(profile.gstin ? { taxID: profile.gstin } : {}),
           ...(profile.llpin

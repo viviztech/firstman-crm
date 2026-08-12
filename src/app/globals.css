@@ -50,6 +50,33 @@
   --color-brand-foreground: var(--brand-foreground);
   --color-brand-muted: var(--brand-muted);
   --color-brand-ink: var(--brand-ink);
+  --color-brand-graphite: var(--brand-graphite);
+  --color-brand-deep: var(--brand-deep);
+  --color-brand-light: var(--brand-light);
+
+  /* FirstMan identity palette, derived from the supplied brand artwork. */
+  --color-pink-50: #fdf3f7;
+  --color-pink-100: #fae1eb;
+  --color-pink-200: #f3bfd4;
+  --color-pink-300: #e68caf;
+  --color-pink-400: #d65b8c;
+  --color-pink-500: #c83d76;
+  --color-pink-600: #ba2a66;
+  --color-pink-700: #9c2054;
+  --color-pink-800: #801d48;
+  --color-pink-900: #6b1c40;
+  --color-pink-950: #421023;
+  --color-slate-50: #f7f7f8;
+  --color-slate-100: #eeeeef;
+  --color-slate-200: #dedee0;
+  --color-slate-300: #c5c5c8;
+  --color-slate-400: #a1a1a5;
+  --color-slate-500: #7d7d81;
+  --color-slate-600: #68686c;
+  --color-slate-700: #58585b;
+  --color-slate-800: #48484c;
+  --color-slate-900: #39393d;
+  --color-slate-950: #29292d;
   --font-display: var(--font-fraunces);
 }
 
@@ -61,9 +88,8 @@
   --card-foreground: oklch(0.148 0.004 228.8);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.148 0.004 228.8);
-  /* Brand pink swapped in for this theme's original blue (hue 264 -> 357), L/C unchanged. */
-  --primary: oklch(0.488 0.243 357);
-  --primary-foreground: oklch(0.97 0.014 357);
+  --primary: #ba2a66;
+  --primary-foreground: #ffffff;
   --secondary: oklch(0.967 0.001 286.375);
   --secondary-foreground: oklch(0.21 0.006 285.885);
   --muted: oklch(0.963 0.002 197.1);
@@ -73,7 +99,7 @@
   --destructive: oklch(0.577 0.245 27.325);
   --border: oklch(0.925 0.005 214.3);
   --input: oklch(0.925 0.005 214.3);
-  --ring: oklch(0.723 0.014 214.4);
+  --ring: #ba2a66;
   --chart-1: oklch(0.872 0.007 219.6);
   --chart-2: oklch(0.56 0.021 213.5);
   --chart-3: oklch(0.45 0.017 213.2);
@@ -98,8 +124,11 @@
      tokens for badge tints and text-ink use, unrelated to the primary/blue swap above. */
   --brand: var(--primary);
   --brand-foreground: var(--primary-foreground);
-  --brand-muted: oklch(0.96 0.03 357);
-  --brand-ink: oklch(0.16 0 0);
+  --brand-muted: #f9e4ed;
+  --brand-ink: #58585b;
+  --brand-graphite: #58585b;
+  --brand-deep: #29292d;
+  --brand-light: #e68caf;
 }
 
 .dark {
@@ -109,8 +138,8 @@
   --card-foreground: oklch(0.987 0.002 197.1);
   --popover: oklch(0.218 0.008 223.9);
   --popover-foreground: oklch(0.987 0.002 197.1);
-  --primary: oklch(0.424 0.199 357);
-  --primary-foreground: oklch(0.97 0.014 357);
+  --primary: #e68caf;
+  --primary-foreground: #29292d;
   --secondary: oklch(0.274 0.006 286.033);
   --secondary-foreground: oklch(0.985 0 0);
   --muted: oklch(0.275 0.011 216.9);
@@ -128,8 +157,8 @@
   --chart-5: oklch(0.275 0.011 216.9);
   --sidebar: oklch(0.218 0.008 223.9);
   --sidebar-foreground: oklch(0.987 0.002 197.1);
-  --sidebar-primary: oklch(0.623 0.214 357);
-  --sidebar-primary-foreground: oklch(0.97 0.014 357);
+  --sidebar-primary: #e68caf;
+  --sidebar-primary-foreground: #29292d;
   --sidebar-accent: oklch(0.275 0.011 216.9);
   --sidebar-accent-foreground: oklch(0.987 0.002 197.1);
   --sidebar-border: oklch(1 0 0 / 10%);
@@ -137,8 +166,11 @@
 
   --brand: var(--primary);
   --brand-foreground: var(--primary-foreground);
-  --brand-muted: oklch(0.26 0.06 357);
-  --brand-ink: oklch(0.97 0 0);
+  --brand-muted: #421023;
+  --brand-ink: #ffffff;
+  --brand-graphite: #58585b;
+  --brand-deep: #29292d;
+  --brand-light: #e68caf;
 }
 
 @layer base {
@@ -213,7 +245,7 @@
     font-weight: 800;
     letter-spacing: 0.16em;
     text-transform: uppercase;
-    color: rgb(190 24 93);
+    color: #ba2a66;
   }
 
   .marketing-orbit {
