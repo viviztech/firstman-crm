@@ -1,119 +1,21 @@
+import { ArrowRight, Mail, MapPin, Phone } from "lucide-react";
 import Link from "next/link";
 import { Logo } from "@/components/marketing/logo";
 import { getCompanyProfile } from "@/services/company-profile";
-import { getPublicServices } from "@/services/marketing-catalog";
+import { getPublicCatalog } from "@/services/marketing-catalog";
 
-export async function SiteFooter() {
-  const [profile, services] = await Promise.all([getCompanyProfile(), getPublicServices()]);
-  const featuredServices = services.slice(0, 6);
-  const year = new Date().getFullYear();
-
-  return (
-    <footer className="border-t bg-muted/30">
-      <div className="mx-auto grid max-w-6xl gap-10 px-4 py-12 sm:px-6 md:grid-cols-4">
-        <div className="flex flex-col gap-3 md:col-span-1">
-          <Logo />
-          <p className="text-sm text-muted-foreground">
-            Company registration, GST, and compliance — done right, tracked end to end.
-          </p>
-          <p className="text-sm text-muted-foreground">Serving {profile.areasServed}.</p>
-          {profile.address ? (
-            <p className="text-xs text-muted-foreground">{profile.address}</p>
-          ) : null}
-          {profile.gstin ? (
-            <p className="text-xs text-muted-foreground">GSTIN: {profile.gstin}</p>
-          ) : null}
-        </div>
-
-        <nav aria-label="Services">
-          <h3 className="mb-3 text-sm font-semibold">Services</h3>
-          <ul className="flex flex-col gap-2 text-sm text-muted-foreground">
-            {featuredServices.map((service) => (
-              <li key={service.id}>
-                <Link href={`/services/${service.slug}`} className="hover:text-foreground">
-                  {service.name}
-                </Link>
-              </li>
-            ))}
-            <li>
-              <Link href="/services" className="hover:text-foreground">
-                View all services →
-              </Link>
-            </li>
-          </ul>
-        </nav>
-
-        <nav aria-label="Company">
-          <h3 className="mb-3 text-sm font-semibold">Company</h3>
-          <ul className="flex flex-col gap-2 text-sm text-muted-foreground">
-            <li>
-              <Link href="/about" className="hover:text-foreground">
-                About
-              </Link>
-            </li>
-            <li>
-              <Link href="/pricing" className="hover:text-foreground">
-                Pricing
-              </Link>
-            </li>
-            <li>
-              <Link href="/compare" className="hover:text-foreground">
-                Compare structures
-              </Link>
-            </li>
-            <li>
-              <Link href="/resources" className="hover:text-foreground">
-                Resources
-              </Link>
-            </li>
-            <li>
-              <Link href="/contact" className="hover:text-foreground">
-                Contact
-              </Link>
-            </li>
-          </ul>
-        </nav>
-
-        <nav aria-label="Contact">
-          <h3 className="mb-3 text-sm font-semibold">Get in touch</h3>
-          <ul className="flex flex-col gap-2 text-sm text-muted-foreground">
-            {profile.phone ? (
-              <li>
-                <a href={`tel:${profile.phone}`} className="hover:text-foreground">
-                  {profile.phone}
-                </a>
-              </li>
-            ) : null}
-            {profile.email ? (
-              <li>
-                <a href={`mailto:${profile.email}`} className="hover:text-foreground">
-                  {profile.email}
-                </a>
-              </li>
-            ) : null}
-            <li>
-              <Link href="/contact" className="hover:text-foreground">
-                Send us a message
-              </Link>
-            </li>
-          </ul>
-        </nav>
-      </div>
-      <div className="border-t">
-        <div className="mx-auto flex max-w-6xl flex-col gap-2 px-4 py-5 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between sm:px-6">
-          <span>
-            © {year} {profile.legalName || profile.name}. All rights reserved.
-          </span>
-          <div className="flex gap-4">
-            <Link href="/legal/privacy" className="hover:text-foreground">
-              Privacy
-            </Link>
-            <Link href="/legal/terms" className="hover:text-foreground">
-              Terms
-            </Link>
-          </div>
-        </div>
-      </div>
-    </footer>
-  );
+export async function SiteFooter(){
+  const [profile,catalog]=await Promise.all([getCompanyProfile(),getPublicCatalog()]); const year=new Date().getFullYear();
+  const popular=catalog.flatMap(v=>v.categories.flatMap(c=>c.services)).slice(0,8);
+  const exploreLinks = [["/services","All services"],["/pricing","Transparent pricing"],["/compare","Compare structures"],["/resources","Business insights"],["/about","About FirstMan"],["/contact","Contact"]] as const;
+  return <footer className="marketing-site bg-slate-950 text-slate-300">
+    <div className="border-b border-white/10"><div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-10 sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8"><div><p className="text-xs font-bold tracking-[.18em] text-pink-300 uppercase">Ready for the next filing?</p><h2 className="mt-2 text-2xl font-semibold text-white">Get a clear scope before you spend.</h2></div><Link href="/contact" className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-pink-600 px-5 text-sm font-bold text-white hover:bg-pink-500">Talk to an expert <ArrowRight className="size-4"/></Link></div></div>
+    <div className="mx-auto grid max-w-7xl gap-12 px-4 py-14 sm:px-6 md:grid-cols-2 lg:grid-cols-[1.2fr_1fr_1fr_1fr] lg:px-8">
+      <div><Logo className="w-fit rounded-lg bg-white px-3 py-2"/><p className="mt-5 max-w-sm text-sm leading-7 text-slate-400">Formation, licensing, tax, accounting, intellectual property and statutory compliance—managed by one corporate services team.</p><div className="mt-6 space-y-3 text-sm">{profile.address?<p className="flex gap-2"><MapPin className="mt-0.5 size-4 shrink-0 text-pink-400"/>{profile.address}</p>:null}{profile.phone?<a href={`tel:${profile.phone}`} className="flex gap-2 hover:text-white"><Phone className="size-4 text-pink-400"/>{profile.phone}</a>:null}{profile.email?<a href={`mailto:${profile.email}`} className="flex gap-2 hover:text-white"><Mail className="size-4 text-pink-400"/>{profile.email}</a>:null}</div></div>
+      <nav><h3 className="text-xs font-bold tracking-[.15em] text-white uppercase">Popular services</h3><ul className="mt-5 space-y-3 text-sm">{popular.map(s=><li key={s.id}><Link href={`/services/${s.slug}`} className="hover:text-pink-300">{s.name}</Link></li>)}</ul></nav>
+      <nav><h3 className="text-xs font-bold tracking-[.15em] text-white uppercase">Explore</h3><ul className="mt-5 space-y-3 text-sm">{exploreLinks.map(([href,label])=><li key={href}><Link href={href} className="hover:text-pink-300">{label}</Link></li>)}</ul></nav>
+      <div><h3 className="text-xs font-bold tracking-[.15em] text-white uppercase">Corporate details</h3><dl className="mt-5 space-y-4 text-sm"><div><dt className="text-slate-500">Service area</dt><dd className="mt-1 text-slate-300">{profile.areasServed}</dd></div>{profile.gstin?<div><dt className="text-slate-500">GSTIN</dt><dd className="mt-1 text-slate-300">{profile.gstin}</dd></div>:null}{profile.llpin?<div><dt className="text-slate-500">LLPIN</dt><dd className="mt-1 text-slate-300">{profile.llpin}</dd></div>:null}</dl></div>
+    </div>
+    <div className="border-t border-white/10"><div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-5 text-xs text-slate-500 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8"><span>© {year} {profile.legalName||profile.name}. All rights reserved.</span><div className="flex gap-5"><Link href="/legal/privacy" className="hover:text-white">Privacy</Link><Link href="/legal/terms" className="hover:text-white">Terms</Link><Link href="/login" className="hover:text-white">Client login</Link></div></div></div>
+  </footer>;
 }

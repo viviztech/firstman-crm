@@ -1,190 +1,25 @@
-import { CheckCircle2 } from "lucide-react";
+import { ArrowRight, CheckCircle2, Clock3, FileText, IndianRupee, ShieldCheck } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { MarketingEnquiryForm } from "@/components/marketing/enquiry-form";
 import { JsonLd } from "@/components/marketing/json-ld";
+import { MarketingEnquiryForm } from "@/components/marketing/enquiry-form";
+import { Badge } from "@/components/ui/badge";
+import { getServicePageContent } from "@/content/service-content";
 import { getAppUrl } from "@/lib/app-url";
 import { formatMoney } from "@/lib/money";
 import { getPublicServiceBySlug, getPublicServices } from "@/services/marketing-catalog";
 
-export async function generateStaticParams() {
-  const services = await getPublicServices();
-  return services.map((service) => ({ slug: service.slug }));
-}
+export async function generateStaticParams(){return (await getPublicServices()).map(s=>({slug:s.slug}));}
+export async function generateMetadata({params}:{params:Promise<{slug:string}>}):Promise<Metadata>{const {slug}=await params;const s=await getPublicServiceBySlug(slug);if(!s)return{};return{title:`${s.name} — Fees, documents & process | FirstMan`,description:`Get ${s.name} handled end to end. Starting ${formatMoney(s.basePricePaise)}, typical turnaround ${s.estimatedDays} business days. See documents, process and deliverables.`};}
 
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}): Promise<Metadata> {
-  const { slug } = await params;
-  const service = await getPublicServiceBySlug(slug);
-  if (!service) return {};
-
-  const description =
-    service.description ??
-    `${service.name} starting at ${formatMoney(service.basePricePaise)}, typically ${service.estimatedDays} business days.`;
-
-  return {
-    title: `${service.name} — FirstMan Corporate Services`,
-    description,
-  };
-}
-
-function recurrenceLabel(recurrence: "monthly" | "quarterly" | "yearly" | null): string | null {
-  if (!recurrence) return null;
-  return `Filed ${recurrence}`;
-}
-
-export default async function ServiceDetailPage({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = await params;
-  const [service, allServices] = await Promise.all([
-    getPublicServiceBySlug(slug),
-    getPublicServices(),
-  ]);
-  if (!service) notFound();
-
-  const totalFromPaise = service.basePricePaise + (service.govtFeePaise ?? 0);
-
-  const faqs = [
-    {
-      question: `How much does ${service.name} cost?`,
-      answer: service.govtFeePaise
-        ? `${service.name} starts at ${formatMoney(service.basePricePaise)} in professional fees plus ${formatMoney(service.govtFeePaise)} in government fees — ${formatMoney(totalFromPaise)} all-in.`
-        : `${service.name} starts at ${formatMoney(service.basePricePaise)}.`,
-    },
-    {
-      question: "How long does it take?",
-      answer: `Typically ${service.estimatedDays} business days from when we have everything we need from you.`,
-    },
-    {
-      question: "What documents do I need to provide?",
-      answer:
-        service.requiredDocuments.length > 0
-          ? `You'll need: ${service.requiredDocuments.join(", ")}.`
-          : "We'll share the exact document checklist once you get in touch.",
-    },
-    ...(service.isRecurring
-      ? [
-          {
-            question: "Is this a one-time or recurring filing?",
-            answer: `This is filed ${service.recurrence} — we'll remind you ahead of every due date so nothing is missed.`,
-          },
-        ]
-      : []),
-  ];
-
-  return (
-    <div className="mx-auto max-w-4xl px-4 py-16 sm:px-6">
-      <nav className="mb-6 text-sm text-muted-foreground" aria-label="Breadcrumb">
-        <Link href="/services" className="hover:text-foreground">
-          Services
-        </Link>
-        <span className="mx-2">/</span>
-        <span className="text-foreground">{service.name}</span>
-      </nav>
-
-      <span className="text-brand text-sm font-semibold uppercase tracking-wide">
-        {service.categoryName}
-      </span>
-      <h1 className="mt-2 text-3xl font-extrabold tracking-tight sm:text-4xl">{service.name}</h1>
-
-      {/* Answer-first block for AEO/GEO extractability — direct answer before any marketing copy. */}
-      <p className="mt-4 max-w-2xl text-lg text-muted-foreground">
-        {service.name} through FirstMan starts at {formatMoney(service.basePricePaise)}
-        {service.govtFeePaise
-          ? ` plus ${formatMoney(service.govtFeePaise)} in government fees`
-          : ""}
-        , and typically takes {service.estimatedDays} business days.
-        {recurrenceLabel(service.recurrence) ? ` ${recurrenceLabel(service.recurrence)}.` : ""}
-      </p>
-
-      <div className="mt-8 grid gap-8 md:grid-cols-[1fr_320px]">
-        <div className="flex flex-col gap-10">
-          {service.description ? (
-            <section>
-              <h2 className="mb-2 text-lg font-bold">About this service</h2>
-              <p className="text-muted-foreground">{service.description}</p>
-            </section>
-          ) : null}
-
-          {service.requiredDocuments.length > 0 ? (
-            <section>
-              <h2 className="mb-3 text-lg font-bold">Documents you'll need</h2>
-              <ul className="flex flex-col gap-2">
-                {service.requiredDocuments.map((doc) => (
-                  <li key={doc} className="flex items-start gap-2 text-sm text-muted-foreground">
-                    <CheckCircle2 className="text-brand mt-0.5 size-4 shrink-0" />
-                    {doc}
-                  </li>
-                ))}
-              </ul>
-            </section>
-          ) : null}
-
-          <section>
-            <h2 className="mb-4 text-lg font-bold">Frequently asked questions</h2>
-            <div className="flex flex-col divide-y">
-              {faqs.map((faq) => (
-                <div key={faq.question} className="py-4">
-                  <h3 className="font-semibold">{faq.question}</h3>
-                  <p className="mt-1.5 text-sm text-muted-foreground">{faq.answer}</p>
-                </div>
-              ))}
-            </div>
-          </section>
-        </div>
-
-        <aside className="md:sticky md:top-24 md:self-start">
-          <div className="rounded-xl border bg-card p-5">
-            <div className="mb-4">
-              <p className="text-xs text-muted-foreground uppercase tracking-wide">Starting from</p>
-              <p className="text-2xl font-extrabold">{formatMoney(service.basePricePaise)}</p>
-              {service.govtFeePaise ? (
-                <p className="text-sm text-muted-foreground">
-                  + {formatMoney(service.govtFeePaise)} govt. fees
-                </p>
-              ) : null}
-              <p className="mt-1 text-sm text-muted-foreground">
-                ~{service.estimatedDays} business days
-              </p>
-            </div>
-            <MarketingEnquiryForm
-              services={allServices.map((s) => ({ id: s.id, name: s.name }))}
-              defaultServiceId={service.id}
-            />
-          </div>
-        </aside>
-      </div>
-
-      <JsonLd
-        data={{
-          "@context": "https://schema.org",
-          "@type": "Service",
-          name: service.name,
-          description: service.description ?? undefined,
-          provider: { "@type": "Organization", name: "FirstMan Corporate Services" },
-          areaServed: "Tamil Nadu",
-          offers: {
-            "@type": "Offer",
-            price: (service.basePricePaise / 100).toFixed(2),
-            priceCurrency: "INR",
-            url: getAppUrl(`/services/${service.slug}`),
-          },
-        }}
-      />
-      <JsonLd
-        data={{
-          "@context": "https://schema.org",
-          "@type": "FAQPage",
-          mainEntity: faqs.map((faq) => ({
-            "@type": "Question",
-            name: faq.question,
-            acceptedAnswer: { "@type": "Answer", text: faq.answer },
-          })),
-        }}
-      />
-    </div>
-  );
+export default async function ServiceDetailPage({params}:{params:Promise<{slug:string}>}){
+  const {slug}=await params; const [service,allServices]=await Promise.all([getPublicServiceBySlug(slug),getPublicServices()]); if(!service)notFound();
+  const content=getServicePageContent(service); const total=service.basePricePaise+(service.govtFeePaise??0);
+  const faqs=[{question:`What is included in ${service.name}?`,answer:`The engagement covers requirement review, document verification, preparation, filing or execution support, query coordination, and final handover. The exact scope is confirmed before work starts.`},{question:"What does it cost?",answer:service.govtFeePaise?`Professional fees start at ${formatMoney(service.basePricePaise)} plus typical government fees of ${formatMoney(service.govtFeePaise)}. Your confirmed estimate will identify any case-specific charges.`:`Professional fees start at ${formatMoney(service.basePricePaise)}. We confirm taxes and any third-party charges before you proceed.`},{question:"How long will it take?",answer:`The typical turnaround is ${service.estimatedDays} business days after complete documents are received. Government processing or clarification requests can affect the final date.`},{question:"How will I track progress?",answer:"Your FirstMan contact coordinates the matter end to end and shares milestone updates, outstanding requirements, and final records by your agreed communication channel."}];
+  return <div className="marketing-site bg-white">
+    <section className="border-b border-slate-200 bg-slate-950 text-white"><div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8 lg:py-20"><nav className="text-xs font-medium text-slate-400"><Link href="/services" className="hover:text-white">Services</Link><span className="mx-2">/</span>{service.categoryName}</nav><div className="mt-8 grid gap-10 lg:grid-cols-[1fr_360px] lg:items-end"><div><Badge className="border-pink-400/30 bg-pink-400/10 text-pink-200">{content.eyebrow}</Badge><h1 className="mt-5 max-w-4xl text-4xl font-semibold tracking-[-.035em] text-balance sm:text-5xl lg:text-6xl">{service.name}</h1><p className="mt-6 max-w-3xl text-lg leading-8 text-slate-300">{content.summary}</p></div><div className="grid grid-cols-2 gap-3 rounded-2xl border border-white/10 bg-white/[.05] p-5"><div><IndianRupee className="size-4 text-pink-300"/><p className="mt-3 text-xs text-slate-400">Professional fee</p><p className="mt-1 font-bold">From {formatMoney(service.basePricePaise)}</p></div><div><Clock3 className="size-4 text-pink-300"/><p className="mt-3 text-xs text-slate-400">Typical timeline</p><p className="mt-1 font-bold">{service.estimatedDays} business days</p></div>{service.govtFeePaise?<p className="col-span-2 border-t border-white/10 pt-3 text-xs text-slate-400">Typical government fee: {formatMoney(service.govtFeePaise)} · Indicative total from {formatMoney(total)}</p>:null}</div></div></div></section>
+    <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 lg:py-24"><div className="grid gap-14 lg:grid-cols-[1fr_380px]"><main className="space-y-16"><section><p className="marketing-kicker">What you receive</p><h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-950">A defined outcome, not just a submission.</h2><div className="mt-7 grid gap-4 sm:grid-cols-2">{content.outcomes.map(item=><div key={item} className="flex gap-3 rounded-xl border border-slate-200 p-5"><ShieldCheck className="mt-0.5 size-5 shrink-0 text-pink-700"/><p className="text-sm leading-6 text-slate-700">{item}</p></div>)}</div></section><section><p className="marketing-kicker">How it works</p><h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-950">A controlled four-stage process.</h2><div className="mt-8 border-l border-slate-200">{content.process.map((step,index)=><div key={step.title} className="relative pb-8 pl-8 last:pb-0"><span className="absolute -left-4 top-0 flex size-8 items-center justify-center rounded-full bg-slate-950 text-xs font-bold text-white">{index+1}</span><h3 className="font-bold text-slate-950">{step.title}</h3><p className="mt-2 text-sm leading-6 text-slate-600">{step.body}</p></div>)}</div></section><div className="grid gap-10 sm:grid-cols-2"><section><h2 className="text-xl font-bold text-slate-950">Included in the engagement</h2><ul className="mt-5 space-y-3">{content.includes.map(x=><li key={x} className="flex gap-2 text-sm leading-6 text-slate-600"><CheckCircle2 className="mt-1 size-4 shrink-0 text-emerald-600"/>{x}</li>)}</ul></section><section><h2 className="text-xl font-bold text-slate-950">Best suited for</h2><ul className="mt-5 space-y-3">{content.idealFor.map(x=><li key={x} className="flex gap-2 text-sm leading-6 text-slate-600"><CheckCircle2 className="mt-1 size-4 shrink-0 text-emerald-600"/>{x}</li>)}</ul></section></div>{service.requiredDocuments.length?<section className="rounded-2xl bg-slate-50 p-7"><div className="flex items-center gap-3"><FileText className="size-5 text-pink-700"/><h2 className="text-xl font-bold text-slate-950">Documents to prepare</h2></div><p className="mt-2 text-sm text-slate-600">We confirm the final checklist for your case. The standard starting set is:</p><div className="mt-5 grid gap-3 sm:grid-cols-2">{service.requiredDocuments.map(doc=><p key={doc} className="flex gap-2 text-sm text-slate-700"><CheckCircle2 className="mt-0.5 size-4 shrink-0 text-pink-700"/>{doc}</p>)}</div></section>:null}<section><p className="marketing-kicker">Questions</p><h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-950">Before you proceed.</h2><div className="mt-6 divide-y divide-slate-200 border-y border-slate-200">{faqs.map(f=><details key={f.question} className="group py-5"><summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-bold text-slate-950 [&::-webkit-details-marker]:hidden">{f.question}<span className="text-pink-700">+</span></summary><p className="max-w-3xl pt-3 text-sm leading-7 text-slate-600">{f.answer}</p></details>)}</div></section></main><aside className="lg:sticky lg:top-32 lg:self-start"><div className="rounded-2xl border border-slate-200 bg-slate-50 p-2 shadow-xl shadow-slate-950/5"><div className="p-5 pb-3"><p className="text-xs font-bold tracking-[.14em] text-pink-700 uppercase">Discuss this service</p><h2 className="mt-2 text-xl font-bold text-slate-950">Get scope, fees and next steps.</h2><p className="mt-2 text-sm leading-6 text-slate-600">Share your details. A specialist will review the requirement and respond.</p></div><MarketingEnquiryForm services={allServices.map(s=>({id:s.id,name:s.name}))} defaultServiceId={service.id}/></div><Link href="/pricing" className="mt-4 flex items-center justify-between rounded-xl border border-slate-200 p-4 text-sm font-bold text-slate-700 hover:border-pink-300 hover:text-pink-700">Compare all service fees <ArrowRight className="size-4"/></Link></aside></div></section>
+    <JsonLd data={{"@context":"https://schema.org","@type":"Service",name:service.name,description:content.summary,provider:{"@type":"Organization",name:"FirstMan Corporate Services"},areaServed:"India",offers:{"@type":"Offer",price:(service.basePricePaise/100).toFixed(2),priceCurrency:"INR",url:getAppUrl(`/services/${service.slug}`)}}}/><JsonLd data={{"@context":"https://schema.org","@type":"FAQPage",mainEntity:faqs.map(f=>({"@type":"Question",name:f.question,acceptedAnswer:{"@type":"Answer",text:f.answer}}))}}/>
+  </div>;
 }

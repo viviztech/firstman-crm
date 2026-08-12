@@ -103,12 +103,16 @@ export async function getPublicServices(): Promise<PublicService[]> {
 /** A single service by slug, for a service detail page — 404s (returns null) if unpublished. */
 export async function getPublicServiceBySlug(
   slug: string,
-): Promise<(PublicService & { categoryName: string }) | null> {
+): Promise<(PublicService & { categoryName: string; verticalName: string }) | null> {
   const row = await db.query.services.findFirst({
     where: and(eq(services.slug, slug), isNull(services.deletedAt)),
     with: { category: { with: { vertical: true } } },
   });
   if (!row || row.category.deletedAt || row.category.vertical.deletedAt) return null;
 
-  return { ...toPublicService(row), categoryName: row.category.name };
+  return {
+    ...toPublicService(row),
+    categoryName: row.category.name,
+    verticalName: row.category.vertical.name,
+  };
 }

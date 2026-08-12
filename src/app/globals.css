@@ -195,3 +195,39 @@
     animation: none;
   }
 }
+
+/* Public corporate site: deliberately independent from the denser CRM shell. */
+@layer utilities {
+  .marketing-heading {
+    font-size: clamp(2.25rem, 4vw, 4.25rem);
+    line-height: 1.04;
+    letter-spacing: -0.04em;
+    font-weight: 650;
+    color: rgb(15 23 42);
+    text-wrap: balance;
+  }
+
+  .marketing-kicker {
+    font-size: 0.72rem;
+    line-height: 1rem;
+    font-weight: 800;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: rgb(190 24 93);
+  }
+
+  .marketing-orbit {
+    position: absolute;
+    width: 52rem;
+    height: 52rem;
+    right: -20rem;
+    top: -18rem;
+    border: 1px solid rgb(255 255 255 / 0.08);
+    border-radius: 9999px;
+    box-shadow: 0 0 0 8rem rgb(255 255 255 / 0.025), 0 0 0 16rem rgb(255 255 255 / 0.015);
+  }
+
+  .marketing-site section[id] {
+    scroll-margin-top: 9rem;
+  }
+}

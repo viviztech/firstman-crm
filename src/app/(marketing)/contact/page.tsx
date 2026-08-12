@@ -4,49 +4,5 @@ import { MarketingEnquiryForm } from "@/components/marketing/enquiry-form";
 import { getCompanyProfile } from "@/services/company-profile";
 import { getPublicServices } from "@/services/marketing-catalog";
 
-export const metadata: Metadata = {
-  title: "Contact — FirstMan Corporate Services",
-  description: "Get in touch with FirstMan Corporate Services — we usually reply the same day.",
-};
-
-export default async function ContactPage() {
-  const [profile, services] = await Promise.all([getCompanyProfile(), getPublicServices()]);
-
-  return (
-    <div className="mx-auto max-w-5xl px-4 py-16 sm:px-6">
-      <div className="grid gap-12 md:grid-cols-[1fr_1.2fr]">
-        <div>
-          <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">Let's talk</h1>
-          <p className="mt-3 text-muted-foreground">
-            Share a few details and we'll get back to you — usually the same day.
-          </p>
-
-          <ul className="mt-8 flex flex-col gap-4 text-sm">
-            <li className="flex items-start gap-3">
-              <MapPin className="text-brand mt-0.5 size-4.5 shrink-0" />
-              <span>{profile.address || `Serving clients across ${profile.areasServed}`}</span>
-            </li>
-            {profile.phone ? (
-              <li className="flex items-start gap-3">
-                <Phone className="text-brand mt-0.5 size-4.5 shrink-0" />
-                <a href={`tel:${profile.phone}`} className="hover:underline">
-                  {profile.phone}
-                </a>
-              </li>
-            ) : null}
-            {profile.email ? (
-              <li className="flex items-start gap-3">
-                <Mail className="text-brand mt-0.5 size-4.5 shrink-0" />
-                <a href={`mailto:${profile.email}`} className="hover:underline">
-                  {profile.email}
-                </a>
-              </li>
-            ) : null}
-          </ul>
-        </div>
-
-        <MarketingEnquiryForm services={services.map((s) => ({ id: s.id, name: s.name }))} />
-      </div>
-    </div>
-  );
-}
+export const metadata:Metadata={title:"Contact a business services expert — FirstMan",description:"Discuss company registration, tax, licensing, accounting, IP or compliance requirements with FirstMan."};
+export default async function ContactPage(){const [profile,services]=await Promise.all([getCompanyProfile(),getPublicServices()]);return <div className="marketing-site bg-slate-50"><div className="mx-auto grid max-w-7xl gap-10 px-4 py-16 sm:px-6 md:grid-cols-[.8fr_1.2fr] lg:px-8 lg:py-24"><div className="rounded-3xl bg-slate-950 p-8 text-white sm:p-10"><p className="text-xs font-bold tracking-[.18em] text-pink-300 uppercase">Speak with a specialist</p><h1 className="mt-4 text-4xl font-semibold tracking-[-.04em] sm:text-5xl">Start with a clear plan.</h1><p className="mt-5 leading-7 text-slate-300">Tell us the outcome you need. We’ll identify prerequisites, order of work, realistic fees, and next steps.</p><ul className="mt-10 space-y-5 text-sm text-slate-300"><li className="flex gap-3"><MapPin className="size-4 shrink-0 text-pink-400"/>{profile.address||`Serving ${profile.areasServed}`}</li>{profile.phone?<li><a href={`tel:${profile.phone}`} className="flex gap-3 hover:text-white"><Phone className="size-4 text-pink-400"/>{profile.phone}</a></li>:null}{profile.email?<li><a href={`mailto:${profile.email}`} className="flex gap-3 hover:text-white"><Mail className="size-4 text-pink-400"/>{profile.email}</a></li>:null}</ul></div><div><p className="mb-5 text-sm leading-6 text-slate-600">Complete the form and our team will respond during business hours. No payment is required to discuss your requirement.</p><MarketingEnquiryForm services={services.map(s=>({id:s.id,name:s.name}))}/></div></div></div>}
