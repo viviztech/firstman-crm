@@ -4,7 +4,9 @@ FROM node:24-alpine AS base
 FROM base AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN npm ci
+# Coolify can inject NODE_ENV=production at build time. Explicitly retain build
+# tooling (Next.js, TypeScript, Husky) in this stage regardless of that value.
+RUN npm ci --include=dev
 
 # Full (untraced) production node_modules — Next's standalone output only bundles
 # what its own import graph reaches, which misses src/db/migrate.ts (a CLI entry
@@ -12,7 +14,9 @@ RUN npm ci
 FROM base AS prod-deps
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN npm ci --omit=dev
+# Husky is a devDependency, so its prepare hook is unavailable in this
+# production-only stage. Package lifecycle scripts are not needed at runtime.
+RUN npm ci --omit=dev --ignore-scripts
 
 FROM base AS builder
 WORKDIR /app
