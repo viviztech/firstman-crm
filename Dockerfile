@@ -23,7 +23,10 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
-RUN npm run build
+# Marketing pages read the service catalog while Next.js generates static
+# routes, so a brand-new production database must be migrated before the build.
+# The runtime migration below remains as a safety net for container starts.
+RUN node_modules/.bin/tsx src/db/migrate.ts && npm run build
 
 FROM base AS runner
 WORKDIR /app
