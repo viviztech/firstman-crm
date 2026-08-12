@@ -3,7 +3,7 @@ import { eq, ilike } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { db } from "@/db";
 import { user } from "@/db/schema/auth-schema";
-import { serviceCategories, services } from "@/db/schema/catalog";
+import { serviceCategories, services, serviceVerticals } from "@/db/schema/catalog";
 import { clients } from "@/db/schema/clients";
 import { complianceItems } from "@/db/schema/compliance";
 import { enquiries } from "@/db/schema/enquiries";
@@ -30,6 +30,7 @@ describe("reports service (integration)", () => {
   let clientId: string;
   let reportsTestServiceId: string;
   let reportsTestCategoryId: string;
+  let reportsTestVerticalId: string;
 
   beforeAll(async () => {
     await db.insert(user).values([
@@ -49,9 +50,19 @@ describe("reports service (integration)", () => {
       },
     ]);
 
+    const [vertical] = await db
+      .insert(serviceVerticals)
+      .values({ name: `Reports Test Vertical ${randomUUID().slice(0, 8)}` })
+      .returning();
+    if (!vertical) throw new Error("Failed to create test service vertical");
+    reportsTestVerticalId = vertical.id;
+
     const [category] = await db
       .insert(serviceCategories)
-      .values({ name: `Reports Test Category ${randomUUID().slice(0, 8)}` })
+      .values({
+        verticalId: reportsTestVerticalId,
+        name: `Reports Test Category ${randomUUID().slice(0, 8)}`,
+      })
       .returning();
     if (!category) throw new Error("Failed to create test service category");
     reportsTestCategoryId = category.id;
@@ -108,6 +119,7 @@ describe("reports service (integration)", () => {
     await db.delete(enquiries).where(ilike(enquiries.phone, "+919876616%"));
     await db.delete(services).where(eq(services.id, reportsTestServiceId));
     await db.delete(serviceCategories).where(eq(serviceCategories.id, reportsTestCategoryId));
+    await db.delete(serviceVerticals).where(eq(serviceVerticals.id, reportsTestVerticalId));
     await db.delete(user).where(eq(user.id, managerId));
     await db.delete(user).where(eq(user.id, execId));
   });

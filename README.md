@@ -375,6 +375,79 @@ prescribe an exact answer:
     double-count in collections totals. The proforma's GST rate defaults to
     the `defaultGstRate` setting (18 if unset) — no settings-page UI was
     added for it yet, just the existing key/value `settings` store.
+16. **Sales/Operations teams, multi-service job cards, and payment-gated
+    completion (ADR 0002,
+    `docs/adr/0002-sales-operations-teams-and-job-card-lifecycle.md`)** —
+    supersedes parts of Assumption #15 above. The Job Card is no longer "an
+    order rendered as a PDF": `/orders/[id]` is now a single interactive,
+    live-tracking page (status, tasks, documents, invoices, activity all on
+    one scroll), and the PDF export is now a secondary "print" affordance.
+    Four decisions worth calling out explicitly:
+    - **New numbering (customer ID, job card, proforma, tax invoice) is
+      prospective-only.** Existing records keep their old-format numbers;
+      there is no retroactive renumbering, matching how `orderNo`/`invoiceNo`
+      already worked before this change.
+    - **Customer uniqueness (phone/email/CIN) is enforced at the database
+      level, and dedup conflicts resolve in favor of phone.** If an
+      enquiry's phone matches one existing client but its email matches a
+      *different* client, the phone match wins — phone is mandatory and
+      always collected, email is optional and more typo-prone — and the
+      conflict is logged (`dedup_conflict_phone_precedence`) rather than
+      silently dropped or blocking the sale.
+    - **The hard completion gate's payment half only applies to job cards
+      that actually have a proforma.** A job card created outside the
+      Sales/proforma flow (e.g. a manually-created order) can still be
+      marked Completed once its tasks are done — it was never billed via a
+      proforma, so there's nothing to wait on.
+    - **The gate's bypass is `super_admin`-only, not `manager`.** The gate
+      exists specifically to stop unpaid/incomplete work from being marked
+      done; overriding it is treated the same as other irreversible,
+      trust-gated actions in this app (e.g. permanently deleting a lost
+      enquiry), not a routine manager action. Every bypass is logged as
+      `status_changed_forced` for audit.
+17. **Light, grouped-nav dashboard shell inspired by an external reference (ADR
+    0003, `docs/adr/0003-sabpaisa-inspired-dashboard-shell.md`)**: the sidebar
+    switched from the earlier dark-charcoal QuickBooks-style theme to a light
+    surface with grouped nav sections (Main/Operations/Finance/Admin) and a
+    topbar avatar/notification-bell menu, **keeping FirstMan's brand-pink
+    accent** rather than the reference's blue. Scoped to the shell + dashboard
+    only — Job Cards/Clients/Invoices/Enquiries/Compliance/Expenses list pages
+    keep their existing filter-form + table + prev/next pattern for now, and
+    the dashboard's charts stay bar charts (a gradient/donut trend chart would
+    need a new daily-series analytics query not built in this pass).
+18. **Service catalog rebuilt from `Website Services.xlsx` (81 services, extended
+    to a 3-level Vertical → Category → Service hierarchy)**: the source sheet's
+    4-level structure (Website Menu → Vertical → Group → Service) was flattened
+    by dropping the coarsest "Website Menu" level — its 3 values (Business
+    StartUp/Support/Compliance) added no grouping the "Vertical" level didn't
+    already provide. A new `service_verticals` table sits above the existing
+    `service_categories` (the source's "Group" values, e.g. "ISO Certification",
+    "Digital Signature Services"), which now carries a required `verticalId` FK.
+    Pricing uses the sheet's "Online Price" column only (the one populated on
+    every row); the other three tiers (Min/Basic/Market Price) weren't imported
+    since the schema quotes a single `basePricePaise` — revisit as a real
+    tiered-pricing feature if the business needs to quote off a different tier.
+    `estimatedDays` comes from the sheet's TAT column, replacing the old
+    hand-picked values for the 17 services that already existed in the seed
+    catalog. The sheet has no `checklistTemplate`/`requiredDocuments`/recurrence
+    data: the 17 pre-existing services (matched by name, e.g. Pvt Ltd/LLP/OPC/GST
+    Registration, Trademark Registration, Annual Compliances) kept their
+    hand-authored checklists (day offsets clamped to the sheet's TAT, which is
+    sometimes shorter than what they were originally authored against); the
+    remaining ~64 services got a generic 3–4 step checklist and document list
+    templated per source "Group" (e.g. all ISO certifications share one
+    checklist shape) — good enough to exercise order-creation's task/doc
+    auto-generation, but worth an admin pass via the catalog UI for anything
+    customer-facing. Recurrence (monthly/quarterly/yearly) was inferred only for
+    the obviously periodic filings (GST/TDS returns, IT returns, professional
+    tax, bookkeeping, annual compliances, DIN KYC); everything else defaulted to
+    one-time. `itr-filing` (generic annual ITR filing) was kept as an 81st
+    service alongside the sheet's three granular "IT Return" variants
+    (Salaried/Firm/Companies) since CLAUDE.md §4.3 names it explicitly and no
+    single sheet row matches it 1:1. One data typo was fixed on import:
+    "Professional Tax Registration" had Vertical Code "AA" (Company Registration)
+    instead of "RL" (Registration & Licensing) like every other row in that
+    group — corrected to match its Group.
 
 ## Phase checklists (per `CLAUDE.md` §5)
 
@@ -443,8 +516,9 @@ prescribe an exact answer:
 
 **Phase 6 — Invoicing**
 - [x] Invoices with jsonb line items, GST (0/18%), status flow
-      (draft→sent→partially_paid/paid→overdue), auto-numbered
-      (`FM-INV-{year}-{seq}`).
+      (draft→sent→partially_paid/paid→overdue), auto-numbered — proforma
+      (`FMPI{yy}{mm}{seq}`, monthly) and tax (`FMINV{yy}{seq}`, yearly) each
+      on their own independent sequence (ADR 0002/0003).
 - [x] Recording a payment updates invoice status automatically (partial vs
       full) — tested with exact-paise assertions, no float math anywhere
       (`invoices.test.ts`, `money.test.ts`).

@@ -3,10 +3,14 @@ import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { db } from "@/db";
 import { user } from "@/db/schema/auth-schema";
+import { services } from "@/db/schema/catalog";
+import { makeScope } from "@/lib/test-scope";
+import { setStaffServiceAssignments, updateStaffTeam } from "@/services/staff";
 import {
   getUserContact,
   listAllStaffForAdmin,
   listAssignableStaff,
+  listAssignableStaffForService,
   listExecutives,
   listStaffEmailsByRole,
 } from "@/services/users";
@@ -99,5 +103,88 @@ describe("notification-related user lookups (integration)", () => {
     expect(accountant).toMatchObject({ role: "accountant" });
     expect(exec).toMatchObject({ role: "executive" });
     expect(manager?.createdAt).toBeInstanceOf(Date);
+  });
+});
+
+describe("listAssignableStaffForService (integration, ADR 0004)", () => {
+  const managerId = randomUUID();
+  const opsExecId = randomUUID();
+  const salesExecId = randomUUID();
+  const managerScope = makeScope(managerId, "manager");
+  let pvtLtdServiceId: string;
+  let gstServiceId: string;
+
+  beforeAll(async () => {
+    await db.insert(user).values([
+      {
+        id: managerId,
+        name: "Assignable Staff Test Manager",
+        email: `assignable-staff-manager-${managerId}@test.local`,
+        emailVerified: true,
+        role: "manager",
+      },
+      {
+        id: opsExecId,
+        name: "Assignable Staff Test Ops Exec",
+        email: `assignable-staff-ops-${opsExecId}@test.local`,
+        emailVerified: true,
+        role: "executive",
+      },
+      {
+        id: salesExecId,
+        name: "Assignable Staff Test Sales Exec",
+        email: `assignable-staff-sales-${salesExecId}@test.local`,
+        emailVerified: true,
+        role: "executive",
+      },
+    ]);
+    await updateStaffTeam(opsExecId, "operations", managerScope);
+    await updateStaffTeam(salesExecId, "sales", managerScope);
+
+    const pvtLtd = await db.query.services.findFirst({
+      where: eq(services.slug, "pvt-ltd-registration"),
+    });
+    if (!pvtLtd) throw new Error("Seed catalog first — pvt-ltd-registration service not found");
+    pvtLtdServiceId = pvtLtd.id;
+
+    const gst = await db.query.services.findFirst({
+      where: eq(services.slug, "gst-registration"),
+    });
+    if (!gst) throw new Error("Seed catalog first — gst-registration service not found");
+    gstServiceId = gst.id;
+  });
+
+  afterAll(async () => {
+    await db.delete(user).where(eq(user.id, managerId));
+    await db.delete(user).where(eq(user.id, opsExecId));
+    await db.delete(user).where(eq(user.id, salesExecId));
+  });
+
+  it("excludes an operations executive not scoped to the given service", async () => {
+    await setStaffServiceAssignments(opsExecId, [gstServiceId], managerScope);
+
+    const staff = await listAssignableStaffForService(pvtLtdServiceId);
+    expect(staff.map((member) => member.id)).not.toContain(opsExecId);
+  });
+
+  it("includes an operations executive scoped to the given service", async () => {
+    await setStaffServiceAssignments(opsExecId, [pvtLtdServiceId], managerScope);
+
+    const staff = await listAssignableStaffForService(pvtLtdServiceId);
+    expect(staff.map((member) => member.id)).toContain(opsExecId);
+  });
+
+  it("excludes an operations executive with zero service assignments (mandatory scoping)", async () => {
+    await setStaffServiceAssignments(opsExecId, [], managerScope);
+
+    const staff = await listAssignableStaffForService(pvtLtdServiceId);
+    expect(staff.map((member) => member.id)).not.toContain(opsExecId);
+  });
+
+  it("never excludes a non-operations executive, regardless of service scope", async () => {
+    await setStaffServiceAssignments(salesExecId, [], managerScope);
+
+    const staff = await listAssignableStaffForService(pvtLtdServiceId);
+    expect(staff.map((member) => member.id)).toContain(salesExecId);
   });
 });

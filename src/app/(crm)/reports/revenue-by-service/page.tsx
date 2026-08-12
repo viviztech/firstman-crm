@@ -19,7 +19,7 @@ export default async function RevenueByServiceReportPage() {
     <div className="flex flex-col gap-4">
       <ReportPageHeader
         title="Revenue by service"
-        description="Order revenue (quoted price, non-cancelled orders) grouped by catalog service."
+        description="Job card revenue (quoted price, non-cancelled job cards) grouped by catalog service."
         exportHref="/api/reports/revenue-by-service/export"
       />
 
@@ -28,7 +28,7 @@ export default async function RevenueByServiceReportPage() {
           <TableHeader>
             <TableRow>
               <TableHead>Service</TableHead>
-              <TableHead className="text-right">Orders</TableHead>
+              <TableHead className="text-right">Job Cards</TableHead>
               <TableHead className="text-right">Revenue</TableHead>
             </TableRow>
           </TableHeader>

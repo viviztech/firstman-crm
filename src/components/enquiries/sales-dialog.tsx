@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { type FocusEvent, type FormEvent, useRef, useState, useTransition } from "react";
 import { closeEnquiryAsSaleAction } from "@/actions/enquiries";
 import { lookupPincodeAction } from "@/actions/geography";
+import { SalesServiceLinesEditor } from "@/components/enquiries/sales-service-lines-editor";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -15,7 +16,6 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { MoneyInput } from "@/components/ui/money-input";
 import {
   Select,
   SelectContent,
@@ -26,12 +26,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { ENQUIRY_SOURCE_LABEL, type EnquirySource } from "@/lib/badges";
 
-type ServiceOption = {
-  id: string;
-  name: string;
-  basePricePaise: number;
-  govtFeePaise: number | null;
-};
+type ServiceOption = { id: string; name: string; basePricePaise: number };
 type StateOption = { id: string; name: string };
 
 export function SalesDialog({
@@ -52,6 +47,7 @@ export function SalesDialog({
     phone: string;
     email?: string | null;
     address?: string | null;
+    city?: string | null;
     pincode?: string | null;
     serviceInterestedId?: string | null;
   };
@@ -62,34 +58,17 @@ export function SalesDialog({
   const formRef = useRef<HTMLFormElement>(null);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
-  const [serviceId, setServiceId] = useState(defaults.serviceInterestedId ?? "");
-  // MoneyInput manages its own rupee-string state internally (see its doc comment) — the price
-  // fields reset to a newly-selected service's defaults by remounting on `priceToken`, which
-  // only advances on an explicit selection (never on the initial preset `serviceId`, matching
-  // the pre-existing behavior of leaving price blank until the user actively chooses a service).
-  const [priceToken, setPriceToken] = useState(0);
-  const [priceDefaults, setPriceDefaults] = useState<{
-    quotedPricePaise?: number;
-    govtFeePaise?: number | null;
-  }>({});
+  const [city, setCity] = useState(defaults.city ?? "");
   const [stateName, setStateName] = useState("");
-
-  function handleServiceChange(value: string | null) {
-    if (!value) return;
-    setServiceId(value);
-    const service = services.find((candidate) => candidate.id === value);
-    setPriceDefaults({
-      quotedPricePaise: service?.basePricePaise,
-      govtFeePaise: service?.govtFeePaise,
-    });
-    setPriceToken((token) => token + 1);
-  }
 
   async function handlePincodeBlur(event: FocusEvent<HTMLInputElement>) {
     const pincode = event.target.value.trim();
     if (!/^\d{6}$/.test(pincode)) return;
     const match = await lookupPincodeAction(pincode);
-    if (match) setStateName(match.state);
+    if (match) {
+      setCity(match.city);
+      setStateName(match.state);
+    }
   }
 
   // Calls the action directly (rather than useActionState) and navigates as a direct
@@ -157,12 +136,12 @@ export function SalesDialog({
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-2">
-              <Label htmlFor="sales-address">Address</Label>
-              <Textarea
-                id="sales-address"
-                name="address"
-                rows={2}
-                defaultValue={defaults.address ?? ""}
+              <Label htmlFor="sales-city">City</Label>
+              <Input
+                id="sales-city"
+                name="city"
+                value={city}
+                onChange={(event) => setCity(event.target.value)}
               />
             </div>
             <div className="flex flex-col gap-2">
@@ -187,54 +166,22 @@ export function SalesDialog({
             </div>
           </div>
 
-          <p className="text-sm text-muted-foreground">Source: {ENQUIRY_SOURCE_LABEL[source]}</p>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="sales-service">
-                Service <span className="text-destructive">*</span>
-              </Label>
-              <Select
-                name="serviceId"
-                value={serviceId}
-                onValueChange={handleServiceChange}
-                items={services.map((service) => ({ value: service.id, label: service.name }))}
-              >
-                <SelectTrigger id="sales-service" className="w-full">
-                  <SelectValue placeholder="Choose a service" />
-                </SelectTrigger>
-                <SelectContent>
-                  {services.map((service) => (
-                    <SelectItem key={service.id} value={service.id}>
-                      {service.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="sales-price">
-                Price (₹) <span className="text-destructive">*</span>
-              </Label>
-              <MoneyInput
-                key={priceToken}
-                id="sales-price"
-                name="quotedPricePaise"
-                required
-                defaultValuePaise={priceDefaults.quotedPricePaise}
-              />
-            </div>
-          </div>
-
           <div className="flex flex-col gap-2">
-            <Label htmlFor="sales-govt-fee">Govt. fee (₹)</Label>
-            <MoneyInput
-              key={priceToken}
-              id="sales-govt-fee"
-              name="govtFeePaise"
-              defaultValuePaise={priceDefaults.govtFeePaise}
+            <Label htmlFor="sales-address">Address</Label>
+            <Textarea
+              id="sales-address"
+              name="address"
+              rows={2}
+              defaultValue={defaults.address ?? ""}
             />
           </div>
+
+          <p className="text-sm text-muted-foreground">Source: {ENQUIRY_SOURCE_LABEL[source]}</p>
+
+          <SalesServiceLinesEditor
+            services={services}
+            defaultServiceId={defaults.serviceInterestedId}
+          />
 
           <div className="flex flex-col gap-2">
             <Label htmlFor="sales-comments">Comments</Label>
@@ -244,7 +191,7 @@ export function SalesDialog({
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
           <DialogFooter>
-            <Button type="submit" disabled={isPending || !serviceId}>
+            <Button type="submit" disabled={isPending}>
               {isPending ? "Closing…" : "Close sale"}
             </Button>
           </DialogFooter>

@@ -11,6 +11,14 @@ import { services } from "@/db/schema/catalog";
  */
 export const employeeTypeEnum = pgEnum("employee_type", ["internal", "franchise"]);
 
+/**
+ * A second axis orthogonal to both `role` and `employeeType` (ADR 0002): which functional
+ * module an executive works — the sales pipeline (enquiries/follow-ups/Sales conversion) or
+ * fulfillment of converted jobs (job cards). Nullable: no value means unrestricted, matching
+ * the same "absence = unrestricted" rule employeeType/service-assignment already use.
+ */
+export const staffTeamEnum = pgEnum("staff_team", ["sales", "operations"]);
+
 export const staffProfiles = pgTable("staff_profiles", {
   ...baseColumns(),
   ...actorColumns(),
@@ -19,6 +27,7 @@ export const staffProfiles = pgTable("staff_profiles", {
     .unique()
     .references(() => user.id, { onDelete: "cascade" }),
   employeeType: employeeTypeEnum("employee_type").notNull().default("internal"),
+  team: staffTeamEnum("team"),
 });
 
 export const staffPincodeAllocations = pgTable(

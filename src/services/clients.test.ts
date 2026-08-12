@@ -212,4 +212,32 @@ describe("clients service — executive scoping (integration)", () => {
 
     expect(await getClientForNotification(randomUUID())).toBeUndefined();
   });
+
+  it("assigns a Customer Identification Number in the FM<year><6-digit> format", async () => {
+    const created = await createClient(input("9876500013"), managerScope);
+    expect(created.cin).toMatch(/^FM\d{4}\d{6}$/);
+    expect(created.cin?.slice(2, 6)).toBe(String(new Date().getFullYear()));
+  });
+
+  it("finds a client by searching for its Customer ID", async () => {
+    const created = await createClient(input("9876500016"), managerScope);
+    if (!created.cin) throw new Error("Expected the created client to have a CIN");
+
+    const byCin = await listClients(managerScope, { search: created.cin });
+    expect(byCin.rows.map((c) => c.id)).toContain(created.id);
+  });
+
+  it("generates increasing, unique CINs across two clients", async () => {
+    const first = await createClient(input("9876500014"), managerScope);
+    const second = await createClient(input("9876500015"), managerScope);
+
+    // Shared, lock-protected global sequence (per year) — other test files creating clients
+    // concurrently can interleave, so assert monotonic increase, not exact +1 (same convention
+    // as generateOrderNo's/generateInvoiceNo's existing sequencing tests).
+    if (!first.cin || !second.cin) throw new Error("Expected both clients to have a CIN");
+    const firstSeq = Number(first.cin.slice(6));
+    const secondSeq = Number(second.cin.slice(6));
+    expect(secondSeq).toBeGreaterThan(firstSeq);
+    expect(first.cin).not.toBe(second.cin);
+  });
 });

@@ -18,7 +18,7 @@ export default async function NewOrderPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="text-2xl font-semibold">New order</h1>
+      <h1 className="text-2xl font-semibold">New job card</h1>
       {clients.length === 0 ? (
         <p className="text-sm text-muted-foreground">
           No clients available yet — create a client first.

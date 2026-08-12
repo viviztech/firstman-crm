@@ -8,18 +8,22 @@ import {
   servicePriceHistory,
   serviceRelations,
   services,
+  serviceVerticals,
 } from "@/db/schema/catalog";
 import { makeScope } from "@/lib/test-scope";
 import {
   createService,
   createServiceCategory,
+  createServiceVertical,
   deleteServiceCategory,
+  deleteServiceVertical,
   listServicePriceHistory,
   listServiceRelations,
   serviceInputSchema,
   setServiceRelations,
   updateService,
   updateServiceCategory,
+  updateServiceVertical,
 } from "@/services/catalog";
 
 function serviceInput(categoryId: string, overrides: Record<string, unknown> = {}) {
@@ -42,6 +46,7 @@ function serviceInput(categoryId: string, overrides: Record<string, unknown> = {
 describe("catalog service (integration)", () => {
   const managerId = randomUUID();
   const managerScope = makeScope(managerId, "manager");
+  let verticalId: string;
   let categoryId: string;
   const createdServiceIds: string[] = [];
 
@@ -54,8 +59,14 @@ describe("catalog service (integration)", () => {
       role: "manager",
     });
 
+    const vertical = await createServiceVertical(
+      { name: `Catalog Test Vertical ${randomUUID().slice(0, 8)}`, sort: 0 },
+      managerScope,
+    );
+    verticalId = vertical.id;
+
     const category = await createServiceCategory(
-      { name: `Catalog Test Category ${randomUUID().slice(0, 8)}`, sort: 0 },
+      { verticalId, name: `Catalog Test Category ${randomUUID().slice(0, 8)}`, sort: 0 },
       managerScope,
     );
     categoryId = category.id;
@@ -68,19 +79,49 @@ describe("catalog service (integration)", () => {
       await db.delete(servicePriceHistory).where(eq(servicePriceHistory.serviceId, id));
       await db.delete(services).where(eq(services.id, id));
     }
-    await db.delete(serviceCategories).where(eq(serviceCategories.id, categoryId));
+    // Also sweeps the soft-deleted "Temp Category" row created by the category CRUD test —
+    // it still references verticalId and would block the vertical's hard-delete below.
+    await db.delete(serviceCategories).where(eq(serviceCategories.verticalId, verticalId));
+    await db.delete(serviceVerticals).where(eq(serviceVerticals.id, verticalId));
     await db.delete(user).where(eq(user.id, managerId));
+  });
+
+  describe("service vertical CRUD", () => {
+    it("creates and updates a vertical", async () => {
+      const created = await createServiceVertical(
+        { name: `Temp Vertical ${randomUUID().slice(0, 8)}`, sort: 5 },
+        managerScope,
+      );
+      const updated = await updateServiceVertical(
+        created.id,
+        { name: "Renamed Vertical", sort: 9 },
+        managerScope,
+      );
+      expect(updated?.name).toBe("Renamed Vertical");
+      expect(updated?.sort).toBe(9);
+
+      const result = await deleteServiceVertical(created.id, managerScope);
+      expect(result.ok).toBe(true);
+    });
+
+    it("refuses to delete a vertical that still has active categories", async () => {
+      const result = await deleteServiceVertical(verticalId, managerScope);
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.error).toMatch(/categories in this vertical/i);
+      }
+    });
   });
 
   describe("service category CRUD", () => {
     it("creates and updates a category", async () => {
       const created = await createServiceCategory(
-        { name: `Temp Category ${randomUUID().slice(0, 8)}`, sort: 5 },
+        { verticalId, name: `Temp Category ${randomUUID().slice(0, 8)}`, sort: 5 },
         managerScope,
       );
       const updated = await updateServiceCategory(
         created.id,
-        { name: "Renamed Category", sort: 9 },
+        { verticalId, name: "Renamed Category", sort: 9 },
         managerScope,
       );
       expect(updated?.name).toBe("Renamed Category");

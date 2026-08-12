@@ -14,10 +14,26 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
-type ServiceCategory = { id: string; name: string; sort: number };
+type ServiceCategory = { id: string; name: string; sort: number; verticalId: string };
+type VerticalOption = { id: string; name: string };
 
-export function CategoryFormDialog({ category }: { category?: ServiceCategory }) {
+export function CategoryFormDialog({
+  category,
+  verticals,
+  defaultVerticalId,
+}: {
+  category?: ServiceCategory;
+  verticals: VerticalOption[];
+  defaultVerticalId?: string;
+}) {
   const [open, setOpen] = useState(false);
   const action = category
     ? updateServiceCategoryAction.bind(null, category.id)
@@ -40,6 +56,27 @@ export function CategoryFormDialog({ category }: { category?: ServiceCategory })
         </DialogHeader>
 
         <form action={formAction} className="flex flex-col gap-4">
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="category-vertical">
+              Vertical <span className="text-destructive">*</span>
+            </Label>
+            <Select
+              name="verticalId"
+              defaultValue={category?.verticalId ?? defaultVerticalId}
+              items={verticals.map((vertical) => ({ value: vertical.id, label: vertical.name }))}
+            >
+              <SelectTrigger id="category-vertical" className="w-full">
+                <SelectValue placeholder="Choose a vertical" />
+              </SelectTrigger>
+              <SelectContent>
+                {verticals.map((vertical) => (
+                  <SelectItem key={vertical.id} value={vertical.id}>
+                    {vertical.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
           <div className="flex flex-col gap-2">
             <Label htmlFor="category-name">
               Name <span className="text-destructive">*</span>

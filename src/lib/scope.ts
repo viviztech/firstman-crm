@@ -2,16 +2,18 @@ import { and, eq, inArray, type SQL, sql } from "drizzle-orm";
 import type { AnyPgColumn } from "drizzle-orm/pg-core";
 import { db } from "@/db";
 import { clients } from "@/db/schema/clients";
-import type { employeeTypeEnum } from "@/db/schema/staff";
+import type { employeeTypeEnum, staffTeamEnum } from "@/db/schema/staff";
 import type { Role } from "@/lib/auth";
 
 export type EmployeeType = (typeof employeeTypeEnum.enumValues)[number];
+export type StaffTeam = (typeof staffTeamEnum.enumValues)[number];
 
 /**
  * Identifies the acting user for service-layer authorization and row scoping (spec 3, extended
  * by ADR 0001 with employeeType/pincodes/serviceIds for franchise territories and service-scoped
- * panels). employeeType/pincodes/serviceIds default to unrestricted-internal when a user has no
- * staff_profiles row — see getStaffScope in services/staff.ts.
+ * panels, and by ADR 0002 with team for the Sales/Operations split). employeeType/pincodes/
+ * serviceIds default to unrestricted-internal, and team defaults to null (unrestricted), when a
+ * user has no staff_profiles row — see getStaffScope in services/staff.ts.
  */
 export type ActorScope = {
   userId: string;
@@ -19,6 +21,7 @@ export type ActorScope = {
   employeeType: EmployeeType;
   pincodes: string[];
   serviceIds: string[];
+  team: StaffTeam | null;
 };
 
 /** Internal-type executives only ever see/act on rows assigned to them (spec 3). */
@@ -68,6 +71,18 @@ export function territoryConditionViaClientIds(
 export function serviceCondition(serviceIdColumn: AnyPgColumn, scope: ActorScope): SQL | undefined {
   if (scope.role !== "executive" || scope.serviceIds.length === 0) return undefined;
   return inArray(serviceIdColumn, scope.serviceIds);
+}
+
+/**
+ * Sales-team executives never see fulfillment work; operations-team executives never see the
+ * sales pipeline (ADR 0002). Unlike assignedTo/territory/service scoping, this is an all-or-
+ * nothing module boundary, not a row filter — so it's composed by each module's own
+ * scopeCondition() rather than through visibilityConditions()'s per-column shape. No team set
+ * (or a non-executive role) is unrestricted, same "absence = unrestricted" rule as elsewhere.
+ */
+export function teamCondition(scope: ActorScope, requiredTeam: StaffTeam): SQL | undefined {
+  if (scope.role !== "executive" || !scope.team) return undefined;
+  return scope.team === requiredTeam ? undefined : sql`false`;
 }
 
 type VisibilityColumns = {

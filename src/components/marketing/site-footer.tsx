@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { Logo } from "@/components/marketing/logo";
 import { getCompanyProfile } from "@/services/company-profile";
-import { getPublicCatalog } from "@/services/marketing-catalog";
+import { getPublicServices } from "@/services/marketing-catalog";
 
 export async function SiteFooter() {
-  const [profile, catalog] = await Promise.all([getCompanyProfile(), getPublicCatalog()]);
-  const featuredServices = catalog.flatMap((category) => category.services).slice(0, 6);
+  const [profile, services] = await Promise.all([getCompanyProfile(), getPublicServices()]);
+  const featuredServices = services.slice(0, 6);
   const year = new Date().getFullYear();
 
   return (

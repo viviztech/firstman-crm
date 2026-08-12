@@ -6,7 +6,7 @@ export function ClientSearchForm({ defaultValue }: { defaultValue?: string }) {
       <Input
         type="search"
         name="q"
-        placeholder="Search by name or phone…"
+        placeholder="Search by name, phone, or customer ID…"
         defaultValue={defaultValue}
       />
     </form>

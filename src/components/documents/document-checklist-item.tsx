@@ -1,11 +1,13 @@
 "use client";
 
+import { AlertCircle, CheckCircle2, CircleDashed, Clock } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import type { ChangeEvent } from "react";
+import type { ChangeEvent, ComponentType } from "react";
 import { useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
 import { rejectDocumentAction, verifyDocumentAction } from "@/actions/documents";
+import { STAT_COLOR_CLASSES } from "@/components/dashboard/dashboard-colors";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,8 +19,19 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { DOCUMENT_STATUS_BADGE, type DocumentStatus } from "@/lib/badges";
+import {
+  DOCUMENT_STATUS_BADGE,
+  DOCUMENT_STATUS_STAT_COLOR,
+  type DocumentStatus,
+} from "@/lib/badges";
 import { cn } from "@/lib/utils";
+
+const DOCUMENT_STATUS_ICON: Record<DocumentStatus, ComponentType<{ className?: string }>> = {
+  pending: CircleDashed,
+  received: Clock,
+  verified: CheckCircle2,
+  rejected: AlertCircle,
+};
 
 export type DocumentChecklistItemData = {
   id: string;
@@ -99,14 +112,31 @@ export function DocumentChecklistItem({
 
   const { label: statusLabel, className: statusClassName } = DOCUMENT_STATUS_BADGE[document.status];
   const busy = isUploading || isPending;
+  const colors = STAT_COLOR_CLASSES[DOCUMENT_STATUS_STAT_COLOR[document.status]];
+  const Icon = DOCUMENT_STATUS_ICON[document.status];
 
   return (
-    <div className="flex flex-col gap-2 rounded-lg border p-3 text-sm sm:flex-row sm:items-center sm:justify-between">
-      <div className="flex flex-col gap-1">
-        <span className="font-medium">{document.label}</span>
-        {document.status === "rejected" && document.rejectReason ? (
-          <span className="text-xs text-destructive">Rejected: {document.rejectReason}</span>
-        ) : null}
+    <div
+      className={cn(
+        "flex flex-col gap-2 rounded-lg border border-l-4 p-3 text-sm sm:flex-row sm:items-center sm:justify-between",
+        colors.border,
+      )}
+    >
+      <div className="flex items-start gap-2.5">
+        <span
+          className={cn(
+            "mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full",
+            colors.chip,
+          )}
+        >
+          <Icon className="size-3.5" />
+        </span>
+        <div className="flex flex-col gap-1">
+          <span className="font-medium">{document.label}</span>
+          {document.status === "rejected" && document.rejectReason ? (
+            <span className="text-xs text-destructive">Rejected: {document.rejectReason}</span>
+          ) : null}
+        </div>
       </div>
       <div className="flex flex-wrap items-center gap-2">
         <Badge className={cn(statusClassName)}>{statusLabel}</Badge>

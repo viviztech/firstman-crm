@@ -39,6 +39,7 @@
       "includes": [
         "**/src/db/seed.ts",
         "**/src/db/migrate.ts",
+        "**/src/db/truncate.ts",
         "**/*.config.ts",
         "**/*.config.mts"
       ],

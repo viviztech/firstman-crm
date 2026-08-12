@@ -7,7 +7,7 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-inter);
   --font-mono: var(--font-geist-mono);
   --font-heading: var(--font-sans);
   --color-sidebar-ring: var(--sidebar-ring);
@@ -54,7 +54,8 @@
 }
 
 :root {
-  --background: oklch(1 0 0);
+  /* Soft off-white app canvas (not pure white) so white cards read as raised surfaces — QuickBooks-style content area. */
+  --background: oklch(0.981 0.002 197.1);
   --foreground: oklch(0.148 0.004 228.8);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.148 0.004 228.8);
@@ -78,15 +79,19 @@
   --chart-3: oklch(0.45 0.017 213.2);
   --chart-4: oklch(0.378 0.015 216);
   --chart-5: oklch(0.275 0.011 216.9);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.987 0.002 197.1);
+  /* Moderate rounding (~8px base) — QuickBooks favors restrained corners on cards/buttons and reserves full pill rounding for badges/avatars. */
+  --radius: 0.5rem;
+  /* Light sidebar (ADR 0003, SabPaisa-inspired shell) — near-white surface with a grouped nav and
+     a brand-pink tinted active/hover state, replacing the earlier dark-charcoal QuickBooks-style
+     sidebar. Brand pink stays the one accent color across the app. */
+  --sidebar: oklch(0.99 0.001 197.1);
   --sidebar-foreground: oklch(0.148 0.004 228.8);
-  --sidebar-primary: oklch(0.546 0.245 357);
-  --sidebar-primary-foreground: oklch(0.97 0.014 357);
-  --sidebar-accent: oklch(0.963 0.002 197.1);
-  --sidebar-accent-foreground: oklch(0.218 0.008 223.9);
-  --sidebar-border: oklch(0.925 0.005 214.3);
-  --sidebar-ring: oklch(0.723 0.014 214.4);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-accent: var(--brand-muted);
+  --sidebar-accent-foreground: var(--primary);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--ring);
 
   /* FirstMan brand tint/ink — brand/brand-foreground mirror primary/primary-foreground (one
      source of truth now that primary is the brand pink app-wide); muted/ink stay as their own

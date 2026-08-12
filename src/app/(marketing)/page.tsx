@@ -4,7 +4,7 @@ import Link from "next/link";
 import { MarketingEnquiryForm } from "@/components/marketing/enquiry-form";
 import { formatMoney } from "@/lib/money";
 import { getCompanyProfile } from "@/services/company-profile";
-import { getPublicCatalog } from "@/services/marketing-catalog";
+import { getPublicServices } from "@/services/marketing-catalog";
 
 export const metadata: Metadata = {
   title: "FirstMan Corporate Services — Company Registration, GST & Compliance",
@@ -31,8 +31,7 @@ const DIFFERENTIATORS = [
 ];
 
 export default async function MarketingHomePage() {
-  const [profile, catalog] = await Promise.all([getCompanyProfile(), getPublicCatalog()]);
-  const services = catalog.flatMap((category) => category.services);
+  const [profile, services] = await Promise.all([getCompanyProfile(), getPublicServices()]);
   const featured = services.slice(0, 6);
 
   return (

@@ -23,7 +23,7 @@ const EMPTY_RESULTS: GlobalSearchResults = {
 const GROUPS: { key: keyof GlobalSearchResults; heading: string }[] = [
   { key: "enquiries", heading: "Enquiries" },
   { key: "clients", heading: "Clients" },
-  { key: "orders", heading: "Orders" },
+  { key: "orders", heading: "Job Cards" },
   { key: "invoices", heading: "Invoices" },
 ];
 

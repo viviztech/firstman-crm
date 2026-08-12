@@ -12,7 +12,7 @@ import { requireRole } from "@/lib/session";
 import { getConversionRateByExecutive, getEnquirySourcePerformance } from "@/services/reports";
 
 export default async function ConversionRateReportPage() {
-  await requireRole("super_admin", "manager", "accountant");
+  await requireRole("super_admin", "manager");
   const [bySource, byExecutive] = await Promise.all([
     getEnquirySourcePerformance(),
     getConversionRateByExecutive(),

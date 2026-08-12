@@ -3,7 +3,7 @@ import { and, eq, ilike, inArray } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { db } from "@/db";
 import { user } from "@/db/schema/auth-schema";
-import { serviceCategories, services } from "@/db/schema/catalog";
+import { serviceCategories, services, serviceVerticals } from "@/db/schema/catalog";
 import { clients } from "@/db/schema/clients";
 import { documents } from "@/db/schema/documents";
 import { enquiries } from "@/db/schema/enquiries";
@@ -43,6 +43,7 @@ describe("analytics service (integration)", () => {
   let pvtLtdServiceId: string;
   let dedicatedServiceId: string;
   let dedicatedCategoryId: string;
+  let dedicatedVerticalId: string;
 
   beforeAll(async () => {
     await db.insert(user).values([
@@ -78,9 +79,19 @@ describe("analytics service (integration)", () => {
     // A private service (not the shared seeded catalog) for the top-services-by-revenue test,
     // which does an exact-sum assertion that would otherwise race other test files' orders
     // against the shared pvt-ltd-registration service.
+    const [vertical] = await db
+      .insert(serviceVerticals)
+      .values({ name: `Analytics Test Vertical ${randomUUID().slice(0, 8)}` })
+      .returning();
+    if (!vertical) throw new Error("Failed to create test service vertical");
+    dedicatedVerticalId = vertical.id;
+
     const [category] = await db
       .insert(serviceCategories)
-      .values({ name: `Analytics Test Category ${randomUUID().slice(0, 8)}` })
+      .values({
+        verticalId: dedicatedVerticalId,
+        name: `Analytics Test Category ${randomUUID().slice(0, 8)}`,
+      })
       .returning();
     if (!category) throw new Error("Failed to create test service category");
     dedicatedCategoryId = category.id;
@@ -139,6 +150,7 @@ describe("analytics service (integration)", () => {
     await db.delete(enquiries).where(ilike(enquiries.phone, "+919876614%"));
     await db.delete(services).where(eq(services.id, dedicatedServiceId));
     await db.delete(serviceCategories).where(eq(serviceCategories.id, dedicatedCategoryId));
+    await db.delete(serviceVerticals).where(eq(serviceVerticals.id, dedicatedVerticalId));
     await db.delete(user).where(eq(user.id, managerId));
     await db.delete(user).where(eq(user.id, execAId));
     await db.delete(user).where(eq(user.id, execBId));

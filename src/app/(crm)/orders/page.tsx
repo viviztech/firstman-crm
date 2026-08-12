@@ -27,14 +27,14 @@ export default async function OrdersPage({
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">Orders</h1>
+          <h1 className="text-2xl font-semibold">Job Cards</h1>
           <p className="text-sm text-muted-foreground">
-            {user.role === "executive" ? "Orders assigned to you." : "All orders."}
+            {user.role === "executive" ? "Job cards assigned to you." : "All job cards."}
           </p>
         </div>
         {canCreate ? (
           <Button nativeButton={false} render={<Link href="/orders/new" />}>
-            New order
+            New job card
           </Button>
         ) : null}
       </div>

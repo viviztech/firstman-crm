@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { user } from "@/db/schema/auth-schema";
-import { serviceCategories, services } from "@/db/schema/catalog";
+import { serviceCategories, services, serviceVerticals } from "@/db/schema/catalog";
 import { clients } from "@/db/schema/clients";
 import { complianceItems } from "@/db/schema/compliance";
 import { enquiries, enquiryFollowups } from "@/db/schema/enquiries";
@@ -38,11 +38,12 @@ import {
   sendInvoice,
 } from "@/services/invoices";
 import { createOrder, updateOrderStatus } from "@/services/orders";
+import { updateStaffTeam } from "@/services/staff";
 
 /** A couple of seeded enquiries get genuinely closed as sales so conversion-rate reports have non-zero data. */
 const WON_ENQUIRY_PHONES = ["+919833100033", "+919900100010"] as const;
 
-/** The seed script always acts as an unrestricted super_admin (ADR 0001's employeeType/pincodes/serviceIds don't apply). */
+/** The seed script always acts as an unrestricted super_admin (ADR 0001/0002's scoping fields don't apply). */
 function actorScope(actorId: string): ActorScope {
   return {
     userId: actorId,
@@ -50,6 +51,7 @@ function actorScope(actorId: string): ActorScope {
     employeeType: "internal",
     pincodes: [],
     serviceIds: [],
+    team: null,
   };
 }
 
@@ -153,50 +155,72 @@ async function seedGeography(): Promise<void> {
 }
 
 async function seedCatalog(actorId: string): Promise<void> {
-  for (const category of CATALOG_SEED) {
-    let categoryRow = await db.query.serviceCategories.findFirst({
-      where: eq(serviceCategories.name, category.name),
+  for (const vertical of CATALOG_SEED) {
+    let verticalRow = await db.query.serviceVerticals.findFirst({
+      where: eq(serviceVerticals.name, vertical.name),
     });
 
-    if (!categoryRow) {
+    if (!verticalRow) {
       const [created] = await db
-        .insert(serviceCategories)
+        .insert(serviceVerticals)
         .values({
-          name: category.name,
-          sort: category.sort,
+          name: vertical.name,
+          sort: vertical.sort,
           createdBy: actorId,
           updatedBy: actorId,
         })
         .returning();
-      if (!created) throw new Error(`Failed to create category ${category.name}`);
-      categoryRow = created;
-      console.log(`created category ${category.name}`);
+      if (!created) throw new Error(`Failed to create vertical ${vertical.name}`);
+      verticalRow = created;
+      console.log(`created vertical ${vertical.name}`);
     }
 
-    for (const service of category.services) {
-      const existing = await db.query.services.findFirst({
-        where: eq(services.slug, service.slug),
+    for (const category of vertical.categories) {
+      let categoryRow = await db.query.serviceCategories.findFirst({
+        where: eq(serviceCategories.name, category.name),
       });
-      const values = {
-        categoryId: categoryRow.id,
-        name: service.name,
-        slug: service.slug,
-        description: service.description,
-        basePricePaise: service.basePricePaise,
-        govtFeePaise: service.govtFeePaise ?? null,
-        estimatedDays: service.estimatedDays,
-        isRecurring: service.isRecurring,
-        recurrence: service.recurrence ?? null,
-        checklistTemplate: service.checklistTemplate,
-        requiredDocuments: service.requiredDocuments,
-        updatedBy: actorId,
-      };
 
-      if (existing) {
-        await db.update(services).set(values).where(eq(services.id, existing.id));
-      } else {
-        await db.insert(services).values({ ...values, createdBy: actorId });
-        console.log(`created service ${service.name}`);
+      if (!categoryRow) {
+        const [created] = await db
+          .insert(serviceCategories)
+          .values({
+            verticalId: verticalRow.id,
+            name: category.name,
+            sort: category.sort,
+            createdBy: actorId,
+            updatedBy: actorId,
+          })
+          .returning();
+        if (!created) throw new Error(`Failed to create category ${category.name}`);
+        categoryRow = created;
+        console.log(`created category ${category.name}`);
+      }
+
+      for (const service of category.services) {
+        const existing = await db.query.services.findFirst({
+          where: eq(services.slug, service.slug),
+        });
+        const values = {
+          categoryId: categoryRow.id,
+          name: service.name,
+          slug: service.slug,
+          description: service.description,
+          basePricePaise: service.basePricePaise,
+          govtFeePaise: service.govtFeePaise ?? null,
+          estimatedDays: service.estimatedDays,
+          isRecurring: service.isRecurring,
+          recurrence: service.recurrence ?? null,
+          checklistTemplate: service.checklistTemplate,
+          requiredDocuments: service.requiredDocuments,
+          updatedBy: actorId,
+        };
+
+        if (existing) {
+          await db.update(services).set(values).where(eq(services.id, existing.id));
+        } else {
+          await db.insert(services).values({ ...values, createdBy: actorId });
+          console.log(`created service ${service.name}`);
+        }
       }
     }
   }
@@ -304,9 +328,13 @@ async function seedEnquiryConversions(actorId: string): Promise<void> {
         email: enquiry.email ?? undefined,
         address: undefined,
         pincode: undefined,
-        serviceId: service.id,
-        quotedPricePaise: service.basePricePaise,
-        govtFeePaise: service.govtFeePaise ?? undefined,
+        services: [
+          {
+            serviceId: service.id,
+            quotedPricePaise: service.basePricePaise,
+            govtFeePaise: service.govtFeePaise ?? undefined,
+          },
+        ],
         comments: undefined,
       },
       actor,
@@ -347,7 +375,10 @@ async function seedOrders(actorId: string, executiveIds: string[]): Promise<void
     );
 
     if (seed.status) {
-      await updateOrderStatus(created.id, seed.status, actor);
+      // Seed data sets a specific demo status directly rather than simulating the real
+      // workflow (tasks done, proforma paid) — force bypasses the hard completion gate
+      // (ADR 0002); harmless for non-"completed" statuses, since force is only consulted there.
+      await updateOrderStatus(created.id, seed.status, actor, { force: true });
     }
   }
   console.log(`seeded ${ORDER_SEED.length} demo orders`);
@@ -484,8 +515,16 @@ async function seedExpenses(actorId: string): Promise<void> {
   console.log(`seeded ${EXPENSE_SEED.length} demo expenses`);
 }
 
+/**
+ * --minimal seeds only reference data an empty install actually needs to be usable — staff
+ * accounts, geography, and the service catalog — and skips every fake demo record (clients,
+ * enquiries, orders, compliance items, invoices, expenses) the full seed otherwise generates.
+ */
 async function main(): Promise<void> {
+  const minimal = process.argv.includes("--minimal");
+
   const adminId = await upsertUser("admin@firstman.in", "Admin", "super_admin");
+  const actor = actorScope(adminId);
 
   const executiveIds: string[] = [];
   for (const group of STAFF) {
@@ -496,12 +535,31 @@ async function main(): Promise<void> {
     }
   }
 
+  // A couple of demo executives get a team (ADR 0002) — the rest stay unset/unrestricted, so the
+  // seeded demo shows all three states (sales, operations, no team) side by side.
+  const [salesExecId, opsExecId, unsetExecId] = executiveIds;
+  if (salesExecId) await updateStaffTeam(salesExecId, "sales", actor);
+  if (opsExecId) await updateStaffTeam(opsExecId, "operations", actor);
+  console.log("assigned demo executives to sales/operations teams");
+
   await seedGeography();
   await seedCatalog(adminId);
+
+  if (minimal) {
+    console.log("Minimal seed complete (users, geography, catalog only — no demo data).");
+    process.exit(0);
+  }
+
+  // Enquiries only ever go to executives who can actually see Enquiries (sales-team or no team);
+  // job cards only ever go to executives who can actually see Job Cards (operations-team or no
+  // team) — otherwise seeded data would include records invisible to their own assignee.
+  const salesExecutiveIds = [salesExecId, unsetExecId].filter((id): id is string => Boolean(id));
+  const opsExecutiveIds = [opsExecId, unsetExecId].filter((id): id is string => Boolean(id));
+
   await seedClients(adminId, executiveIds);
-  await seedEnquiries(adminId, executiveIds);
+  await seedEnquiries(adminId, salesExecutiveIds);
   await seedEnquiryConversions(adminId);
-  await seedOrders(adminId, executiveIds);
+  await seedOrders(adminId, opsExecutiveIds);
   await seedCompliance(adminId);
   await seedInvoices(adminId);
   await seedExpenses(adminId);

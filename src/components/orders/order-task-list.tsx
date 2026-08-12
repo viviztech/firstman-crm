@@ -1,10 +1,12 @@
 "use client";
 
+import { AlertCircle, CheckCircle2, CircleDashed, Clock } from "lucide-react";
 import { useRouter } from "next/navigation";
+import type { ComponentType } from "react";
 import { useTransition } from "react";
 import { toast } from "sonner";
 import { updateOrderTaskStatusAction } from "@/actions/orders";
-import { Badge } from "@/components/ui/badge";
+import { STAT_COLOR_CLASSES } from "@/components/dashboard/dashboard-colors";
 import {
   Select,
   SelectContent,
@@ -13,7 +15,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { orderTaskStatusEnum } from "@/db/schema/orders";
-import { ORDER_TASK_STATUS_BADGE, type OrderTaskStatus } from "@/lib/badges";
+import {
+  ORDER_TASK_STATUS_BADGE,
+  ORDER_TASK_STATUS_STAT_COLOR,
+  type OrderTaskStatus,
+} from "@/lib/badges";
+import { cn } from "@/lib/utils";
 
 export type OrderTaskRow = {
   id: string;
@@ -21,6 +28,13 @@ export type OrderTaskRow = {
   status: OrderTaskStatus;
   dueAt: Date | string | null;
   assignee: { id: string; name: string } | null;
+};
+
+const TASK_STATUS_ICON: Record<OrderTaskStatus, ComponentType<{ className?: string }>> = {
+  pending: CircleDashed,
+  in_progress: Clock,
+  done: CheckCircle2,
+  blocked: AlertCircle,
 };
 
 function isOverdue(dueAt: Date | string | null, status: OrderTaskStatus): boolean {
@@ -45,21 +59,48 @@ function TaskRow({ orderId, task }: { orderId: string; task: OrderTaskRow }) {
   }
 
   const overdue = isOverdue(task.dueAt, task.status);
+  const colors = STAT_COLOR_CLASSES[ORDER_TASK_STATUS_STAT_COLOR[task.status]];
+  const Icon = TASK_STATUS_ICON[task.status];
 
   return (
-    <div className="flex items-center justify-between gap-3 rounded-lg border p-3 text-sm">
-      <div className="flex flex-col gap-1">
-        <span className="font-medium">{task.title}</span>
-        <span className="flex items-center gap-2 text-xs text-muted-foreground">
-          {task.assignee?.name ?? "Unassigned"}
-          {task.dueAt ? (
-            <span className={overdue ? "font-medium text-destructive" : undefined}>
-              · Due{" "}
-              {new Date(task.dueAt).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
-              {overdue ? " · Overdue" : ""}
-            </span>
-          ) : null}
+    <div
+      className={cn(
+        "flex items-center justify-between gap-3 rounded-lg border border-l-4 p-3 text-sm",
+        colors.border,
+      )}
+    >
+      <div className="flex items-start gap-2.5">
+        <span
+          className={cn(
+            "mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full",
+            colors.chip,
+          )}
+        >
+          <Icon className="size-3.5" />
         </span>
+        <div className="flex flex-col gap-1">
+          <span
+            className={cn(
+              "font-medium",
+              task.status === "done" && "text-muted-foreground line-through",
+            )}
+          >
+            {task.title}
+          </span>
+          <span className="flex items-center gap-2 text-xs text-muted-foreground">
+            {task.assignee?.name ?? "Unassigned"}
+            {task.dueAt ? (
+              <span className={overdue ? "font-medium text-destructive" : undefined}>
+                · Due{" "}
+                {new Date(task.dueAt).toLocaleDateString("en-IN", {
+                  day: "numeric",
+                  month: "short",
+                })}
+                {overdue ? " · Overdue" : ""}
+              </span>
+            ) : null}
+          </span>
+        </div>
       </div>
       <Select
         value={task.status}
@@ -91,14 +132,26 @@ export function OrderTaskList({ orderId, tasks }: { orderId: string; tasks: Orde
   }
 
   const doneCount = tasks.filter((task) => task.status === "done").length;
+  const percentDone = Math.round((doneCount / tasks.length) * 100);
 
   return (
-    <div className="flex flex-col gap-2">
-      <div className="flex items-center justify-between">
-        <span className="text-sm text-muted-foreground">
-          {doneCount} of {tasks.length} tasks done
-        </span>
-        <Badge variant="secondary">{tasks.length} total</Badge>
+    <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-1.5">
+        <div className="flex items-center justify-between text-sm">
+          <span className="text-muted-foreground">
+            {doneCount} of {tasks.length} tasks done
+          </span>
+          <span className="font-medium">{percentDone}%</span>
+        </div>
+        <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+          <div
+            className={cn(
+              "h-full rounded-full transition-[width]",
+              percentDone === 100 ? "bg-green-500" : "bg-blue-500",
+            )}
+            style={{ width: `${percentDone}%` }}
+          />
+        </div>
       </div>
       {tasks.map((task) => (
         <TaskRow key={task.id} orderId={orderId} task={task} />

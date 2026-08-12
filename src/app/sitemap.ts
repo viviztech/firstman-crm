@@ -2,7 +2,7 @@ import type { MetadataRoute } from "next";
 import { COMPARISONS } from "@/content/comparisons";
 import { ALL_ARTICLES } from "@/content/resources";
 import { getAppUrl } from "@/lib/app-url";
-import { getPublicCatalog } from "@/services/marketing-catalog";
+import { getPublicServices } from "@/services/marketing-catalog";
 
 export const revalidate = 3600;
 
@@ -17,10 +17,8 @@ const STATIC_ROUTES = [
 ];
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const catalog = await getPublicCatalog();
-  const serviceRoutes = catalog.flatMap((category) =>
-    category.services.map((service) => `/services/${service.slug}`),
-  );
+  const services = await getPublicServices();
+  const serviceRoutes = services.map((service) => `/services/${service.slug}`);
   const compareRoutes = COMPARISONS.map((comparison) => `/compare/${comparison.slug}`);
   const resourceRoutes = ALL_ARTICLES.map((article) => `/resources/${article.slug}`);
 

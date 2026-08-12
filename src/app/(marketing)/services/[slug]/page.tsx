@@ -6,13 +6,11 @@ import { MarketingEnquiryForm } from "@/components/marketing/enquiry-form";
 import { JsonLd } from "@/components/marketing/json-ld";
 import { getAppUrl } from "@/lib/app-url";
 import { formatMoney } from "@/lib/money";
-import { getPublicCatalog, getPublicServiceBySlug } from "@/services/marketing-catalog";
+import { getPublicServiceBySlug, getPublicServices } from "@/services/marketing-catalog";
 
 export async function generateStaticParams() {
-  const catalog = await getPublicCatalog();
-  return catalog.flatMap((category) =>
-    category.services.map((service) => ({ slug: service.slug })),
-  );
+  const services = await getPublicServices();
+  return services.map((service) => ({ slug: service.slug }));
 }
 
 export async function generateMetadata({
@@ -41,11 +39,13 @@ function recurrenceLabel(recurrence: "monthly" | "quarterly" | "yearly" | null):
 
 export default async function ServiceDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const [service, catalog] = await Promise.all([getPublicServiceBySlug(slug), getPublicCatalog()]);
+  const [service, allServices] = await Promise.all([
+    getPublicServiceBySlug(slug),
+    getPublicServices(),
+  ]);
   if (!service) notFound();
 
   const totalFromPaise = service.basePricePaise + (service.govtFeePaise ?? 0);
-  const allServices = catalog.flatMap((category) => category.services);
 
   const faqs = [
     {

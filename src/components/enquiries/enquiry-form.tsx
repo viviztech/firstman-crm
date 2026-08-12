@@ -1,13 +1,16 @@
 "use client";
 
+import { CalendarClock, CircleAlert, Megaphone, MessageSquare, Phone } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { FocusEvent } from "react";
 import { useActionState, useEffect, useState } from "react";
 import { lookupPincodeAction } from "@/actions/geography";
 import type { ActionResult } from "@/actions/shared";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { SectionIcon } from "@/components/ui/section-icon";
 import {
   Select,
   SelectContent,
@@ -91,165 +94,225 @@ export function EnquiryForm<T extends { id: string } | undefined>({
   const canAssign = role !== "executive";
 
   return (
-    <form action={formAction} className="flex max-w-2xl flex-col gap-4">
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="name">
-            Name <span className="text-destructive">*</span>
+    <form action={formAction} className="flex flex-col gap-4">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <SectionIcon icon={Phone} color="blue" />
+            Contact details
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-4">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="name">
+                Name <span className="text-destructive">*</span>
+              </Label>
+              <Input id="name" name="name" required defaultValue={defaultValues?.name ?? ""} />
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="phone">
+                Phone <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="phone"
+                name="phone"
+                required
+                placeholder="98765 43210"
+                defaultValue={defaultValues?.phone ?? ""}
+              />
+            </div>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                defaultValue={defaultValues?.email ?? ""}
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="city">City</Label>
+              <Input id="city" name="city" value={city} onChange={(e) => setCity(e.target.value)} />
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="address">Address</Label>
+            <Textarea
+              id="address"
+              name="address"
+              rows={2}
+              defaultValue={defaultValues?.address ?? ""}
+            />
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="pincode">Pincode</Label>
+              <Input
+                id="pincode"
+                name="pincode"
+                placeholder="560001"
+                defaultValue={defaultValues?.pincode ?? ""}
+                onBlur={handlePincodeBlur}
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <SectionIcon icon={Megaphone} color="purple" />
+            Enquiry details
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-4">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="source">
+                Source <span className="text-destructive">*</span>
+              </Label>
+              <Select
+                name="source"
+                defaultValue={defaultValues?.source ?? "website"}
+                items={enquirySourceEnum.enumValues.map((value) => ({
+                  value,
+                  label: ENQUIRY_SOURCE_LABEL[value],
+                }))}
+              >
+                <SelectTrigger id="source" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {enquirySourceEnum.enumValues.map((value) => (
+                    <SelectItem key={value} value={value}>
+                      {ENQUIRY_SOURCE_LABEL[value]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="serviceInterestedId">Service interested</Label>
+              <Select
+                name="serviceInterestedId"
+                defaultValue={defaultValues?.serviceInterestedId ?? undefined}
+                items={services.map((service) => ({ value: service.id, label: service.name }))}
+              >
+                <SelectTrigger id="serviceInterestedId" className="w-full">
+                  <SelectValue placeholder="None" />
+                </SelectTrigger>
+                <SelectContent>
+                  {services.map((service) => (
+                    <SelectItem key={service.id} value={service.id}>
+                      {service.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="referralPartnerId">Referral partner</Label>
+            <Select
+              name="referralPartnerId"
+              defaultValue={defaultValues?.referralPartnerId ?? undefined}
+              items={referralPartners.map((partner) => ({
+                value: partner.id,
+                label: partner.name,
+              }))}
+            >
+              <SelectTrigger id="referralPartnerId" className="w-full sm:w-1/2">
+                <SelectValue placeholder="None" />
+              </SelectTrigger>
+              <SelectContent>
+                {referralPartners.map((partner) => (
+                  <SelectItem key={partner.id} value={partner.id}>
+                    {partner.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <SectionIcon icon={CalendarClock} color="amber" />
+            Follow-up &amp; ownership
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-4">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="nextFollowUpAt">Next follow-up</Label>
+              <Input
+                id="nextFollowUpAt"
+                name="nextFollowUpAt"
+                type="datetime-local"
+                defaultValue={toDateTimeLocalValue(defaultValues?.nextFollowUpAt)}
+              />
+            </div>
+            {canAssign ? (
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="assignedTo">Assigned to</Label>
+                <Select
+                  name="assignedTo"
+                  defaultValue={defaultValues?.assignedTo ?? undefined}
+                  items={staff.map((member) => ({ value: member.id, label: member.name }))}
+                >
+                  <SelectTrigger id="assignedTo" className="w-full">
+                    <SelectValue placeholder="Unassigned" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {staff.map((member) => (
+                      <SelectItem key={member.id} value={member.id}>
+                        {member.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            ) : null}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <SectionIcon icon={MessageSquare} color="slate" />
+            Notes
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Label htmlFor="notes" className="sr-only">
+            Comments
           </Label>
-          <Input id="name" name="name" required defaultValue={defaultValues?.name ?? ""} />
-        </div>
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="phone">
-            Phone <span className="text-destructive">*</span>
-          </Label>
-          <Input
-            id="phone"
-            name="phone"
-            required
-            placeholder="98765 43210"
-            defaultValue={defaultValues?.phone ?? ""}
+          <Textarea
+            id="notes"
+            name="notes"
+            placeholder="Anything else worth knowing about this enquiry…"
+            defaultValue={defaultValues?.notes ?? ""}
           />
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="email">Email</Label>
-          <Input id="email" name="email" type="email" defaultValue={defaultValues?.email ?? ""} />
-        </div>
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="city">City</Label>
-          <Input id="city" name="city" value={city} onChange={(e) => setCity(e.target.value)} />
-        </div>
-      </div>
-
-      <div className="flex flex-col gap-2">
-        <Label htmlFor="address">Address</Label>
-        <Textarea
-          id="address"
-          name="address"
-          rows={2}
-          defaultValue={defaultValues?.address ?? ""}
-        />
-      </div>
-
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="pincode">Pincode</Label>
-          <Input
-            id="pincode"
-            name="pincode"
-            placeholder="560001"
-            defaultValue={defaultValues?.pincode ?? ""}
-            onBlur={handlePincodeBlur}
-          />
-        </div>
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="source">
-            Source <span className="text-destructive">*</span>
-          </Label>
-          <Select
-            name="source"
-            defaultValue={defaultValues?.source ?? "website"}
-            items={enquirySourceEnum.enumValues.map((value) => ({
-              value,
-              label: ENQUIRY_SOURCE_LABEL[value],
-            }))}
-          >
-            <SelectTrigger id="source" className="w-full">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {enquirySourceEnum.enumValues.map((value) => (
-                <SelectItem key={value} value={value}>
-                  {ENQUIRY_SOURCE_LABEL[value]}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="serviceInterestedId">Service interested</Label>
-          <Select
-            name="serviceInterestedId"
-            defaultValue={defaultValues?.serviceInterestedId ?? undefined}
-            items={services.map((service) => ({ value: service.id, label: service.name }))}
-          >
-            <SelectTrigger id="serviceInterestedId" className="w-full">
-              <SelectValue placeholder="None" />
-            </SelectTrigger>
-            <SelectContent>
-              {services.map((service) => (
-                <SelectItem key={service.id} value={service.id}>
-                  {service.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="referralPartnerId">Referral partner</Label>
-          <Select
-            name="referralPartnerId"
-            defaultValue={defaultValues?.referralPartnerId ?? undefined}
-            items={referralPartners.map((partner) => ({ value: partner.id, label: partner.name }))}
-          >
-            <SelectTrigger id="referralPartnerId" className="w-full">
-              <SelectValue placeholder="None" />
-            </SelectTrigger>
-            <SelectContent>
-              {referralPartners.map((partner) => (
-                <SelectItem key={partner.id} value={partner.id}>
-                  {partner.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      <div className="flex flex-col gap-2">
-        <Label htmlFor="nextFollowUpAt">Next follow-up</Label>
-        <Input
-          id="nextFollowUpAt"
-          name="nextFollowUpAt"
-          type="datetime-local"
-          defaultValue={toDateTimeLocalValue(defaultValues?.nextFollowUpAt)}
-        />
-      </div>
-
-      {canAssign ? (
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="assignedTo">Assigned to</Label>
-          <Select
-            name="assignedTo"
-            defaultValue={defaultValues?.assignedTo ?? undefined}
-            items={staff.map((member) => ({ value: member.id, label: member.name }))}
-          >
-            <SelectTrigger id="assignedTo" className="w-full">
-              <SelectValue placeholder="Unassigned" />
-            </SelectTrigger>
-            <SelectContent>
-              {staff.map((member) => (
-                <SelectItem key={member.id} value={member.id}>
-                  {member.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+      {state && !state.ok ? (
+        <div className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
+          <CircleAlert className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+          <span>{state.error}</span>
         </div>
       ) : null}
-
-      <div className="flex flex-col gap-2">
-        <Label htmlFor="notes">Comments</Label>
-        <Textarea id="notes" name="notes" defaultValue={defaultValues?.notes ?? ""} />
-      </div>
-
-      {state && !state.ok ? <p className="text-sm text-destructive">{state.error}</p> : null}
 
       <div>
         <Button type="submit" disabled={isPending}>

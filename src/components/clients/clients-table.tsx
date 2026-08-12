@@ -31,6 +31,11 @@ const columns: ColumnDef<ClientRow>[] = [
     ),
   },
   {
+    accessorKey: "cin",
+    header: "Customer ID",
+    cell: ({ row }) => <span className="text-muted-foreground">{row.original.cin ?? "—"}</span>,
+  },
+  {
     accessorKey: "type",
     header: "Type",
     cell: ({ row }) => (

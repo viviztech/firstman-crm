@@ -25,12 +25,26 @@ export type ChecklistTemplateItem = {
   dayOffset: number;
 };
 
-export const serviceCategories = pgTable("service_categories", {
+export const serviceVerticals = pgTable("service_verticals", {
   ...baseColumns(),
   ...actorColumns(),
   name: text("name").notNull(),
   sort: integer("sort").notNull().default(0),
 });
+
+export const serviceCategories = pgTable(
+  "service_categories",
+  {
+    ...baseColumns(),
+    ...actorColumns(),
+    verticalId: uuid("vertical_id")
+      .notNull()
+      .references(() => serviceVerticals.id, { onDelete: "restrict" }),
+    name: text("name").notNull(),
+    sort: integer("sort").notNull().default(0),
+  },
+  (table) => [index("service_categories_vertical_id_idx").on(table.verticalId)],
+);
 
 export const services = pgTable(
   "services",
@@ -98,7 +112,15 @@ export const serviceRelations = pgTable(
   ],
 );
 
-export const serviceCategoriesRelations = relations(serviceCategories, ({ many }) => ({
+export const serviceVerticalsRelations = relations(serviceVerticals, ({ many }) => ({
+  categories: many(serviceCategories),
+}));
+
+export const serviceCategoriesRelations = relations(serviceCategories, ({ one, many }) => ({
+  vertical: one(serviceVerticals, {
+    fields: [serviceCategories.verticalId],
+    references: [serviceVerticals.id],
+  }),
   services: many(services),
 }));
 

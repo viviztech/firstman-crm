@@ -35,12 +35,13 @@ export function DeleteOrderButton({ orderId, orderNo }: { orderId: string; order
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={<Button variant="destructive" />}>Delete order</DialogTrigger>
+      <DialogTrigger render={<Button variant="destructive" />}>Delete job card</DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Delete order {orderNo}?</DialogTitle>
+          <DialogTitle>Delete job card {orderNo}?</DialogTitle>
           <DialogDescription>
-            This soft-deletes the order — it will be hidden from lists but can be recovered later.
+            This soft-deletes the job card — it will be hidden from lists but can be recovered
+            later.
           </DialogDescription>
         </DialogHeader>
         {error ? <p className="text-sm text-destructive">{error}</p> : null}

@@ -20,48 +20,53 @@ export default async function PricingPage() {
         </p>
       </div>
 
-      <div className="flex flex-col gap-10">
-        {catalog.map((category) => (
-          <section key={category.id}>
-            <h2 className="mb-3 text-lg font-bold">{category.name}</h2>
-            <div className="overflow-x-auto rounded-xl border">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
-                    <th className="px-4 py-3 font-medium">Service</th>
-                    <th className="px-4 py-3 font-medium">Professional fee</th>
-                    <th className="px-4 py-3 font-medium">Govt. fee</th>
-                    <th className="px-4 py-3 font-medium">Turnaround</th>
-                    <th className="px-4 py-3" />
-                  </tr>
-                </thead>
-                <tbody>
-                  {category.services.map((service) => (
-                    <tr key={service.id} className="border-b last:border-0">
-                      <td className="px-4 py-3 font-medium">{service.name}</td>
-                      <td className="px-4 py-3 tabular-nums">
-                        {formatMoney(service.basePricePaise)}
-                      </td>
-                      <td className="px-4 py-3 tabular-nums text-muted-foreground">
-                        {service.govtFeePaise ? formatMoney(service.govtFeePaise) : "—"}
-                      </td>
-                      <td className="px-4 py-3 text-muted-foreground">
-                        {service.estimatedDays} days
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <Link
-                          href={`/services/${service.slug}`}
-                          className="text-brand font-medium hover:underline"
-                        >
-                          Details
-                        </Link>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </section>
+      <div className="flex flex-col gap-14">
+        {catalog.map((vertical) => (
+          <div key={vertical.id} className="flex flex-col gap-8">
+            <h2 className="text-xl font-extrabold tracking-tight">{vertical.name}</h2>
+            {vertical.categories.map((category) => (
+              <section key={category.id}>
+                <h3 className="mb-3 text-lg font-bold">{category.name}</h3>
+                <div className="overflow-x-auto rounded-xl border">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
+                        <th className="px-4 py-3 font-medium">Service</th>
+                        <th className="px-4 py-3 font-medium">Professional fee</th>
+                        <th className="px-4 py-3 font-medium">Govt. fee</th>
+                        <th className="px-4 py-3 font-medium">Turnaround</th>
+                        <th className="px-4 py-3" />
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {category.services.map((service) => (
+                        <tr key={service.id} className="border-b last:border-0">
+                          <td className="px-4 py-3 font-medium">{service.name}</td>
+                          <td className="px-4 py-3 tabular-nums">
+                            {formatMoney(service.basePricePaise)}
+                          </td>
+                          <td className="px-4 py-3 tabular-nums text-muted-foreground">
+                            {service.govtFeePaise ? formatMoney(service.govtFeePaise) : "—"}
+                          </td>
+                          <td className="px-4 py-3 text-muted-foreground">
+                            {service.estimatedDays} days
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            <Link
+                              href={`/services/${service.slug}`}
+                              className="text-brand font-medium hover:underline"
+                            >
+                              Details
+                            </Link>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+            ))}
+          </div>
         ))}
       </div>
 

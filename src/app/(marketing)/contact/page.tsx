@@ -2,7 +2,7 @@ import { Mail, MapPin, Phone } from "lucide-react";
 import type { Metadata } from "next";
 import { MarketingEnquiryForm } from "@/components/marketing/enquiry-form";
 import { getCompanyProfile } from "@/services/company-profile";
-import { getPublicCatalog } from "@/services/marketing-catalog";
+import { getPublicServices } from "@/services/marketing-catalog";
 
 export const metadata: Metadata = {
   title: "Contact — FirstMan Corporate Services",
@@ -10,8 +10,7 @@ export const metadata: Metadata = {
 };
 
 export default async function ContactPage() {
-  const [profile, catalog] = await Promise.all([getCompanyProfile(), getPublicCatalog()]);
-  const services = catalog.flatMap((category) => category.services);
+  const [profile, services] = await Promise.all([getCompanyProfile(), getPublicServices()]);
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-16 sm:px-6">

@@ -1,6 +1,7 @@
 import { eq, inArray, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { user } from "@/db/schema/auth-schema";
+import { staffProfiles, staffServiceAssignments } from "@/db/schema/staff";
 import type { Role } from "@/lib/auth";
 import { listStaffProfileSummaries } from "@/services/staff";
 
@@ -14,6 +15,34 @@ export async function listAssignableStaff() {
     .from(user)
     .where(inArray(user.role, ["super_admin", "manager", "executive"]))
     .orderBy(byNameCaseInsensitive);
+}
+
+/**
+ * Same roster as listAssignableStaff, but narrowed for a specific job card's service: an
+ * operations-team executive who isn't scoped to `serviceId` is left out, since assigning them
+ * would just be rejected by orders.ts's mandatory scope check (ADR 0004). Everyone else — sales/
+ * no-team executives, franchise staff, managers, super_admins — stays included; the mandatory
+ * scoping rule only ever applies to operations-team executives.
+ */
+export async function listAssignableStaffForService(serviceId: string) {
+  const [staff, operationsProfiles, assignments] = await Promise.all([
+    listAssignableStaff(),
+    db
+      .select({ userId: staffProfiles.userId })
+      .from(staffProfiles)
+      .where(eq(staffProfiles.team, "operations")),
+    db
+      .select({ userId: staffServiceAssignments.userId })
+      .from(staffServiceAssignments)
+      .where(eq(staffServiceAssignments.serviceId, serviceId)),
+  ]);
+
+  const operationsUserIds = new Set(operationsProfiles.map((row) => row.userId));
+  const scopedForThisService = new Set(assignments.map((row) => row.userId));
+
+  return staff.filter(
+    (member) => !operationsUserIds.has(member.id) || scopedForThisService.has(member.id),
+  );
 }
 
 /** Unscoped fetch for notification jobs — system-context, not a user request (mirrors getInvoiceForPdf). */
@@ -43,7 +72,7 @@ export async function listStaffEmailsByRole(roles: Role[]): Promise<string[]> {
 
 /**
  * Full staff roster for the admin user-management screen (spec 4.10, extended by ADR 0001 with
- * employeeType/pincodes/serviceIds) — super_admin only.
+ * employeeType/pincodes/serviceIds and ADR 0002 with team) — super_admin only.
  */
 export async function listAllStaffForAdmin() {
   const [rows, profileSummaries] = await Promise.all([
@@ -68,6 +97,7 @@ export async function listAllStaffForAdmin() {
       employeeType: profile?.employeeType ?? "internal",
       pincodes: profile?.pincodes ?? [],
       serviceIds: profile?.serviceIds ?? [],
+      team: profile?.team ?? null,
     };
   });
 }

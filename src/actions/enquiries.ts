@@ -7,6 +7,7 @@ import type { Role } from "@/lib/auth";
 import { requireUser } from "@/lib/session";
 import {
   addFollowup,
+  claimEnquiry,
   closeEnquiryAsSale,
   closeEnquiryAsSaleInputSchema,
   createEnquiry,
@@ -21,6 +22,19 @@ import {
 
 const CAN_ACCESS: Role[] = ["super_admin", "manager", "executive"];
 const CAN_DELETE: Role[] = ["super_admin", "manager"];
+
+/** Service lines travel as a JSON blob in a hidden field — FormData has no native array encoding
+ * (mirrors parseLineItems in actions/invoices.ts). */
+function parseServiceLines(formData: FormData): unknown[] {
+  const raw = formData.get("servicesJson");
+  if (typeof raw !== "string") return [];
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
 
 export async function createEnquiryAction(
   _prev: ActionResult<{ id: string }> | undefined,
@@ -144,15 +158,20 @@ export async function deleteEnquiryAction(id: string): Promise<ActionResult> {
 
 export async function closeEnquiryAsSaleAction(
   id: string,
-  _prev: ActionResult<{ clientId: string; orderId: string; proformaInvoiceId: string }> | undefined,
+  _prev:
+    | ActionResult<{ clientId: string; orderIds: string[]; proformaInvoiceIds: string[] }>
+    | undefined,
   formData: FormData,
-): Promise<ActionResult<{ clientId: string; orderId: string; proformaInvoiceId: string }>> {
+): Promise<ActionResult<{ clientId: string; orderIds: string[]; proformaInvoiceIds: string[] }>> {
   const currentUser = await requireUser();
   if (!CAN_ACCESS.includes(currentUser.role)) {
     return { ok: false, error: "You do not have permission to close a sale on this enquiry." };
   }
 
-  const parsed = closeEnquiryAsSaleInputSchema.safeParse(Object.fromEntries(formData));
+  const parsed = closeEnquiryAsSaleInputSchema.safeParse({
+    ...Object.fromEntries(formData),
+    services: parseServiceLines(formData),
+  });
   if (!parsed.success) {
     return { ok: false, error: firstIssueMessage(parsed.error) };
   }
@@ -162,6 +181,7 @@ export async function closeEnquiryAsSaleAction(
     return { ok: false, error: "Enquiry not found, already converted, or already lost." };
   }
 
+  revalidatePath("/dashboard");
   revalidatePath("/enquiries");
   revalidatePath(`/enquiries/${id}`);
   revalidatePath("/clients");
@@ -171,10 +191,27 @@ export async function closeEnquiryAsSaleAction(
     ok: true,
     data: {
       clientId: result.client.id,
-      orderId: result.order.id,
-      proformaInvoiceId: result.proformaInvoice.id,
+      orderIds: result.orders.map((order) => order.id),
+      proformaInvoiceIds: result.proformaInvoices.map((invoice) => invoice.id),
     },
   };
+}
+
+export async function claimEnquiryAction(id: string): Promise<ActionResult> {
+  const currentUser = await requireUser();
+  if (!CAN_ACCESS.includes(currentUser.role)) {
+    return { ok: false, error: "You do not have permission to pick up enquiries." };
+  }
+
+  const claimed = await claimEnquiry(id, await toScope(currentUser));
+  if (!claimed) {
+    return { ok: false, error: "This enquiry was already picked up by someone else." };
+  }
+
+  revalidatePath("/dashboard");
+  revalidatePath("/enquiries");
+  revalidatePath(`/enquiries/${id}`);
+  return { ok: true, data: undefined };
 }
 
 export async function hardDeleteEnquiryAction(id: string): Promise<ActionResult> {
