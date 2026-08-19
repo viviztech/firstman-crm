@@ -9,7 +9,7 @@ import {
   resolveRelatedArticles,
 } from "@/content/resources";
 import { getAppUrl } from "@/lib/app-url";
-import { getPublicCatalog } from "@/services/marketing-catalog";
+import { getPublicServices } from "@/services/marketing-catalog";
 
 export async function generateStaticParams() {
   return ALL_ARTICLES.map((article) => ({ slug: article.slug }));
@@ -43,8 +43,7 @@ export default async function ResourceArticlePage({
   const article = getArticleBySlug(slug);
   if (!article) notFound();
 
-  const catalog = await getPublicCatalog();
-  const allServices = catalog.flatMap((category) => category.services);
+  const allServices = await getPublicServices();
   const relatedServices = (article.relatedServiceSlugs ?? [])
     .map((serviceSlug) => allServices.find((s) => s.slug === serviceSlug))
     .filter((s): s is (typeof allServices)[number] => Boolean(s));

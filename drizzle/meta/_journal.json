@@ -92,6 +92,34 @@
       "when": 1786078213084,
       "tag": "0012_add_invoice_kind_proforma",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1786249223821,
+      "tag": "0013_add_staff_team",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1786250495641,
+      "tag": "0014_add_client_cin_and_uniqueness",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1786509925844,
+      "tag": "0015_wise_mauler",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1786608000000,
+      "tag": "0016_add_crm_portal_roles",
+      "breakpoints": true
     }
   ]
 }

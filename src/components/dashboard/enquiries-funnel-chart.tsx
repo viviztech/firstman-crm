@@ -13,7 +13,16 @@ export function EnquiriesFunnelChart({ data }: { data: { status: string; count: 
   return (
     <ResponsiveContainer width="100%" height={220}>
       <BarChart data={chartData}>
-        <CartesianGrid strokeDasharray="3 3" vertical={false} />
+        <defs>
+          {/* Matches the --primary brand pink (oklch(0.488 0.243 357) ~ #b20061) — a literal
+              hex rather than var(--primary), since SVG fill attribute var() support is
+              inconsistent across renderers. */}
+          <linearGradient id="enquiriesGradient" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#b20061" stopOpacity={1} />
+            <stop offset="100%" stopColor="#b20061" stopOpacity={0.6} />
+          </linearGradient>
+        </defs>
+        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
         <XAxis
           dataKey="status"
           tick={{ fontSize: 11 }}
@@ -23,11 +32,14 @@ export function EnquiriesFunnelChart({ data }: { data: { status: string; count: 
           height={50}
         />
         <YAxis allowDecimals={false} tick={{ fontSize: 12 }} width={30} />
-        <Tooltip />
-        {/* Matches the --primary brand pink (oklch(0.488 0.243 357) ~ #b20061) — a literal
-            hex rather than var(--primary), since SVG fill attribute var() support is
-            inconsistent across renderers. */}
-        <Bar dataKey="count" fill="#b20061" radius={[4, 4, 0, 0]} />
+        <Tooltip
+          contentStyle={{
+            borderRadius: 8,
+            border: "1px solid var(--border)",
+            boxShadow: "0 4px 12px rgb(0 0 0 / 0.08)",
+          }}
+        />
+        <Bar dataKey="count" fill="url(#enquiriesGradient)" radius={[6, 6, 0, 0]} />
       </BarChart>
     </ResponsiveContainer>
   );

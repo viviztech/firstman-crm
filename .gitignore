@@ -54,3 +54,7 @@ next-env.d.ts
 !.vscode/extensions.json
 .idea
 
+# local scratch (dev server logs, ad-hoc exports, Coolify local git-index artifacts)
+/tmp/
+.coolify-deploy-index*
+

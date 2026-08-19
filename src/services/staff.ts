@@ -6,14 +6,19 @@ import {
   staffPincodeAllocations,
   staffProfiles,
   staffServiceAssignments,
+  staffTeamEnum,
 } from "@/db/schema/staff";
-import type { ActorScope, EmployeeType } from "@/lib/scope";
+import type { ActorScope, EmployeeType, StaffTeam } from "@/lib/scope";
 import { recordActivity } from "@/services/activity-log";
 
 type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 export const staffEmployeeTypeInputSchema = z.object({
   employeeType: z.enum(employeeTypeEnum.enumValues),
+});
+
+export const staffTeamInputSchema = z.object({
+  team: z.enum(staffTeamEnum.enumValues).nullable(),
 });
 
 export const staffPincodesInputSchema = z.object({
@@ -28,17 +33,20 @@ export type StaffScope = {
   employeeType: EmployeeType;
   pincodes: string[];
   serviceIds: string[];
+  team: StaffTeam | null;
 };
 
 const UNRESTRICTED_INTERNAL: StaffScope = {
   employeeType: "internal",
   pincodes: [],
   serviceIds: [],
+  team: null,
 };
 
 /**
- * Loads a user's employeeType + territory + service assignments for ActorScope. Absence of a
- * staff_profiles row means unrestricted/internal behavior — see ADR 0001 (no backfill migration).
+ * Loads a user's employeeType + territory + service assignments + team for ActorScope. Absence
+ * of a staff_profiles row means unrestricted/internal/no-team behavior — see ADR 0001 and ADR
+ * 0002 (no backfill migration).
  */
 export async function getStaffScope(userId: string): Promise<StaffScope> {
   const [profile, assignments] = await Promise.all([
@@ -61,6 +69,7 @@ export async function getStaffScope(userId: string): Promise<StaffScope> {
     employeeType: profile.employeeType,
     pincodes: profile.pincodeAllocations.map((row) => row.pincode),
     serviceIds,
+    team: profile.team,
   };
 }
 
@@ -68,6 +77,7 @@ export type StaffProfileSummary = {
   employeeType: EmployeeType;
   pincodes: string[];
   serviceIds: string[];
+  team: StaffTeam | null;
 };
 
 /** Every user's staff profile summary, keyed by userId — for the /settings/users admin table. */
@@ -83,6 +93,7 @@ export async function listStaffProfileSummaries(): Promise<Map<string, StaffProf
       employeeType: profile.employeeType,
       pincodes: profile.pincodeAllocations.map((row) => row.pincode),
       serviceIds: [],
+      team: profile.team,
     });
   }
   for (const assignment of assignments) {
@@ -94,6 +105,7 @@ export async function listStaffProfileSummaries(): Promise<Map<string, StaffProf
         employeeType: "internal",
         pincodes: [],
         serviceIds: [assignment.serviceId],
+        team: null,
       });
     }
   }
@@ -143,6 +155,31 @@ export async function updateStaffEmployeeType(
   });
 }
 
+export async function updateStaffTeam(userId: string, team: StaffTeam | null, actor: ActorScope) {
+  return db.transaction(async (tx) => {
+    const profile = await ensureStaffProfile(tx, userId, actor);
+    const [updated] = await tx
+      .update(staffProfiles)
+      .set({ team, updatedBy: actor.userId })
+      .where(eq(staffProfiles.id, profile.id))
+      .returning();
+    if (!updated) throw new Error("Failed to update team");
+
+    await recordActivity(
+      {
+        actorId: actor.userId,
+        entityType: "staff_profile",
+        entityId: updated.id,
+        action: "team_changed",
+        diff: { userId, team },
+      },
+      tx,
+    );
+
+    return updated;
+  });
+}
+
 export async function setStaffPincodes(userId: string, pincodes: string[], actor: ActorScope) {
   const normalized = Array.from(new Set(pincodes));
 
@@ -184,6 +221,8 @@ export async function setStaffServiceAssignments(
   const normalized = Array.from(new Set(serviceIds));
 
   return db.transaction(async (tx) => {
+    const profile = await ensureStaffProfile(tx, userId, actor);
+
     await tx.delete(staffServiceAssignments).where(eq(staffServiceAssignments.userId, userId));
     if (normalized.length > 0) {
       await tx.insert(staffServiceAssignments).values(
@@ -200,7 +239,7 @@ export async function setStaffServiceAssignments(
       {
         actorId: actor.userId,
         entityType: "staff_profile",
-        entityId: userId,
+        entityId: profile.id,
         action: "service_assignments_updated",
         diff: { userId, serviceIds: normalized },
       },

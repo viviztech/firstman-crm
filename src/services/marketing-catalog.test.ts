@@ -2,11 +2,16 @@ import { randomUUID } from "node:crypto";
 import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { db } from "@/db";
-import { serviceCategories, services } from "@/db/schema/catalog";
-import { getPublicCatalog, getPublicServiceBySlug } from "@/services/marketing-catalog";
+import { serviceCategories, services, serviceVerticals } from "@/db/schema/catalog";
+import {
+  getPublicCatalog,
+  getPublicServiceBySlug,
+  getPublicServices,
+} from "@/services/marketing-catalog";
 
 describe("marketing-catalog service (integration)", () => {
   const marker = `MktCatTest${randomUUID().slice(0, 8)}`;
+  let verticalId: string;
   let categoryId: string;
   let activeServiceId: string;
   let deletedServiceId: string;
@@ -14,9 +19,16 @@ describe("marketing-catalog service (integration)", () => {
   let deletedCategoryServiceId: string;
 
   beforeAll(async () => {
+    const [vertical] = await db
+      .insert(serviceVerticals)
+      .values({ name: `${marker} Vertical` })
+      .returning();
+    if (!vertical) throw new Error("Failed to create test vertical");
+    verticalId = vertical.id;
+
     const [category] = await db
       .insert(serviceCategories)
-      .values({ name: `${marker} Category` })
+      .values({ verticalId, name: `${marker} Category` })
       .returning();
     if (!category) throw new Error("Failed to create test category");
     categoryId = category.id;
@@ -58,7 +70,7 @@ describe("marketing-catalog service (integration)", () => {
 
     const [deletedCategory] = await db
       .insert(serviceCategories)
-      .values({ name: `${marker} Deleted Category`, deletedAt: new Date() })
+      .values({ verticalId, name: `${marker} Deleted Category`, deletedAt: new Date() })
       .returning();
     if (!deletedCategory) throw new Error("Failed to create deleted test category");
     deletedCategoryId = deletedCategory.id;
@@ -85,12 +97,16 @@ describe("marketing-catalog service (integration)", () => {
     await db.delete(services).where(eq(services.id, deletedCategoryServiceId));
     await db.delete(serviceCategories).where(eq(serviceCategories.id, categoryId));
     await db.delete(serviceCategories).where(eq(serviceCategories.id, deletedCategoryId));
+    await db.delete(serviceVerticals).where(eq(serviceVerticals.id, verticalId));
   });
 
   describe("getPublicCatalog", () => {
     it("includes active categories with their non-deleted services, projected to public fields", async () => {
       const catalog = await getPublicCatalog();
-      const category = catalog.find((c) => c.id === categoryId);
+      const vertical = catalog.find((v) => v.id === verticalId);
+      expect(vertical).toBeDefined();
+
+      const category = vertical?.categories.find((c) => c.id === categoryId);
       expect(category).toBeDefined();
       expect(category?.services.map((s) => s.id)).toContain(activeServiceId);
       expect(category?.services.map((s) => s.id)).not.toContain(deletedServiceId);
@@ -110,7 +126,18 @@ describe("marketing-catalog service (integration)", () => {
 
     it("excludes soft-deleted categories entirely", async () => {
       const catalog = await getPublicCatalog();
-      expect(catalog.map((c) => c.id)).not.toContain(deletedCategoryId);
+      const vertical = catalog.find((v) => v.id === verticalId);
+      expect(vertical?.categories.map((c) => c.id)).not.toContain(deletedCategoryId);
+    });
+  });
+
+  describe("getPublicServices", () => {
+    it("includes non-deleted services across categories and excludes soft-deleted ones", async () => {
+      const allServices = await getPublicServices();
+      const ids = allServices.map((s) => s.id);
+      expect(ids).toContain(activeServiceId);
+      expect(ids).not.toContain(deletedServiceId);
+      expect(ids).not.toContain(deletedCategoryServiceId);
     });
   });
 

@@ -25,7 +25,7 @@ function isOverdue(dueAt: Date | string, completedAt: Date | string | null): boo
 const columns: ColumnDef<OrderRow>[] = [
   {
     accessorKey: "orderNo",
-    header: "Order #",
+    header: "Job Card #",
     cell: ({ row }) => (
       <Link href={`/orders/${row.original.id}`} className="font-medium hover:underline">
         {row.original.orderNo}
@@ -91,7 +91,7 @@ export function OrdersTable({ orders }: { orders: OrderRow[] }) {
   if (orders.length === 0) {
     return (
       <div className="rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground">
-        No orders found.
+        No job cards found.
       </div>
     );
   }

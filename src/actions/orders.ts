@@ -12,6 +12,7 @@ import {
   orderInputSchema,
   orderStatusUpdateSchema,
   orderTaskStatusUpdateSchema,
+  pickUpJobCard,
   updateOrder,
   updateOrderStatus,
   updateOrderTaskStatus,
@@ -64,7 +65,11 @@ export async function updateOrderAction(
   return { ok: true, data: undefined };
 }
 
-export async function updateOrderStatusAction(id: string, status: string): Promise<ActionResult> {
+export async function updateOrderStatusAction(
+  id: string,
+  status: string,
+  force?: boolean,
+): Promise<ActionResult> {
   const currentUser = await requireUser();
   if (!CAN_WRITE.includes(currentUser.role)) {
     return { ok: false, error: "You do not have permission to update orders." };
@@ -75,16 +80,25 @@ export async function updateOrderStatusAction(id: string, status: string): Promi
     return { ok: false, error: firstIssueMessage(parsed.error) };
   }
 
-  const updated = await updateOrderStatus(id, parsed.data.status, await toScope(currentUser));
-  if (!updated) {
-    return { ok: false, error: "Order not found, or you do not have access to it." };
-  }
+  try {
+    const updated = await updateOrderStatus(id, parsed.data.status, await toScope(currentUser), {
+      force: force === true && currentUser.role === "super_admin",
+    });
+    if (!updated) {
+      return { ok: false, error: "Order not found, or you do not have access to it." };
+    }
 
-  await enqueueOrderStatusChangedNotification({
-    orderId: updated.id,
-    orderNo: updated.orderNo,
-    status: updated.status,
-  });
+    await enqueueOrderStatusChangedNotification({
+      orderId: updated.id,
+      orderNo: updated.orderNo,
+      status: updated.status,
+    });
+  } catch (error) {
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : "Could not update the job card.",
+    };
+  }
 
   revalidatePath("/orders");
   revalidatePath(`/orders/${id}`);
@@ -117,6 +131,30 @@ export async function updateOrderTaskStatusAction(
   }
 
   revalidatePath(`/orders/${orderId}`);
+  return { ok: true, data: undefined };
+}
+
+export async function pickUpJobCardAction(id: string): Promise<ActionResult> {
+  const currentUser = await requireUser();
+  if (currentUser.role !== "executive") {
+    return { ok: false, error: "You do not have permission to pick up job cards." };
+  }
+
+  try {
+    const updated = await pickUpJobCard(id, await toScope(currentUser));
+    if (!updated) {
+      return { ok: false, error: "This job card was already picked up or is no longer available." };
+    }
+  } catch (error) {
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : "Could not pick up this job card.",
+    };
+  }
+
+  revalidatePath("/dashboard");
+  revalidatePath("/orders");
+  revalidatePath(`/orders/${id}`);
   return { ok: true, data: undefined };
 }
 

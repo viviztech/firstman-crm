@@ -19,7 +19,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { recurrenceEnum, serviceRelationTypeEnum } from "@/db/schema/catalog";
 import { SERVICE_RECURRENCE_LABEL, SERVICE_RELATION_TYPE_LABEL } from "@/lib/badges";
 
-type CategoryOption = { id: string; name: string };
+type CategoryOption = { id: string; name: string; verticalName: string };
 type ServiceOption = { id: string; name: string };
 type RelationType = (typeof serviceRelationTypeEnum.enumValues)[number];
 
@@ -171,7 +171,10 @@ export function ServiceForm<T extends { id: string } | undefined>({
         <Select
           name="categoryId"
           defaultValue={defaultValues?.categoryId}
-          items={categories.map((category) => ({ value: category.id, label: category.name }))}
+          items={categories.map((category) => ({
+            value: category.id,
+            label: `${category.verticalName} / ${category.name}`,
+          }))}
         >
           <SelectTrigger id="categoryId" className="w-full">
             <SelectValue placeholder="Choose a category" />
@@ -179,7 +182,7 @@ export function ServiceForm<T extends { id: string } | undefined>({
           <SelectContent>
             {categories.map((category) => (
               <SelectItem key={category.id} value={category.id}>
-                {category.name}
+                {category.verticalName} / {category.name}
               </SelectItem>
             ))}
           </SelectContent>

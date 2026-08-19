@@ -12,7 +12,7 @@ import { requireRole } from "@/lib/session";
 import { getComplianceFilingStatus } from "@/services/reports";
 
 export default async function ComplianceStatusReportPage() {
-  await requireRole("super_admin", "manager", "accountant");
+  await requireRole("super_admin", "manager");
   const rows = await getComplianceFilingStatus();
 
   return (

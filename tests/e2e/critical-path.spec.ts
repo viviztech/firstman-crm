@@ -48,7 +48,10 @@ test("critical path: login, create enquiry, close sale, invoice, payment", async
     await expect(page.getByRole("button", { name: "Sales" })).toBeVisible();
     await page.getByRole("button", { name: "Sales" }).click();
     const dialog = page.getByRole("dialog");
-    await dialog.locator("#sales-service").click();
+    // The Sales dialog's service picker is a repeatable row editor (ADR 0002) — the first row's
+    // select has no fixed id (since-removed #sales-service), and the State select earlier in the
+    // form also matches a bare select-trigger locator, so disambiguate by placeholder text.
+    await dialog.locator('[data-slot="select-trigger"]', { hasText: "Choose a service" }).click();
     await page.getByRole("option", { name: "Private Limited Company Registration" }).click();
     await dialog.getByRole("button", { name: "Close sale" }).click();
     await expect(page).toHaveURL(/\/clients\/[0-9a-f-]+$/);
@@ -56,17 +59,17 @@ test("critical path: login, create enquiry, close sale, invoice, payment", async
     await expect(page.getByRole("heading", { name: enquiryName })).toBeVisible();
   });
 
-  await test.step("open the order created by the sale", async () => {
-    await page.getByRole("tab", { name: "Orders" }).click();
+  await test.step("open the job card created by the sale", async () => {
+    await page.getByRole("tab", { name: "Job Cards" }).click();
     await page.waitForTimeout(300);
-    await page.getByRole("link", { name: /^FM-/ }).first().click();
+    await page.getByRole("link", { name: /^FMJC/ }).first().click();
     await expect(page).toHaveURL(/\/orders\/[0-9a-f-]+$/);
     await settle(page);
   });
 
-  await test.step("create an invoice from the order", async () => {
-    await page.getByRole("tab", { name: "Invoices" }).click();
-    await page.waitForTimeout(300);
+  await test.step("create an invoice from the job card", async () => {
+    // The Job Card page is a single scrollable page (ADR 0002) — Invoices is a section, not a
+    // tab; Playwright's click auto-scrolls it into view, so no tab navigation is needed here.
     await expect(page.getByRole("button", { name: "New invoice" })).toBeVisible();
     await page.getByRole("button", { name: "New invoice" }).click();
     await expect(page).toHaveURL(/\/invoices\/new/);

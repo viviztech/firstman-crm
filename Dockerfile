@@ -4,7 +4,9 @@ FROM node:24-alpine AS base
 FROM base AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN npm ci
+# Coolify can inject NODE_ENV=production at build time. Explicitly retain build
+# tooling (Next.js, TypeScript, Husky) in this stage regardless of that value.
+RUN npm ci --include=dev
 
 # Full (untraced) production node_modules — Next's standalone output only bundles
 # what its own import graph reaches, which misses src/db/migrate.ts (a CLI entry
@@ -12,14 +14,19 @@ RUN npm ci
 FROM base AS prod-deps
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN npm ci --omit=dev
+# Husky is a devDependency, so its prepare hook is unavailable in this
+# production-only stage. Package lifecycle scripts are not needed at runtime.
+RUN npm ci --omit=dev --ignore-scripts
 
 FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
-RUN npm run build
+# Marketing pages read the service catalog while Next.js generates static
+# routes, so a brand-new production database must be migrated before the build.
+# The runtime migration below remains as a safety net for container starts.
+RUN node_modules/.bin/tsx src/db/migrate.ts && npm run build
 
 FROM base AS runner
 WORKDIR /app
@@ -28,7 +35,8 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
 
-RUN addgroup --system --gid 1001 nodejs \
+RUN apk add --no-cache curl \
+  && addgroup --system --gid 1001 nodejs \
   && adduser --system --uid 1001 nextjs
 
 COPY --from=builder /app/public ./public
@@ -37,8 +45,9 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=prod-deps --chown=nextjs:nodejs /app/node_modules ./node_modules
 
 COPY --from=builder --chown=nextjs:nodejs /app/drizzle ./drizzle
-COPY --from=builder --chown=nextjs:nodejs /app/src/db/migrate.ts ./src/db/migrate.ts
-COPY --from=builder --chown=nextjs:nodejs /app/src/lib/env.ts ./src/lib/env.ts
+# Keep operational CLI sources available for migrations, minimal seeding, and
+# other maintenance commands run from the Coolify terminal.
+COPY --from=builder --chown=nextjs:nodejs /app/src ./src
 COPY --from=builder --chown=nextjs:nodejs /app/tsconfig.json ./tsconfig.json
 
 RUN mkdir -p /app/storage && chown nextjs:nodejs /app/storage

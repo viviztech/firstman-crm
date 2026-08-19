@@ -28,17 +28,20 @@ export async function GET(): Promise<NextResponse> {
     "",
   ];
 
-  for (const category of catalog) {
-    lines.push(`### ${category.name}`, "");
-    for (const service of category.services) {
-      const fee = service.govtFeePaise
-        ? `${formatMoney(service.basePricePaise)} + ${formatMoney(service.govtFeePaise)} govt. fee`
-        : formatMoney(service.basePricePaise);
-      lines.push(
-        `- [${service.name}](${getAppUrl(`/services/${service.slug}`)}): ${fee}, ~${service.estimatedDays} business days`,
-      );
+  for (const vertical of catalog) {
+    lines.push(`### ${vertical.name}`, "");
+    for (const category of vertical.categories) {
+      lines.push(`#### ${category.name}`, "");
+      for (const service of category.services) {
+        const fee = service.govtFeePaise
+          ? `${formatMoney(service.basePricePaise)} + ${formatMoney(service.govtFeePaise)} govt. fee`
+          : formatMoney(service.basePricePaise);
+        lines.push(
+          `- [${service.name}](${getAppUrl(`/services/${service.slug}`)}): ${fee}, ~${service.estimatedDays} business days`,
+        );
+      }
+      lines.push("");
     }
-    lines.push("");
   }
 
   lines.push("## Compare business structures", "");

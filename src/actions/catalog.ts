@@ -7,17 +7,79 @@ import { requireUser } from "@/lib/session";
 import {
   createService,
   createServiceCategory,
+  createServiceVertical,
   deleteService,
   deleteServiceCategory,
+  deleteServiceVertical,
   serviceCategoryInputSchema,
   serviceInputSchema,
   serviceRelationsInputSchema,
+  serviceVerticalInputSchema,
   setServiceRelations,
   updateService,
   updateServiceCategory,
+  updateServiceVertical,
 } from "@/services/catalog";
 
 const CAN_MANAGE_CATALOG: Role[] = ["super_admin", "manager"];
+
+export async function createServiceVerticalAction(
+  _prev: ActionResult<{ id: string }> | undefined,
+  formData: FormData,
+): Promise<ActionResult<{ id: string }>> {
+  const currentUser = await requireUser();
+  if (!CAN_MANAGE_CATALOG.includes(currentUser.role)) {
+    return { ok: false, error: "You do not have permission to manage the catalog." };
+  }
+
+  const parsed = serviceVerticalInputSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) {
+    return { ok: false, error: firstIssueMessage(parsed.error) };
+  }
+
+  const created = await createServiceVertical(parsed.data, await toScope(currentUser));
+  revalidatePath("/catalog");
+  return { ok: true, data: { id: created.id } };
+}
+
+export async function updateServiceVerticalAction(
+  id: string,
+  _prev: ActionResult<{ id: string }> | undefined,
+  formData: FormData,
+): Promise<ActionResult<{ id: string }>> {
+  const currentUser = await requireUser();
+  if (!CAN_MANAGE_CATALOG.includes(currentUser.role)) {
+    return { ok: false, error: "You do not have permission to manage the catalog." };
+  }
+
+  const parsed = serviceVerticalInputSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) {
+    return { ok: false, error: firstIssueMessage(parsed.error) };
+  }
+
+  const updated = await updateServiceVertical(id, parsed.data, await toScope(currentUser));
+  if (!updated) {
+    return { ok: false, error: "Vertical not found." };
+  }
+
+  revalidatePath("/catalog");
+  return { ok: true, data: { id: updated.id } };
+}
+
+export async function deleteServiceVerticalAction(id: string): Promise<ActionResult> {
+  const currentUser = await requireUser();
+  if (!CAN_MANAGE_CATALOG.includes(currentUser.role)) {
+    return { ok: false, error: "You do not have permission to manage the catalog." };
+  }
+
+  const result = await deleteServiceVertical(id, await toScope(currentUser));
+  if (!result.ok) {
+    return { ok: false, error: result.error };
+  }
+
+  revalidatePath("/catalog");
+  return { ok: true, data: undefined };
+}
 
 export async function createServiceCategoryAction(
   _prev: ActionResult<{ id: string }> | undefined,

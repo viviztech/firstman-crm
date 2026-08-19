@@ -129,6 +129,7 @@ export function KanbanBoard({
             phone: salesEnquiry.phone,
             email: salesEnquiry.email,
             address: salesEnquiry.address,
+            city: salesEnquiry.city,
             pincode: salesEnquiry.pincode,
             serviceInterestedId: salesEnquiry.serviceInterestedId,
           }}

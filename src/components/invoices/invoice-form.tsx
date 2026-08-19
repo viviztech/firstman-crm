@@ -16,7 +16,22 @@ import {
 } from "@/components/ui/select";
 
 type ClientOption = { id: string; name: string; phone: string };
-type OrderOption = { id: string; orderNo: string; clientId: string };
+type OrderOption = {
+  id: string;
+  orderNo: string;
+  clientId: string;
+  serviceName: string;
+  quotedPricePaise: number;
+  govtFeePaise: number | null;
+};
+
+/** Default due window when nothing more specific is known — 15 days is the common norm for
+ * this business's invoices (proforma invoices default to 7 days at time of sale instead). */
+function defaultDueDate(): string {
+  const due = new Date();
+  due.setDate(due.getDate() + 15);
+  return due.toISOString().slice(0, 10);
+}
 
 export function InvoiceForm({
   action,
@@ -49,6 +64,17 @@ export function InvoiceForm({
     () => orders.filter((order) => !clientId || order.clientId === clientId),
     [orders, clientId],
   );
+
+  const selectedOrder = orders.find((order) => order.id === orderId);
+  const orderLineItems = useMemo(() => {
+    if (!selectedOrder) return undefined;
+    return [
+      { description: selectedOrder.serviceName, qty: 1, ratePaise: selectedOrder.quotedPricePaise },
+      ...(selectedOrder.govtFeePaise
+        ? [{ description: "Government fee", qty: 1, ratePaise: selectedOrder.govtFeePaise }]
+        : []),
+    ];
+  }, [selectedOrder]);
 
   return (
     <form action={formAction} className="flex max-w-2xl flex-col gap-4">
@@ -88,7 +114,10 @@ export function InvoiceForm({
             name="orderId"
             value={orderId || undefined}
             onValueChange={(value) => setOrderId(value ?? "")}
-            items={availableOrders.map((order) => ({ value: order.id, label: order.orderNo }))}
+            items={availableOrders.map((order) => ({
+              value: order.id,
+              label: `${order.orderNo} — ${order.serviceName}`,
+            }))}
           >
             <SelectTrigger id="orderId" className="w-full">
               <SelectValue placeholder="None" />
@@ -96,7 +125,7 @@ export function InvoiceForm({
             <SelectContent>
               {availableOrders.map((order) => (
                 <SelectItem key={order.id} value={order.id}>
-                  {order.orderNo}
+                  {order.orderNo} — {order.serviceName}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -104,13 +133,13 @@ export function InvoiceForm({
         </div>
       </div>
 
-      <InvoiceLineItemsEditor />
+      <InvoiceLineItemsEditor key={orderId || "none"} defaultItems={orderLineItems} />
 
       <div className="flex flex-col gap-2 sm:max-w-xs">
         <Label htmlFor="dueDate">
           Due date <span className="text-destructive">*</span>
         </Label>
-        <Input id="dueDate" name="dueDate" type="date" required />
+        <Input id="dueDate" name="dueDate" type="date" required defaultValue={defaultDueDate()} />
       </div>
 
       {state && !state.ok ? <p className="text-sm text-destructive">{state.error}</p> : null}

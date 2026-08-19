@@ -8,6 +8,7 @@ import {
   serviceRelations,
   serviceRelationTypeEnum,
   services,
+  serviceVerticals,
 } from "@/db/schema/catalog";
 import type { ActorScope } from "@/lib/scope";
 import { optionalTrimmed } from "@/lib/validation/helpers";
@@ -23,6 +24,7 @@ import { recordActivity } from "@/services/activity-log";
  */
 const byNameCaseInsensitive = sql`lower(${services.name})`;
 const byCategoryNameCaseInsensitive = sql`lower(${serviceCategories.name})`;
+const byVerticalNameCaseInsensitive = sql`lower(${serviceVerticals.name})`;
 
 function parseJsonArray<T>(schema: z.ZodType<T>) {
   return z.preprocess((value) => {
@@ -35,7 +37,15 @@ function parseJsonArray<T>(schema: z.ZodType<T>) {
   }, z.array(schema));
 }
 
+export const serviceVerticalInputSchema = z.object({
+  name: z.string().trim().min(2, "Name is required").max(200),
+  sort: z.preprocess((v) => (v === "" || v === undefined ? 0 : v), z.coerce.number().int()),
+});
+
+export type ServiceVerticalInput = z.infer<typeof serviceVerticalInputSchema>;
+
 export const serviceCategoryInputSchema = z.object({
+  verticalId: z.string().uuid("Choose a vertical"),
   name: z.string().trim().min(2, "Name is required").max(200),
   sort: z.preprocess((v) => (v === "" || v === undefined ? 0 : v), z.coerce.number().int()),
 });
@@ -88,26 +98,46 @@ export const serviceRelationsInputSchema = parseJsonArray(serviceRelationInputSc
 
 export type ServiceRelationInput = z.infer<typeof serviceRelationInputSchema>;
 
-/** Categories with their non-deleted services, ordered for display. */
+/** Verticals with their non-deleted categories and those categories' non-deleted services, ordered for display. */
 export async function listCatalog() {
-  return db.query.serviceCategories.findMany({
-    where: isNull(serviceCategories.deletedAt),
-    orderBy: (categories, { asc }) => [asc(categories.sort)],
+  return db.query.serviceVerticals.findMany({
+    where: isNull(serviceVerticals.deletedAt),
+    orderBy: (verticals, { asc }) => [asc(verticals.sort)],
     with: {
-      services: {
-        where: (services, { isNull: isNullFn }) => isNullFn(services.deletedAt),
-        orderBy: () => [byNameCaseInsensitive],
+      categories: {
+        where: (categories, { isNull: isNullFn }) => isNullFn(categories.deletedAt),
+        orderBy: (categories, { asc }) => [asc(categories.sort)],
+        with: {
+          services: {
+            where: (services, { isNull: isNullFn }) => isNullFn(services.deletedAt),
+            orderBy: () => [byNameCaseInsensitive],
+          },
+        },
       },
     },
   });
 }
 
+export async function listVerticalOptions() {
+  return db
+    .select({ id: serviceVerticals.id, name: serviceVerticals.name })
+    .from(serviceVerticals)
+    .where(isNull(serviceVerticals.deletedAt))
+    .orderBy(byVerticalNameCaseInsensitive);
+}
+
+/** Category options with their vertical name, for grouped display in the service form's select. */
 export async function listServiceCategoryOptions() {
   return db
-    .select({ id: serviceCategories.id, name: serviceCategories.name })
+    .select({
+      id: serviceCategories.id,
+      name: serviceCategories.name,
+      verticalName: serviceVerticals.name,
+    })
     .from(serviceCategories)
+    .innerJoin(serviceVerticals, eq(serviceCategories.verticalId, serviceVerticals.id))
     .where(isNull(serviceCategories.deletedAt))
-    .orderBy(byCategoryNameCaseInsensitive);
+    .orderBy(byVerticalNameCaseInsensitive, byCategoryNameCaseInsensitive);
 }
 
 /** Minimal {id, name} list for select dropdowns (e.g. enquiry "service interested" field). */
@@ -136,6 +166,95 @@ export async function listServicesForOrders() {
 
 export async function getServiceById(id: string) {
   return db.query.services.findFirst({ where: eq(services.id, id) });
+}
+
+export async function createServiceVertical(input: ServiceVerticalInput, actor: ActorScope) {
+  return db.transaction(async (tx) => {
+    const [created] = await tx
+      .insert(serviceVerticals)
+      .values({ ...input, createdBy: actor.userId, updatedBy: actor.userId })
+      .returning();
+    if (!created) throw new Error("Failed to create service vertical");
+
+    await recordActivity(
+      {
+        actorId: actor.userId,
+        entityType: "service_vertical",
+        entityId: created.id,
+        action: "created",
+        diff: input,
+      },
+      tx,
+    );
+
+    return created;
+  });
+}
+
+export async function updateServiceVertical(
+  id: string,
+  input: ServiceVerticalInput,
+  actor: ActorScope,
+) {
+  return db.transaction(async (tx) => {
+    const [updated] = await tx
+      .update(serviceVerticals)
+      .set({ ...input, updatedBy: actor.userId })
+      .where(and(eq(serviceVerticals.id, id), isNull(serviceVerticals.deletedAt)))
+      .returning();
+    if (!updated) return null;
+
+    await recordActivity(
+      {
+        actorId: actor.userId,
+        entityType: "service_vertical",
+        entityId: updated.id,
+        action: "updated",
+        diff: input,
+      },
+      tx,
+    );
+
+    return updated;
+  });
+}
+
+/** Refuses (friendly error, not a raw FK exception) if the vertical still has active categories. */
+export async function deleteServiceVertical(
+  id: string,
+  actor: ActorScope,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  return db.transaction(async (tx) => {
+    const activeCategory = await tx.query.serviceCategories.findFirst({
+      where: and(eq(serviceCategories.verticalId, id), isNull(serviceCategories.deletedAt)),
+      columns: { id: true },
+    });
+    if (activeCategory) {
+      return {
+        ok: false,
+        error: "Move or delete the categories in this vertical first.",
+      } as const;
+    }
+
+    const [deleted] = await tx
+      .update(serviceVerticals)
+      .set({ deletedAt: new Date(), updatedBy: actor.userId })
+      .where(and(eq(serviceVerticals.id, id), isNull(serviceVerticals.deletedAt)))
+      .returning();
+    if (!deleted) return { ok: false, error: "Vertical not found." } as const;
+
+    await recordActivity(
+      {
+        actorId: actor.userId,
+        entityType: "service_vertical",
+        entityId: deleted.id,
+        action: "deleted",
+      },
+      tx,
+    );
+
+    return { ok: true } as const;
+  });
 }
 
 export async function createServiceCategory(input: ServiceCategoryInput, actor: ActorScope) {

@@ -1,11 +1,15 @@
-import * as Sentry from "@sentry/nextjs";
-
 const dsn = process.env.NEXT_PUBLIC_SENTRY_DSN ?? "";
 
-Sentry.init({
-  dsn: dsn || undefined,
-  enabled: dsn.length > 0,
-  tracesSampleRate: 1.0,
-});
+if (dsn) {
+  void import("@sentry/nextjs").then((Sentry) => {
+    Sentry.init({ dsn, enabled: true, tracesSampleRate: 1.0 });
+  });
+}
 
-export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;
+export async function onRouterTransitionStart(
+  ...args: Parameters<typeof import("@sentry/nextjs").captureRouterTransitionStart>
+) {
+  if (!dsn) return;
+  const Sentry = await import("@sentry/nextjs");
+  return Sentry.captureRouterTransitionStart(...args);
+}

@@ -15,6 +15,7 @@ import type { EmployeeType } from "@/lib/scope";
 const EMPLOYEE_TYPES: { value: EmployeeType; label: string }[] = [
   { value: "internal", label: "Internal" },
   { value: "franchise", label: "Franchise" },
+  { value: "associate", label: "Associate" },
 ];
 
 export function StaffEmployeeTypeSelect({

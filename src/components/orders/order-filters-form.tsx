@@ -12,7 +12,7 @@ export function OrderFiltersForm({ search, status }: { search?: string; status?:
       <Input
         type="search"
         name="q"
-        placeholder="Search by order number…"
+        placeholder="Search by job card number…"
         defaultValue={search}
         className="max-w-xs"
       />

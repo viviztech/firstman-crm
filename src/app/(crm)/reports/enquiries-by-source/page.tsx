@@ -12,7 +12,7 @@ import { requireRole } from "@/lib/session";
 import { getEnquirySourcePerformance } from "@/services/reports";
 
 export default async function EnquiriesBySourceReportPage() {
-  await requireRole("super_admin", "manager", "accountant");
+  await requireRole("super_admin", "manager");
   const rows = await getEnquirySourcePerformance();
 
   return (

@@ -16,7 +16,7 @@ import { sumPaise } from "@/lib/money";
 import type { ActorScope } from "@/lib/scope";
 import { optionalTrimmed, optionalUuid } from "@/lib/validation/helpers";
 import { recordActivity } from "@/services/activity-log";
-import { getSetting, getSettingForUpdate, setSetting } from "@/services/settings";
+import { getSettingForUpdate, setSetting } from "@/services/settings";
 
 export type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
@@ -91,14 +91,55 @@ export function computeInvoiceTotals(lineItems: InvoiceLineItemInput[], gstRate:
   return { lineItems: itemsWithAmount, subtotalPaise, gstAmountPaise, totalPaise };
 }
 
-async function generateInvoiceNo(tx: Transaction, actor: ActorScope): Promise<string> {
-  const year = new Date().getFullYear();
-  const prefix = await getSetting<string>("invoicePrefix", "FM-INV", tx);
-  const key = `invoiceNumberSeq:${year}`;
+/**
+ * Year+month component shared by the proforma sequence's settings key and its display format
+ * (mirrors jobCardYearMonth in services/orders.ts) — pure and exported for month-boundary unit
+ * tests without DB access or faked global timers.
+ */
+export function proformaYearMonth(now: Date): string {
+  const yy = String(now.getFullYear()).slice(-2);
+  const mm = String(now.getMonth() + 1).padStart(2, "0");
+  return `${yy}${mm}`;
+}
+
+/**
+ * Proforma invoice number, format FMPI<year+month><5-digit seq> (ADR 0002/0003) — monthly reset,
+ * its own sequence independent of the tax invoice series below.
+ */
+export function formatProformaInvoiceNo(yearMonth: string, seq: number): string {
+  return `FMPI${yearMonth}${String(seq).padStart(5, "0")}`;
+}
+
+async function generateProformaInvoiceNo(tx: Transaction, actor: ActorScope): Promise<string> {
+  const yearMonth = proformaYearMonth(new Date());
+  const key = `proformaInvoiceNumberSeq:${yearMonth}`;
   const last = await getSettingForUpdate<number>(key, 0, tx);
   const next = last + 1;
   await setSetting(key, next, actor, tx);
-  return `${prefix}-${year}-${String(next).padStart(4, "0")}`;
+  return formatProformaInvoiceNo(yearMonth, next);
+}
+
+/** Year component for the tax invoice sequence — pure, for the same reason as proformaYearMonth. */
+export function taxInvoiceYear(now: Date): string {
+  return String(now.getFullYear()).slice(-2);
+}
+
+/**
+ * Tax invoice number, format FMINV<2-digit year><5-digit seq> (ADR 0002/0003) — yearly reset,
+ * its own sequence independent of the proforma series above (proforma and tax invoices used to
+ * share one sequence via generateInvoiceNo; they no longer do).
+ */
+export function formatTaxInvoiceNo(year: string, seq: number): string {
+  return `FMINV${year}${String(seq).padStart(5, "0")}`;
+}
+
+async function generateTaxInvoiceNo(tx: Transaction, actor: ActorScope): Promise<string> {
+  const now = new Date();
+  const key = `taxInvoiceNumberSeq:${now.getFullYear()}`;
+  const last = await getSettingForUpdate<number>(key, 0, tx);
+  const next = last + 1;
+  await setSetting(key, next, actor, tx);
+  return formatTaxInvoiceNo(taxInvoiceYear(now), next);
 }
 
 async function paidSumsByInvoiceIds(invoiceIds: string[]): Promise<Map<string, number>> {
@@ -253,7 +294,7 @@ export async function createInvoice(input: InvoiceInput, actor: ActorScope) {
 
   return db.transaction(async (tx) => {
     const totals = computeInvoiceTotals(input.lineItems, input.gstRate);
-    const invoiceNo = await generateInvoiceNo(tx, actor);
+    const invoiceNo = await generateTaxInvoiceNo(tx, actor);
 
     const [created] = await tx
       .insert(invoices)
@@ -306,7 +347,7 @@ export async function createProformaInvoiceInTx(
   actor: ActorScope,
 ) {
   const totals = computeInvoiceTotals(input.lineItems, input.gstRate);
-  const invoiceNo = await generateInvoiceNo(tx, actor);
+  const invoiceNo = await generateProformaInvoiceNo(tx, actor);
 
   const [created] = await tx
     .insert(invoices)
@@ -376,7 +417,7 @@ export async function generateFinalInvoiceIfEligibleInTx(
   });
   if (existingTaxInvoice) return existingTaxInvoice;
 
-  const invoiceNo = await generateInvoiceNo(tx, actor);
+  const invoiceNo = await generateTaxInvoiceNo(tx, actor);
 
   const [created] = await tx
     .insert(invoices)
@@ -608,12 +649,24 @@ export async function rollInvoiceStatusesOverdue(
   return { overdue: rows.length };
 }
 
-/** Overdue invoices with client info, for the daily accountant+manager digest (spec 4.7). */
+/**
+ * Overdue invoices with client info, for the daily accountant+manager digest (spec 4.7) and the
+ * accountant dashboard. Each row carries `outstandingPaise` (totalPaise net of any partial
+ * payments) alongside the gross `totalPaise` — an overdue invoice can already be partially paid
+ * (rollInvoiceStatusesOverdue rolls both "sent" and "partially_paid" invoices to "overdue"), so
+ * displaying the gross total alone would overstate what's actually still owed.
+ */
 export async function getOverdueInvoicesForDigest() {
-  return db.query.invoices.findMany({
+  const overdueInvoices = await db.query.invoices.findMany({
     where: and(isNull(invoices.deletedAt), eq(invoices.status, "overdue")),
     with: { client: { columns: { id: true, name: true } } },
   });
+  const paidSums = await paidSumsByInvoiceIds(overdueInvoices.map((invoice) => invoice.id));
+
+  return overdueInvoices.map((invoice) => ({
+    ...invoice,
+    outstandingPaise: invoice.totalPaise - (paidSums.get(invoice.id) ?? 0),
+  }));
 }
 
 /** Unpaid balance across overdue invoices only (nets out any partial payments) — for the digest total. */

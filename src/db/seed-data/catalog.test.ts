@@ -2,9 +2,10 @@ import { describe, expect, it } from "vitest";
 import { CATALOG_SEED } from "@/db/seed-data/catalog";
 
 describe("CATALOG_SEED", () => {
-  const allServices = CATALOG_SEED.flatMap((category) => category.services);
+  const allCategories = CATALOG_SEED.flatMap((vertical) => vertical.categories);
+  const allServices = allCategories.flatMap((category) => category.services);
 
-  it("has unique slugs across all categories", () => {
+  it("has unique slugs across all verticals and categories", () => {
     const slugs = allServices.map((service) => service.slug);
     expect(new Set(slugs).size).toBe(slugs.length);
   });

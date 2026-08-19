@@ -7,7 +7,7 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-inter);
   --font-mono: var(--font-geist-mono);
   --font-heading: var(--font-sans);
   --color-sidebar-ring: var(--sidebar-ring);
@@ -50,19 +50,46 @@
   --color-brand-foreground: var(--brand-foreground);
   --color-brand-muted: var(--brand-muted);
   --color-brand-ink: var(--brand-ink);
+  --color-brand-graphite: var(--brand-graphite);
+  --color-brand-deep: var(--brand-deep);
+  --color-brand-light: var(--brand-light);
+
+  /* FirstMan identity palette, derived from the supplied brand artwork. */
+  --color-pink-50: #fdf3f7;
+  --color-pink-100: #fae1eb;
+  --color-pink-200: #f3bfd4;
+  --color-pink-300: #e68caf;
+  --color-pink-400: #d65b8c;
+  --color-pink-500: #c83d76;
+  --color-pink-600: #ba2a66;
+  --color-pink-700: #9c2054;
+  --color-pink-800: #801d48;
+  --color-pink-900: #6b1c40;
+  --color-pink-950: #421023;
+  --color-slate-50: #f7f7f8;
+  --color-slate-100: #eeeeef;
+  --color-slate-200: #dedee0;
+  --color-slate-300: #c5c5c8;
+  --color-slate-400: #a1a1a5;
+  --color-slate-500: #7d7d81;
+  --color-slate-600: #68686c;
+  --color-slate-700: #58585b;
+  --color-slate-800: #48484c;
+  --color-slate-900: #39393d;
+  --color-slate-950: #29292d;
   --font-display: var(--font-fraunces);
 }
 
 :root {
-  --background: oklch(1 0 0);
+  /* Light grey app canvas (not pure white) so white cards read as raised surfaces — QuickBooks-style content area. */
+  --background: oklch(0.955 0.003 240);
   --foreground: oklch(0.148 0.004 228.8);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.148 0.004 228.8);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.148 0.004 228.8);
-  /* Brand pink swapped in for this theme's original blue (hue 264 -> 357), L/C unchanged. */
-  --primary: oklch(0.488 0.243 357);
-  --primary-foreground: oklch(0.97 0.014 357);
+  --primary: #ba2a66;
+  --primary-foreground: #ffffff;
   --secondary: oklch(0.967 0.001 286.375);
   --secondary-foreground: oklch(0.21 0.006 285.885);
   --muted: oklch(0.963 0.002 197.1);
@@ -72,69 +99,41 @@
   --destructive: oklch(0.577 0.245 27.325);
   --border: oklch(0.925 0.005 214.3);
   --input: oklch(0.925 0.005 214.3);
-  --ring: oklch(0.723 0.014 214.4);
+  --ring: #ba2a66;
   --chart-1: oklch(0.872 0.007 219.6);
   --chart-2: oklch(0.56 0.021 213.5);
   --chart-3: oklch(0.45 0.017 213.2);
   --chart-4: oklch(0.378 0.015 216);
   --chart-5: oklch(0.275 0.011 216.9);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.987 0.002 197.1);
+  /* Moderate rounding (~8px base) — QuickBooks favors restrained corners on cards/buttons and reserves full pill rounding for badges/avatars. */
+  --radius: 0.5rem;
+  /* Light sidebar (ADR 0003, SabPaisa-inspired shell) — near-white surface with a grouped nav and
+     a brand-pink tinted active/hover state, replacing the earlier dark-charcoal QuickBooks-style
+     sidebar. Brand pink stays the one accent color across the app. */
+  --sidebar: oklch(0.99 0.001 197.1);
   --sidebar-foreground: oklch(0.148 0.004 228.8);
-  --sidebar-primary: oklch(0.546 0.245 357);
-  --sidebar-primary-foreground: oklch(0.97 0.014 357);
-  --sidebar-accent: oklch(0.963 0.002 197.1);
-  --sidebar-accent-foreground: oklch(0.218 0.008 223.9);
-  --sidebar-border: oklch(0.925 0.005 214.3);
-  --sidebar-ring: oklch(0.723 0.014 214.4);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-accent: var(--brand-muted);
+  --sidebar-accent-foreground: var(--primary);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--ring);
 
   /* FirstMan brand tint/ink — brand/brand-foreground mirror primary/primary-foreground (one
      source of truth now that primary is the brand pink app-wide); muted/ink stay as their own
      tokens for badge tints and text-ink use, unrelated to the primary/blue swap above. */
   --brand: var(--primary);
   --brand-foreground: var(--primary-foreground);
-  --brand-muted: oklch(0.96 0.03 357);
-  --brand-ink: oklch(0.16 0 0);
+  --brand-muted: #f9e4ed;
+  --brand-ink: #58585b;
+  --brand-graphite: #58585b;
+  --brand-deep: #29292d;
+  --brand-light: #e68caf;
 }
 
-.dark {
-  --background: oklch(0.148 0.004 228.8);
-  --foreground: oklch(0.987 0.002 197.1);
-  --card: oklch(0.218 0.008 223.9);
-  --card-foreground: oklch(0.987 0.002 197.1);
-  --popover: oklch(0.218 0.008 223.9);
-  --popover-foreground: oklch(0.987 0.002 197.1);
-  --primary: oklch(0.424 0.199 357);
-  --primary-foreground: oklch(0.97 0.014 357);
-  --secondary: oklch(0.274 0.006 286.033);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.275 0.011 216.9);
-  --muted-foreground: oklch(0.723 0.014 214.4);
-  --accent: oklch(0.275 0.011 216.9);
-  --accent-foreground: oklch(0.987 0.002 197.1);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.56 0.021 213.5);
-  --chart-1: oklch(0.872 0.007 219.6);
-  --chart-2: oklch(0.56 0.021 213.5);
-  --chart-3: oklch(0.45 0.017 213.2);
-  --chart-4: oklch(0.378 0.015 216);
-  --chart-5: oklch(0.275 0.011 216.9);
-  --sidebar: oklch(0.218 0.008 223.9);
-  --sidebar-foreground: oklch(0.987 0.002 197.1);
-  --sidebar-primary: oklch(0.623 0.214 357);
-  --sidebar-primary-foreground: oklch(0.97 0.014 357);
-  --sidebar-accent: oklch(0.275 0.011 216.9);
-  --sidebar-accent-foreground: oklch(0.987 0.002 197.1);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.56 0.021 213.5);
-
-  --brand: var(--primary);
-  --brand-foreground: var(--primary-foreground);
-  --brand-muted: oklch(0.26 0.06 357);
-  --brand-ink: oklch(0.97 0 0);
-}
+/* No dark theme: FirstMan ships one light, brand-forward surface. The `dark` variant registered
+   above is kept only because a few vendor (shadcn) components reference it defensively; with no
+   `.dark` class ever applied to the tree, those rules never match. */
 
 @layer base {
   * {
@@ -188,5 +187,43 @@
   .reveal-delay-2,
   .reveal-delay-3 {
     animation: none;
+  }
+}
+
+/* Public corporate site: deliberately independent from the denser CRM shell. */
+@layer utilities {
+  .marketing-heading {
+    font-size: clamp(2.25rem, 4vw, 4.25rem);
+    line-height: 1.04;
+    letter-spacing: -0.04em;
+    font-weight: 650;
+    color: rgb(15 23 42);
+    text-wrap: balance;
+  }
+
+  .marketing-kicker {
+    font-size: 0.72rem;
+    line-height: 1rem;
+    font-weight: 800;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: #ba2a66;
+  }
+
+  .marketing-orbit {
+    position: absolute;
+    width: 52rem;
+    height: 52rem;
+    right: -20rem;
+    top: -18rem;
+    border: 1px solid rgb(186 42 102 / 0.1);
+    border-radius: 9999px;
+    box-shadow:
+      0 0 0 8rem rgb(186 42 102 / 0.035),
+      0 0 0 16rem rgb(186 42 102 / 0.02);
+  }
+
+  .marketing-site section[id] {
+    scroll-margin-top: 9rem;
   }
 }

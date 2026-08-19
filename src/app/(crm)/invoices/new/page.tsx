@@ -26,6 +26,9 @@ export default async function NewInvoicePage({
           id: order.id,
           orderNo: order.orderNo,
           clientId: order.clientId,
+          serviceName: order.service.name,
+          quotedPricePaise: order.quotedPricePaise,
+          govtFeePaise: order.govtFeePaise,
         }))}
         defaultClientId={clientId}
         defaultOrderId={orderId}

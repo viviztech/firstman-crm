@@ -15,6 +15,11 @@ describe("assignedToCondition", () => {
     expect(assignedToCondition(enquiries.assignedTo, makeScope("u1", "executive"))).toBeDefined();
   });
 
+  it("applies assigned-only scope to associate executives", () => {
+    const scope = makeScope("u1", "executive", { employeeType: "associate" });
+    expect(assignedToCondition(enquiries.assignedTo, scope)).toBeDefined();
+  });
+
   it("does not apply to franchise-type executives", () => {
     const scope = makeScope("u1", "executive", { employeeType: "franchise" });
     expect(assignedToCondition(enquiries.assignedTo, scope)).toBeUndefined();

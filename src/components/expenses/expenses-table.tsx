@@ -39,7 +39,7 @@ const columns: ColumnDef<ExpenseRow>[] = [
   },
   {
     id: "order",
-    header: "Order",
+    header: "Job Card",
     cell: ({ row }) =>
       row.original.order ? (
         <Link href={`/orders/${row.original.order.id}`} className="hover:underline">

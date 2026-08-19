@@ -17,7 +17,9 @@ export default async function MarketingLayout({ children }: { children: ReactNod
   const profile = await getCompanyProfile();
 
   return (
-    <div className={`${fraunces.variable} flex min-h-screen flex-col`}>
+    <div
+      className={`${fraunces.variable} marketing-root flex min-h-screen flex-col bg-white text-slate-950`}
+    >
       <SiteHeader />
       <main className="flex-1">{children}</main>
       <SiteFooter />
@@ -29,7 +31,7 @@ export default async function MarketingLayout({ children }: { children: ReactNod
           ...(profile.legalName ? { legalName: profile.legalName } : {}),
           url: getAppUrl("/"),
           areaServed: profile.areasServed,
-          ...(profile.logoUrl ? { logo: getAppUrl(profile.logoUrl) } : {}),
+          logo: getAppUrl("/brand/firstman-logo.png"),
           ...(profile.address ? { address: profile.address } : {}),
           ...(profile.gstin ? { taxID: profile.gstin } : {}),
           ...(profile.llpin

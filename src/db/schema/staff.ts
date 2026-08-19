@@ -8,8 +8,25 @@ import { services } from "@/db/schema/catalog";
  * Orthogonal to `role` (spec 3): a user is still e.g. role=executive, but employeeType
  * decides whether they're scoped by assignedTo (internal) or by allocated pincode
  * territory (franchise). Kept off the better-auth-owned `user` table — see ADR 0001.
+ * `associate` (ADR 0006) is scoped identically to `internal` (see isAssignedEmployee in
+ * lib/scope.ts) — it only changes the portal-role label, not visibility.
  */
-export const employeeTypeEnum = pgEnum("employee_type", ["internal", "franchise"]);
+export const employeeTypeEnum = pgEnum("employee_type", ["internal", "franchise", "associate"]);
+
+/**
+ * A second axis orthogonal to both `role` and `employeeType` (ADR 0002): which functional
+ * module an executive works — the sales pipeline (enquiries/follow-ups/Sales conversion) or
+ * fulfillment of converted jobs (job cards). Nullable: no value means unrestricted, matching
+ * the same "absence = unrestricted" rule employeeType/service-assignment already use.
+ * `backoffice`/`workforce` (ADR 0006) are manager-only values that pick a dashboard workspace —
+ * they don't restrict a manager's permissions or nav, unlike `sales`/`operations` on executives.
+ */
+export const staffTeamEnum = pgEnum("staff_team", [
+  "sales",
+  "operations",
+  "backoffice",
+  "workforce",
+]);
 
 export const staffProfiles = pgTable("staff_profiles", {
   ...baseColumns(),
@@ -19,6 +36,7 @@ export const staffProfiles = pgTable("staff_profiles", {
     .unique()
     .references(() => user.id, { onDelete: "cascade" }),
   employeeType: employeeTypeEnum("employee_type").notNull().default("internal"),
+  team: staffTeamEnum("team"),
 });
 
 export const staffPincodeAllocations = pgTable(

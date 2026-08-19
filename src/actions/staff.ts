@@ -10,7 +10,9 @@ import {
   staffEmployeeTypeInputSchema,
   staffPincodesInputSchema,
   staffServiceAssignmentsInputSchema,
+  staffTeamInputSchema,
   updateStaffEmployeeType,
+  updateStaffTeam,
 } from "@/services/staff";
 
 const CAN_MANAGE: Role[] = ["super_admin", "manager"];
@@ -30,6 +32,25 @@ export async function updateStaffEmployeeTypeAction(
   }
 
   await updateStaffEmployeeType(userId, parsed.data.employeeType, await toScope(currentUser));
+  revalidatePath("/settings/users");
+  return { ok: true, data: undefined };
+}
+
+export async function updateStaffTeamAction(
+  userId: string,
+  team: string | null,
+): Promise<ActionResult> {
+  const currentUser = await requireUser();
+  if (!CAN_MANAGE.includes(currentUser.role)) {
+    return { ok: false, error: "You do not have permission to manage staff." };
+  }
+
+  const parsed = staffTeamInputSchema.safeParse({ team });
+  if (!parsed.success) {
+    return { ok: false, error: firstIssueMessage(parsed.error) };
+  }
+
+  await updateStaffTeam(userId, parsed.data.team, await toScope(currentUser));
   revalidatePath("/settings/users");
   return { ok: true, data: undefined };
 }

@@ -4,24 +4,22 @@ import { toScope } from "@/actions/shared";
 import { OrderEditForm } from "@/components/orders/order-edit-form";
 import { requireRole } from "@/lib/session";
 import { getOrder } from "@/services/orders";
-import { listAssignableStaff } from "@/services/users";
+import { listAssignableStaffForService } from "@/services/users";
 
 export default async function EditOrderPage({ params }: { params: Promise<{ id: string }> }) {
   const user = await requireRole("super_admin", "manager", "executive");
   const { id } = await params;
 
-  const [order, staff] = await Promise.all([
-    getOrder(id, await toScope(user)),
-    listAssignableStaff(),
-  ]);
-
+  const order = await getOrder(id, await toScope(user));
   if (!order) {
     notFound();
   }
 
+  const staff = await listAssignableStaffForService(order.service.id);
+
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="text-2xl font-semibold">Edit order {order.orderNo}</h1>
+      <h1 className="text-2xl font-semibold">Edit job card {order.orderNo}</h1>
       <OrderEditForm
         action={updateOrderAction.bind(null, id)}
         role={user.role}

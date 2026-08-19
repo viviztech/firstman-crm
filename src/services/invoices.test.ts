@@ -16,6 +16,8 @@ import {
   createInvoice,
   createProformaInvoiceInTx,
   deleteInvoice,
+  formatProformaInvoiceNo,
+  formatTaxInvoiceNo,
   getClientFinancialSummary,
   getCollectionsThisMonth,
   getInvoice,
@@ -25,9 +27,11 @@ import {
   listInvoices,
   listInvoicesForClient,
   listInvoicesForOrder,
+  proformaYearMonth,
   recordPayment,
   rollInvoiceStatusesOverdue,
   sendInvoice,
+  taxInvoiceYear,
   updateInvoice,
 } from "@/services/invoices";
 import { createOrder, updateOrderStatus } from "@/services/orders";
@@ -40,6 +44,40 @@ async function makeTestClient(phone: string, actorId: string) {
   if (!client) throw new Error("Failed to create test client");
   return client;
 }
+
+// Constructed via the (year, monthIndex, day, ...) local-time form, not an ISO "Z" string —
+// proformaYearMonth/taxInvoiceYear read local-time getters (getFullYear/getMonth), so the two
+// must agree regardless of the test runner's own timezone.
+describe("proformaYearMonth / formatProformaInvoiceNo (pure)", () => {
+  it("formats with 2-digit year, 2-digit month, and a 5-digit zero-padded sequence", () => {
+    const yearMonth = proformaYearMonth(new Date(2099, 2, 10, 12, 0, 0));
+    expect(yearMonth).toBe("9903");
+    expect(formatProformaInvoiceNo(yearMonth, 1)).toBe("FMPI990300001");
+  });
+
+  it("rolls over across a month boundary, independent of the tax invoice's yearly cadence", () => {
+    const endOfMarch = proformaYearMonth(new Date(2099, 2, 31, 12, 0, 0));
+    const startOfApril = proformaYearMonth(new Date(2099, 3, 1, 0, 0, 0));
+    expect(endOfMarch).toBe("9903");
+    expect(startOfApril).toBe("9904");
+  });
+});
+
+describe("taxInvoiceYear / formatTaxInvoiceNo (pure)", () => {
+  it("formats with a 2-digit year and a 5-digit zero-padded sequence, no dashes", () => {
+    const year = taxInvoiceYear(new Date(2099, 2, 10, 12, 0, 0));
+    expect(year).toBe("99");
+    expect(formatTaxInvoiceNo(year, 1)).toBe("FMINV9900001");
+  });
+
+  it("only rolls over at a year boundary, unlike the monthly proforma sequence", () => {
+    const marchYear = taxInvoiceYear(new Date(2099, 2, 10, 12, 0, 0));
+    const decemberYear = taxInvoiceYear(new Date(2099, 11, 31, 12, 0, 0));
+    const nextJanuaryYear = taxInvoiceYear(new Date(2100, 0, 1, 0, 0, 0));
+    expect(marchYear).toBe(decemberYear);
+    expect(decemberYear).not.toBe(nextJanuaryYear);
+  });
+});
 
 describe("invoices service (integration)", () => {
   const managerId = randomUUID();
@@ -172,9 +210,9 @@ describe("invoices service (integration)", () => {
       );
       if (!first || !second) throw new Error("setup failed");
 
-      expect(first.invoiceNo).toMatch(/^FM-INV-\d{4}-\d{4}$/);
-      const firstSeq = Number(first.invoiceNo.split("-")[3]);
-      const secondSeq = Number(second.invoiceNo.split("-")[3]);
+      expect(first.invoiceNo).toMatch(/^FMINV\d{2}\d{5}$/);
+      const firstSeq = Number(first.invoiceNo.slice(7));
+      const secondSeq = Number(second.invoiceNo.slice(7));
       expect(secondSeq).toBeGreaterThan(firstSeq);
       expect(first.invoiceNo).not.toBe(second.invoiceNo);
 
@@ -506,8 +544,13 @@ describe("invoices service (integration)", () => {
       await rollInvoiceStatusesOverdue(now);
 
       const digestList = await getOverdueInvoicesForDigest();
-      const ids = digestList.map((invoice) => invoice.id);
-      expect(ids).toContain(overdueWithPartialPayment.id);
+      const digestRow = digestList.find((invoice) => invoice.id === overdueWithPartialPayment.id);
+      expect(digestRow).toBeTruthy();
+      // Net of the ₹300 partial payment against the ₹1000 total — not the gross total, since
+      // an overdue invoice can already be partially paid (rollInvoiceStatusesOverdue rolls both
+      // "sent" and "partially_paid" invoices to "overdue").
+      expect(digestRow?.outstandingPaise).toBe(70000);
+      expect(digestRow?.totalPaise).toBe(100000);
 
       const total = await getOverdueInvoicesTotalPaise();
       expect(total).toBeGreaterThanOrEqual(70000);
@@ -654,6 +697,8 @@ describe("invoices service (integration)", () => {
 
   describe("final tax invoice generation (proforma paid + order completed)", () => {
     let pvtLtdServiceId: string;
+    const superAdminId = randomUUID();
+    const superAdminScope = makeScope(superAdminId, "super_admin");
 
     beforeAll(async () => {
       const service = await db.query.services.findFirst({
@@ -661,6 +706,14 @@ describe("invoices service (integration)", () => {
       });
       if (!service) throw new Error("Seed catalog first — pvt-ltd-registration service not found");
       pvtLtdServiceId = service.id;
+
+      await db.insert(user).values({
+        id: superAdminId,
+        name: "Invoice Test Super Admin",
+        email: `invoice-superadmin-${superAdminId}@test.local`,
+        emailVerified: true,
+        role: "super_admin",
+      });
     });
 
     afterAll(async () => {
@@ -679,7 +732,7 @@ describe("invoices service (integration)", () => {
       const testClients = await db
         .select({ id: clients.id })
         .from(clients)
-        .where(ilike(clients.phone, "+919876606%"));
+        .where(ilike(clients.phone, "+919876608%"));
       const clientIds = testClients.map((c) => c.id);
       if (clientIds.length > 0) {
         const testInvoices = await db
@@ -693,7 +746,8 @@ describe("invoices service (integration)", () => {
         }
       }
       await db.delete(orders).where(ilike(orders.notes, "invoice-final-test-marker%"));
-      await db.delete(clients).where(ilike(clients.phone, "+919876606%"));
+      await db.delete(clients).where(ilike(clients.phone, "+919876608%"));
+      await db.delete(user).where(eq(user.id, superAdminId));
     });
 
     async function makeOrderWithProforma(phone: string, marker: string) {
@@ -707,6 +761,10 @@ describe("invoices service (integration)", () => {
         },
         managerScope,
       );
+      // The hard completion gate (ADR 0002) requires every task done before "completed" is
+      // reachable at all — every scenario below needs the order completable, so mark its
+      // catalog-generated checklist done up front rather than repeating this in each test.
+      await db.update(orderTasks).set({ status: "done" }).where(eq(orderTasks.orderId, order.id));
       const proforma = await db.transaction((tx) =>
         createProformaInvoiceInTx(
           tx,
@@ -724,7 +782,7 @@ describe("invoices service (integration)", () => {
 
     it("generates the tax invoice once the order completes after the proforma is already paid in full", async () => {
       const { order, proforma } = await makeOrderWithProforma(
-        "+919876606001",
+        "+919876608001",
         "invoice-final-test-marker order-after-payment",
       );
       expect(proforma.kind).toBe("proforma");
@@ -750,12 +808,16 @@ describe("invoices service (integration)", () => {
     });
 
     it("generates the tax invoice once the final payment lands after the order is already completed", async () => {
+      // Under the hard completion gate (ADR 0002), an order can only reach "completed" while its
+      // proforma is still unpaid via the super_admin force-complete bypass — that's the only
+      // route left to set up "completed but not yet paid", which is what this test is proving
+      // recordPayment's side of generateFinalInvoiceIfEligibleInTx still handles correctly.
       const { order, proforma } = await makeOrderWithProforma(
-        "+919876606002",
+        "+919876608002",
         "invoice-final-test-marker payment-after-order",
       );
 
-      await updateOrderStatus(order.id, "completed", managerScope);
+      await updateOrderStatus(order.id, "completed", superAdminScope, { force: true });
       expect(
         await db.query.invoices.findFirst({
           where: and(eq(invoices.proformaInvoiceId, proforma.id), eq(invoices.kind, "tax")),
@@ -772,7 +834,7 @@ describe("invoices service (integration)", () => {
 
     it("never generates a tax invoice while the order is incomplete, or while the proforma is only partially paid", async () => {
       const { order, proforma } = await makeOrderWithProforma(
-        "+919876606003",
+        "+919876608003",
         "invoice-final-test-marker incomplete",
       );
 
@@ -788,7 +850,7 @@ describe("invoices service (integration)", () => {
 
     it("is idempotent — only ever creates one tax invoice per proforma", async () => {
       const { order, proforma } = await makeOrderWithProforma(
-        "+919876606004",
+        "+919876608004",
         "invoice-final-test-marker idempotent",
       );
 

@@ -1,96 +1,84 @@
+import { CheckCircle2 } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getCompanyProfile } from "@/services/company-profile";
 
 export const metadata: Metadata = {
-  title: "About — FirstMan Corporate Services",
+  title: "About FirstMan Corporate Services",
   description:
-    "FirstMan Corporate Services helps businesses in Tamil Nadu register, stay compliant, and grow — with transparent pricing and real-time updates.",
+    "Meet the corporate services team helping businesses register, operate, protect their IP and stay compliant.",
 };
-
+const principles = [
+  {
+    title: "Scope before paperwork",
+    body: "We confirm applicability, dependencies, fees, and the intended outcome before execution begins.",
+  },
+  {
+    title: "One accountable owner",
+    body: "A FirstMan team member coordinates documents, filing, queries, status updates, and final handover.",
+  },
+  {
+    title: "Records you can rely on",
+    body: "Every completed engagement leaves a clear trail of acknowledgements, certificates, and next obligations.",
+  },
+];
 export default async function AboutPage() {
   const profile = await getCompanyProfile();
-
   return (
-    <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6">
-      <span className="text-brand text-sm font-semibold uppercase tracking-wide">About us</span>
-      <h1 className="mt-2 text-3xl font-extrabold tracking-tight sm:text-4xl">
-        Your first step, taken properly.
-      </h1>
-      <p className="mt-6 text-lg text-muted-foreground">
-        FirstMan Corporate Services handles the paperwork side of starting and running a business —
-        company registration, GST, trademarks, licenses, and the annual filings that keep it all
-        compliant — so founders can focus on the business itself.
-      </p>
-      <p className="mt-4 text-lg text-muted-foreground">
-        We currently work with clients across {profile.areasServed}, and every engagement runs
-        through the same internal process our own team uses to track filings, deadlines, and
-        documents — nothing sits in an inbox waiting to be remembered.
-      </p>
-
-      <h2 className="mt-12 text-xl font-bold">How we work</h2>
-      <dl className="mt-6 flex flex-col gap-6">
-        <div>
-          <dt className="font-semibold">Transparent pricing</dt>
-          <dd className="mt-1 text-muted-foreground">
-            Every price on this site is the price our team actually quotes — see the{" "}
-            <Link href="/pricing" className="text-brand hover:underline">
-              full pricing list
-            </Link>
-            .
-          </dd>
+    <div className="marketing-site">
+      <section className="border-b border-slate-200 bg-linear-to-b from-pink-50/70 via-white to-white">
+        <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8 lg:py-28">
+          <p className="text-xs font-bold tracking-[.18em] text-pink-700 uppercase">
+            About FirstMan
+          </p>
+          <h1 className="mt-5 max-w-5xl text-5xl font-semibold tracking-[-.04em] text-balance text-slate-950 sm:text-6xl">
+            The team behind your first step—and every obligation after it.
+          </h1>
+          <p className="mt-7 max-w-3xl text-lg leading-8 text-slate-600">
+            FirstMan handles the paperwork infrastructure of a business: formation, tax
+            registrations, licenses, accounting, intellectual property, certifications, and
+            recurring statutory compliance.
+          </p>
         </div>
-        <div>
-          <dt className="font-semibold">Real progress updates</dt>
-          <dd className="mt-1 text-muted-foreground">
-            You'll hear from us by WhatsApp and email as your filing moves — not just when it's
-            done.
-          </dd>
+      </section>
+      <section className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8 lg:py-28">
+        <div className="grid gap-14 lg:grid-cols-[.8fr_1.2fr]">
+          <div>
+            <p className="marketing-kicker">Why we exist</p>
+            <h2 className="mt-4 text-4xl font-bold tracking-tight text-slate-950">
+              Important work should not disappear into an inbox.
+            </h2>
+            <p className="mt-5 leading-7 text-slate-600">
+              We built FirstMan around visible scope, documented progress, and ownership. Clients
+              across {profile.areasServed} get a practical checklist and a team that stays
+              responsible through completion.
+            </p>
+          </div>
+          <div className="grid gap-4">
+            {principles.map((p) => (
+              <article key={p.title} className="rounded-2xl border border-slate-200 p-6">
+                <CheckCircle2 className="size-5 text-pink-700" />
+                <h3 className="mt-4 text-lg font-bold text-slate-950">{p.title}</h3>
+                <p className="mt-2 text-sm leading-6 text-slate-600">{p.body}</p>
+              </article>
+            ))}
+          </div>
         </div>
-        <div>
-          <dt className="font-semibold">One team, start to finish</dt>
-          <dd className="mt-1 text-muted-foreground">
-            The person who takes your details is on the same team that files your paperwork.
-          </dd>
+        <div className="mt-20 rounded-3xl bg-slate-50 p-8 sm:flex sm:items-center sm:justify-between sm:p-10">
+          <div>
+            <h2 className="text-2xl font-bold text-slate-950">Bring us the business goal.</h2>
+            <p className="mt-2 text-slate-600">
+              We’ll map the registrations, filings, and order of work.
+            </p>
+          </div>
+          <Link
+            href="/contact"
+            className="mt-5 inline-flex h-11 items-center rounded-lg bg-pink-700 px-5 text-sm font-bold text-white hover:bg-pink-800 sm:mt-0"
+          >
+            Talk to an expert
+          </Link>
         </div>
-      </dl>
-
-      {profile.address || profile.gstin || profile.llpin ? (
-        <>
-          <h2 className="mt-12 text-xl font-bold">Registered office</h2>
-          <dl className="mt-6 flex flex-col gap-3 text-sm text-muted-foreground">
-            <div>
-              <dt className="font-semibold text-foreground">{profile.legalName || profile.name}</dt>
-              {profile.address ? <dd className="mt-1">{profile.address}</dd> : null}
-            </div>
-            {profile.llpin ? (
-              <div className="flex gap-2">
-                <dt className="font-semibold text-foreground">LLPIN</dt>
-                <dd>{profile.llpin}</dd>
-              </div>
-            ) : null}
-            {profile.gstin ? (
-              <div className="flex gap-2">
-                <dt className="font-semibold text-foreground">GSTIN</dt>
-                <dd>{profile.gstin}</dd>
-              </div>
-            ) : null}
-          </dl>
-        </>
-      ) : null}
-
-      <div className="mt-12 rounded-xl border bg-muted/30 p-6">
-        <h2 className="font-semibold">Ready to get started?</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Tell us what you need and we'll get back to you — usually the same day.
-        </p>
-        <Link
-          href="/contact"
-          className="bg-brand text-brand-foreground hover:bg-brand/90 mt-4 inline-flex h-10 items-center justify-center rounded-lg px-5 text-sm font-semibold transition-colors"
-        >
-          Contact us
-        </Link>
-      </div>
+      </section>
     </div>
   );
 }

@@ -3,6 +3,7 @@
 import { type ColumnDef, flexRender, getCoreRowModel, useReactTable } from "@tanstack/react-table";
 import { StaffEmployeeTypeSelect } from "@/components/settings/staff-employee-type-select";
 import { StaffScopeDialog } from "@/components/settings/staff-scope-dialog";
+import { StaffTeamSelect } from "@/components/settings/staff-team-select";
 import { UserBanToggle } from "@/components/settings/user-ban-toggle";
 import { UserRoleSelect } from "@/components/settings/user-role-select";
 import { Badge } from "@/components/ui/badge";
@@ -52,6 +53,16 @@ function buildColumns(currentUserId: string, services: ServiceOption[]): ColumnD
             userId={row.original.id}
             employeeType={row.original.employeeType}
           />
+        ) : (
+          <span className="text-sm text-muted-foreground">—</span>
+        ),
+    },
+    {
+      id: "team",
+      header: "Team",
+      cell: ({ row }) =>
+        row.original.role === "executive" || row.original.role === "manager" ? (
+          <StaffTeamSelect userId={row.original.id} team={row.original.team} />
         ) : (
           <span className="text-sm text-muted-foreground">—</span>
         ),

@@ -2,8 +2,7 @@ import { and, count, eq, ilike, isNull, or } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/db";
 import { clients } from "@/db/schema/clients";
-import type { ActorScope } from "@/lib/scope";
-import { visibilityConditions } from "@/lib/scope";
+import { type ActorScope, isAssignedEmployee, visibilityConditions } from "@/lib/scope";
 import {
   optionalEmailSchema,
   optionalTrimmed,
@@ -13,6 +12,9 @@ import {
 import { indianPhoneSchema } from "@/lib/validation/phone";
 import { optionalGstinSchema, optionalPanSchema } from "@/lib/validation/tax-ids";
 import { recordActivity } from "@/services/activity-log";
+import { getSettingForUpdate, setSetting } from "@/services/settings";
+
+type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 export const clientInputSchema = z.object({
   type: z.enum(["individual", "business"]),
@@ -49,7 +51,7 @@ function scopeCondition(scope: ActorScope) {
 /** Internal-type executives can't assign clients to anyone but themselves; franchise-type staff
  * (territory-shared) can assign within their team, regardless of what the form submits (ADR 0001). */
 function enforceAssignment(input: ClientInput, actor: ActorScope): ClientInput {
-  if (actor.role === "executive" && actor.employeeType === "internal") {
+  if (actor.role === "executive" && isAssignedEmployee(actor)) {
     return { ...input, assignedTo: actor.userId };
   }
   return input;
@@ -65,7 +67,11 @@ export async function listClients(
   if (scoped) conditions.push(scoped);
   if (opts.search) {
     const term = `%${opts.search}%`;
-    const searchCondition = or(ilike(clients.name, term), ilike(clients.phone, term));
+    const searchCondition = or(
+      ilike(clients.name, term),
+      ilike(clients.phone, term),
+      ilike(clients.cin, term),
+    );
     if (searchCondition) conditions.push(searchCondition);
   }
   const where = and(...conditions);
@@ -144,13 +150,27 @@ export async function setWhatsAppOptOut(id: string, optedOut: boolean, actor: Ac
   });
 }
 
+/**
+ * Customer Identification Number, format FM<4-digit year><6-digit seq> (ADR 0002/0003) — same
+ * settings-row-lock sequence pattern as generateOrderNo/generateInvoiceNo, per-year reset.
+ */
+export async function generateClientCin(tx: Transaction, actor: ActorScope): Promise<string> {
+  const year = new Date().getFullYear();
+  const key = `clientCinSeq:${year}`;
+  const last = await getSettingForUpdate<number>(key, 0, tx);
+  const next = last + 1;
+  await setSetting(key, next, actor, tx);
+  return `FM${year}${String(next).padStart(6, "0")}`;
+}
+
 export async function createClient(input: ClientInput, actor: ActorScope) {
   const values = enforceAssignment(input, actor);
 
   return db.transaction(async (tx) => {
+    const cin = await generateClientCin(tx, actor);
     const [created] = await tx
       .insert(clients)
-      .values({ ...values, createdBy: actor.userId, updatedBy: actor.userId })
+      .values({ ...values, cin, createdBy: actor.userId, updatedBy: actor.userId })
       .returning();
     if (!created) throw new Error("Failed to create client");
 
