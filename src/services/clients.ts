@@ -2,8 +2,7 @@ import { and, count, eq, ilike, isNull, or } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/db";
 import { clients } from "@/db/schema/clients";
-import type { ActorScope } from "@/lib/scope";
-import { visibilityConditions } from "@/lib/scope";
+import { type ActorScope, isAssignedEmployee, visibilityConditions } from "@/lib/scope";
 import {
   optionalEmailSchema,
   optionalTrimmed,
@@ -52,7 +51,7 @@ function scopeCondition(scope: ActorScope) {
 /** Internal-type executives can't assign clients to anyone but themselves; franchise-type staff
  * (territory-shared) can assign within their team, regardless of what the form submits (ADR 0001). */
 function enforceAssignment(input: ClientInput, actor: ActorScope): ClientInput {
-  if (actor.role === "executive" && actor.employeeType === "internal") {
+  if (actor.role === "executive" && isAssignedEmployee(actor)) {
     return { ...input, assignedTo: actor.userId };
   }
   return input;

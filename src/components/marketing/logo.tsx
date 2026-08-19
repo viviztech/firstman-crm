@@ -4,7 +4,11 @@ import { cn } from "@/lib/utils";
 
 export function Logo({ className }: { className?: string }) {
   return (
-    <Link href="/" aria-label="FirstMan home" className={cn("flex items-center gap-2.5", className)}>
+    <Link
+      href="/"
+      aria-label="FirstMan home"
+      className={cn("flex items-center gap-2.5", className)}
+    >
       <Image
         src="/brand/firstman-mark.png"
         alt=""
@@ -16,8 +20,8 @@ export function Logo({ className }: { className?: string }) {
       <Image
         src="/brand/firstman-wordmark.png"
         alt="FirstMan"
-        width={987}
-        height={164}
+        width={1255}
+        height={220}
         priority
         className="h-7 w-auto"
       />

@@ -29,8 +29,7 @@ import {
 } from "@/db/schema/enquiries";
 import { orders } from "@/db/schema/orders";
 import { staffPincodeAllocations, staffProfiles, staffServiceAssignments } from "@/db/schema/staff";
-import type { ActorScope } from "@/lib/scope";
-import { teamCondition, visibilityConditions } from "@/lib/scope";
+import { type ActorScope, teamCondition, visibilityConditions } from "@/lib/scope";
 import {
   optionalDateTime,
   optionalEmailSchema,
@@ -152,12 +151,10 @@ function scopeCondition(scope: ActorScope) {
   return team ?? visibility;
 }
 
-/** Internal-type executives can't assign enquiries to anyone but themselves; franchise-type staff
- * (territory-shared) only get defaulted to themselves when nothing was submitted (ADR 0001). */
+/** Executives can't assign enquiries to someone else. This also gives franchise-created leads a
+ * stable direct-sales owner for commission attribution, while their territory view remains shared. */
 function enforceAssignment(assignedTo: string | undefined, actor: ActorScope | null) {
-  if (actor?.role === "executive" && actor.employeeType === "internal") {
-    return actor.userId;
-  }
+  if (actor?.role === "executive") return actor.userId;
   return assignedTo;
 }
 
@@ -190,13 +187,16 @@ async function franchiseCandidatesForPincode(tx: Transaction, pincode: string): 
   return rows.map((row) => row.id);
 }
 
-/** Executives who are not franchise-type (no staff_profiles row defaults to internal), stably ordered. */
+/** Sales-capable executives who are not franchise-type, stably ordered. */
 async function internalCandidates(tx: Transaction): Promise<string[]> {
-  const franchiseRows = await tx
-    .select({ id: staffProfiles.userId })
-    .from(staffProfiles)
-    .where(eq(staffProfiles.employeeType, "franchise"));
-  const franchiseIds = new Set(franchiseRows.map((row) => row.id));
+  const profiles = await tx
+    .select({
+      id: staffProfiles.userId,
+      employeeType: staffProfiles.employeeType,
+      team: staffProfiles.team,
+    })
+    .from(staffProfiles);
+  const profileByUser = new Map(profiles.map((profile) => [profile.id, profile]));
 
   const executives = await tx
     .select({ id: user.id })
@@ -204,7 +204,12 @@ async function internalCandidates(tx: Transaction): Promise<string[]> {
     .where(eq(user.role, "executive"))
     .orderBy(asc(user.id));
 
-  return executives.map((row) => row.id).filter((id) => !franchiseIds.has(id));
+  return executives
+    .map((row) => row.id)
+    .filter((id) => {
+      const profile = profileByUser.get(id);
+      return profile?.employeeType !== "franchise" && profile?.team !== "operations";
+    });
 }
 
 /**

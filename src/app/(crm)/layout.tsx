@@ -7,6 +7,7 @@ import { TopbarUserMenu } from "@/components/topbar-user-menu";
 import { Separator } from "@/components/ui/separator";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { formatMoney } from "@/lib/money";
+import { getPortalRole } from "@/lib/portal-role";
 import { requireUser } from "@/lib/session";
 import { getMyOpenTasks, getOverdueTasks } from "@/services/analytics";
 import { listFollowUpsDueForExecutive } from "@/services/enquiries";
@@ -85,6 +86,7 @@ export default async function CrmLayout({ children }: { children: ReactNode }) {
   const staffScope = await getStaffScope(user.id);
   const notifications = await loadNotifications(user, staffScope.team);
   const showSettings = user.role === "super_admin" || user.role === "manager";
+  const portalRole = getPortalRole(user.role, staffScope.team, staffScope.employeeType);
 
   return (
     <SidebarProvider>
@@ -102,7 +104,12 @@ export default async function CrmLayout({ children }: { children: ReactNode }) {
               totalCount={notifications.totalCount}
               seeAllHref={notifications.seeAllHref}
             />
-            <TopbarUserMenu name={user.name} role={user.role} showSettings={showSettings} />
+            <TopbarUserMenu
+              name={user.name}
+              role={user.role}
+              roleLabel={portalRole}
+              showSettings={showSettings}
+            />
           </div>
         </header>
         <main className="flex flex-1 flex-col gap-4 p-4">{children}</main>

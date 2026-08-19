@@ -1,20 +1,147 @@
-import { ArrowRight, Building2, CheckCircle2, FileCheck2, Landmark, Scale, Search, ShieldCheck } from "lucide-react";
+import {
+  ArrowRight,
+  Building2,
+  CheckCircle2,
+  FileCheck2,
+  Landmark,
+  Scale,
+  Search,
+  ShieldCheck,
+} from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { formatMoney } from "@/lib/money";
 import { getPublicCatalog } from "@/services/marketing-catalog";
 
-export const metadata: Metadata = { title: "Business Services Directory — FirstMan", description: "Explore company registration, licensing, tax, accounting, audit, IP and compliance services with transparent pricing." };
+export const metadata: Metadata = {
+  title: "Business Services Directory — FirstMan",
+  description:
+    "Explore company registration, licensing, tax, accounting, audit, IP and compliance services with transparent pricing.",
+};
 
 export default async function ServicesHubPage() {
   const catalog = await getPublicCatalog();
-  const total = catalog.reduce((sum,v)=>sum+v.categories.reduce((s,c)=>s+c.services.length,0),0);
-  return <div className="marketing-site bg-slate-50">
-    <section className="border-b border-slate-200 bg-white"><div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 lg:py-24"><Badge className="border-pink-200 bg-pink-50 text-pink-800">{total}+ services · transparent fees</Badge><div className="mt-6 grid gap-8 lg:grid-cols-[1fr_.55fr] lg:items-end"><div><h1 className="marketing-heading max-w-3xl">The operating system behind a compliant business.</h1><p className="mt-5 max-w-2xl text-lg leading-8 text-slate-600">Find the right filing, registration, license, certification, tax, accounting or technology service. Every engagement includes a defined scope, document checklist, and accountable follow-up.</p></div><div className="rounded-2xl border border-slate-200 bg-slate-50 p-5"><p className="flex items-center gap-2 text-sm font-bold text-slate-950"><Search className="size-4 text-pink-700" /> Need help choosing?</p><p className="mt-2 text-sm leading-6 text-slate-600">Describe your business and goal. We’ll map the services in the right order.</p><Link href="/contact" className="mt-3 inline-flex items-center gap-1 text-sm font-bold text-pink-700">Ask an expert <ArrowRight className="size-4" /></Link></div></div></div></section>
-    <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 lg:py-24">
-      <nav className="mb-14 flex flex-wrap gap-2" aria-label="Service areas">{catalog.map(v=><a key={v.id} href={`#${v.id}`} className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:border-pink-300 hover:text-pink-700">{v.name.replace(" Services","")}</a>)}</nav>
-      <div className="space-y-20">{catalog.map((vertical,index)=>{const Icon=[Building2,Landmark,Scale,FileCheck2,ShieldCheck][index]??FileCheck2; return <section key={vertical.id} id={vertical.id} className="scroll-mt-36"><div className="grid gap-10 lg:grid-cols-[280px_1fr]"><div><span className="flex size-12 items-center justify-center rounded-xl bg-slate-950 text-white"><Icon className="size-5" /></span><h2 className="mt-5 text-2xl font-bold tracking-tight text-slate-950">{vertical.name}</h2><p className="mt-3 text-sm leading-6 text-slate-600">Specialist execution, documented progress, and a clear handover for every service.</p></div><div className="space-y-10">{vertical.categories.map(category=><div key={category.id}><div className="mb-4 flex items-center gap-3"><h3 className="text-sm font-bold tracking-[.12em] text-slate-500 uppercase">{category.name}</h3><span className="h-px flex-1 bg-slate-200" /></div><div className="grid gap-3 md:grid-cols-2">{category.services.map(service=><Link key={service.id} href={`/services/${service.slug}`} className="group rounded-xl border border-slate-200 bg-white p-5 hover:border-pink-300 hover:shadow-md"><div className="flex items-start justify-between gap-4"><h4 className="font-bold text-slate-950 group-hover:text-pink-700">{service.name}</h4><ArrowRight className="mt-0.5 size-4 shrink-0 text-slate-400 group-hover:translate-x-1 group-hover:text-pink-700" /></div><p className="mt-2 line-clamp-2 text-sm leading-6 text-slate-600">{service.description??`End-to-end support for ${service.name.toLowerCase()}, including document review, preparation, filing and follow-up.`}</p><div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs"><span className="font-bold text-slate-900">From {formatMoney(service.basePricePaise)}</span><span className="text-slate-500">{service.estimatedDays} business days</span>{service.isRecurring?<span className="flex items-center gap-1 text-emerald-700"><CheckCircle2 className="size-3" /> Recurring support</span>:null}</div></Link>)}</div></div>)}</div></div></section>})}</div>
+  const total = catalog.reduce(
+    (sum, v) => sum + v.categories.reduce((s, c) => s + c.services.length, 0),
+    0,
+  );
+  return (
+    <div className="marketing-site bg-slate-50">
+      <section className="border-b border-slate-200 bg-white">
+        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 lg:py-24">
+          <Badge className="border-pink-200 bg-pink-50 text-pink-800">
+            {total}+ services · transparent fees
+          </Badge>
+          <div className="mt-6 grid gap-8 lg:grid-cols-[1fr_.55fr] lg:items-end">
+            <div>
+              <h1 className="marketing-heading max-w-3xl">
+                The operating system behind a compliant business.
+              </h1>
+              <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-600">
+                Find the right filing, registration, license, certification, tax, accounting or
+                technology service. Every engagement includes a defined scope, document checklist,
+                and accountable follow-up.
+              </p>
+            </div>
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+              <p className="flex items-center gap-2 text-sm font-bold text-slate-950">
+                <Search className="size-4 text-pink-700" /> Need help choosing?
+              </p>
+              <p className="mt-2 text-sm leading-6 text-slate-600">
+                Describe your business and goal. We’ll map the services in the right order.
+              </p>
+              <Link
+                href="/contact"
+                className="mt-3 inline-flex items-center gap-1 text-sm font-bold text-pink-700"
+              >
+                Ask an expert <ArrowRight className="size-4" />
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+      <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 lg:py-24">
+        <nav className="mb-14 flex flex-wrap gap-2" aria-label="Service areas">
+          {catalog.map((v) => (
+            <a
+              key={v.id}
+              href={`#${v.id}`}
+              className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:border-pink-300 hover:text-pink-700"
+            >
+              {v.name.replace(" Services", "")}
+            </a>
+          ))}
+        </nav>
+        <div className="space-y-20">
+          {catalog.map((vertical, index) => {
+            const Icon = [Building2, Landmark, Scale, FileCheck2, ShieldCheck][index] ?? FileCheck2;
+            return (
+              <section key={vertical.id} id={vertical.id} className="scroll-mt-36">
+                <div className="grid gap-10 lg:grid-cols-[280px_1fr]">
+                  <div>
+                    <span className="flex size-12 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+                      <Icon className="size-5" />
+                    </span>
+                    <h2 className="mt-5 text-2xl font-bold tracking-tight text-slate-950">
+                      {vertical.name}
+                    </h2>
+                    <p className="mt-3 text-sm leading-6 text-slate-600">
+                      Specialist execution, documented progress, and a clear handover for every
+                      service.
+                    </p>
+                  </div>
+                  <div className="space-y-10">
+                    {vertical.categories.map((category) => (
+                      <div key={category.id}>
+                        <div className="mb-4 flex items-center gap-3">
+                          <h3 className="text-sm font-bold tracking-[.12em] text-slate-500 uppercase">
+                            {category.name}
+                          </h3>
+                          <span className="h-px flex-1 bg-slate-200" />
+                        </div>
+                        <div className="grid gap-3 md:grid-cols-2">
+                          {category.services.map((service) => (
+                            <Link
+                              key={service.id}
+                              href={`/services/${service.slug}`}
+                              className="group rounded-xl border border-slate-200 bg-white p-5 hover:border-pink-300 hover:shadow-md"
+                            >
+                              <div className="flex items-start justify-between gap-4">
+                                <h4 className="font-bold text-slate-950 group-hover:text-pink-700">
+                                  {service.name}
+                                </h4>
+                                <ArrowRight className="mt-0.5 size-4 shrink-0 text-slate-400 group-hover:translate-x-1 group-hover:text-pink-700" />
+                              </div>
+                              <p className="mt-2 line-clamp-2 text-sm leading-6 text-slate-600">
+                                {service.description ??
+                                  `End-to-end support for ${service.name.toLowerCase()}, including document review, preparation, filing and follow-up.`}
+                              </p>
+                              <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs">
+                                <span className="font-bold text-slate-900">
+                                  From {formatMoney(service.basePricePaise)}
+                                </span>
+                                <span className="text-slate-500">
+                                  {service.estimatedDays} business days
+                                </span>
+                                {service.isRecurring ? (
+                                  <span className="flex items-center gap-1 text-emerald-700">
+                                    <CheckCircle2 className="size-3" /> Recurring support
+                                  </span>
+                                ) : null}
+                              </div>
+                            </Link>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </section>
+            );
+          })}
+        </div>
+      </div>
     </div>
-  </div>;
+  );
 }

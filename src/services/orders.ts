@@ -10,7 +10,7 @@ import { staffProfiles, staffServiceAssignments } from "@/db/schema/staff";
 import { WIP_STATUSES } from "@/lib/badges";
 import { inferDocumentKind } from "@/lib/document-kind";
 import type { ActorScope } from "@/lib/scope";
-import { teamCondition, visibilityConditions } from "@/lib/scope";
+import { isAssignedEmployee, teamCondition, visibilityConditions } from "@/lib/scope";
 import { optionalDateTime, optionalTrimmed } from "@/lib/validation/helpers";
 import { recordActivity } from "@/services/activity-log";
 import { listDocumentsForOwner } from "@/services/documents";
@@ -81,7 +81,7 @@ function scopeCondition(scope: ActorScope) {
 
   if (
     scope.role === "executive" &&
-    scope.employeeType === "internal" &&
+    isAssignedEmployee(scope) &&
     scope.team === "operations" &&
     scope.serviceIds.length > 0
   ) {
@@ -106,9 +106,7 @@ function scopeCondition(scope: ActorScope) {
  * lead/manager picks them up.
  */
 function enforceAssignment(assignedTo: string | undefined, actor: ActorScope) {
-  return actor.role === "executive" &&
-    actor.employeeType === "internal" &&
-    actor.team === "operations"
+  return actor.role === "executive" && isAssignedEmployee(actor) && actor.team === "operations"
     ? actor.userId
     : assignedTo;
 }
@@ -398,7 +396,7 @@ export async function listMyCancelledJobCards(userId: string, limit = 50) {
 export async function listJobCardsAvailableToPickUp(scope: ActorScope, limit = 50) {
   if (
     scope.role !== "executive" ||
-    scope.employeeType !== "internal" ||
+    !isAssignedEmployee(scope) ||
     scope.team !== "operations" ||
     scope.serviceIds.length === 0
   ) {
@@ -573,11 +571,7 @@ export async function createOrder(input: OrderInput, actor: ActorScope) {
  * available" case, not an error.
  */
 export async function pickUpJobCard(orderId: string, actor: ActorScope) {
-  if (
-    actor.role !== "executive" ||
-    actor.employeeType !== "internal" ||
-    actor.team !== "operations"
-  ) {
+  if (actor.role !== "executive" || !isAssignedEmployee(actor) || actor.team !== "operations") {
     throw new Error("Only operations executives can pick up a job card this way.");
   }
 

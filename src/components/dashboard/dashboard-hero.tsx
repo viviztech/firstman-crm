@@ -16,8 +16,10 @@ function greetingFor(now: Date): string {
 export function DashboardHero({
   userName,
   headline,
+  roleLabel,
 }: {
   userName: string;
+  roleLabel?: string;
   headline?: {
     label: string;
     value: string;
@@ -35,6 +37,7 @@ export function DashboardHero({
           {greetingFor(now)}, {userName.split(" ")[0]}!
         </p>
         <p className="text-sm text-primary-foreground/80">
+          {roleLabel ? `${roleLabel} · ` : ""}
           {formatInTimeZone(now, env.TZ_DISPLAY, "EEE, d MMM yyyy")}
         </p>
       </div>

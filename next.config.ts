@@ -11,10 +11,12 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default withSentryConfig(nextConfig, {
-  silent: true,
-  telemetry: false,
-  sourcemaps: {
-    disable: true,
-  },
-});
+export default process.env.NODE_ENV === "development"
+  ? nextConfig
+  : withSentryConfig(nextConfig, {
+      silent: true,
+      telemetry: false,
+      sourcemaps: {
+        disable: true,
+      },
+    });

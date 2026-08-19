@@ -18,6 +18,8 @@ const TEAMS: { value: string; label: string }[] = [
   { value: NONE, label: "Unset" },
   { value: "sales", label: "Sales" },
   { value: "operations", label: "Operations" },
+  { value: "backoffice", label: "Backoffice Admin" },
+  { value: "workforce", label: "Workforce Manager" },
 ];
 
 export function StaffTeamSelect({

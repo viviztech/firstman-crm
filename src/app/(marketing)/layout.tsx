@@ -17,7 +17,9 @@ export default async function MarketingLayout({ children }: { children: ReactNod
   const profile = await getCompanyProfile();
 
   return (
-    <div className={`${fraunces.variable} marketing-root flex min-h-screen flex-col bg-white text-slate-950`}>
+    <div
+      className={`${fraunces.variable} marketing-root flex min-h-screen flex-col bg-white text-slate-950`}
+    >
       <SiteHeader />
       <main className="flex-1">{children}</main>
       <SiteFooter />

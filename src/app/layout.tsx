@@ -20,7 +20,8 @@ export const metadata: Metadata = {
     default: "FirstMan Corporate Services",
     template: "%s | FirstMan",
   },
-  description: "Business registration, tax, licensing, accounting, intellectual property and compliance services from FirstMan.",
+  description:
+    "Business registration, tax, licensing, accounting, intellectual property and compliance services from FirstMan.",
   icons: {
     icon: [
       { url: "/favicon.ico", sizes: "any" },

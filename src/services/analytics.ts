@@ -7,7 +7,7 @@ import { payments } from "@/db/schema/invoices";
 import { orders, orderTasks } from "@/db/schema/orders";
 import { sumPaise } from "@/lib/money";
 import type { ActorScope } from "@/lib/scope";
-import { visibilityConditions } from "@/lib/scope";
+import { isAssignedEmployee, visibilityConditions } from "@/lib/scope";
 
 /** Manager/Admin dashboard: enquiries created this month, grouped by status. Lost enquiries are hidden everywhere, this funnel included. */
 export async function getEnquiriesThisMonthByStatus(scope: ActorScope, now: Date = new Date()) {
@@ -92,7 +92,7 @@ export async function getOverdueTasks(scope: ActorScope, limit = 10, now: Date =
       isNull(orderTasks.deletedAt),
       ne(orderTasks.status, "done"),
       lt(orderTasks.dueAt, now),
-      scope.role === "executive" && scope.employeeType === "internal"
+      scope.role === "executive" && isAssignedEmployee(scope)
         ? eq(orderTasks.assignedTo, scope.userId)
         : undefined,
     ),

@@ -61,7 +61,7 @@ function buildColumns(currentUserId: string, services: ServiceOption[]): ColumnD
       id: "team",
       header: "Team",
       cell: ({ row }) =>
-        row.original.role === "executive" ? (
+        row.original.role === "executive" || row.original.role === "manager" ? (
           <StaffTeamSelect userId={row.original.id} team={row.original.team} />
         ) : (
           <span className="text-sm text-muted-foreground">—</span>

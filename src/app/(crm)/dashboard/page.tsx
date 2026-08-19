@@ -18,8 +18,10 @@ import { toScope } from "@/actions/shared";
 import { ComplianceStatusBadge } from "@/components/compliance/compliance-status-badge";
 import { DashboardHero } from "@/components/dashboard/dashboard-hero";
 import { EnquiriesFunnelChart } from "@/components/dashboard/enquiries-funnel-chart";
+import { FranchiseDashboard } from "@/components/dashboard/franchise-dashboard";
 import { OperationsExecutiveDashboard } from "@/components/dashboard/operations-executive-dashboard";
 import { RevenueChart } from "@/components/dashboard/revenue-chart";
+import { RoleWorkspaceDashboard } from "@/components/dashboard/role-workspace-dashboard";
 import { SalesExecutiveDashboard } from "@/components/dashboard/sales-executive-dashboard";
 import { SectionCard } from "@/components/dashboard/section-card";
 import { StatCard } from "@/components/dashboard/stat-card";
@@ -27,6 +29,7 @@ import { OrderStatusBadge } from "@/components/orders/order-status-badge";
 import { ORDER_STATUS_ORDER } from "@/lib/badges";
 import { env } from "@/lib/env";
 import { formatMoney } from "@/lib/money";
+import { getPortalRole } from "@/lib/portal-role";
 import { requireUser } from "@/lib/session";
 import {
   getEnquiriesThisMonthByStatus,
@@ -49,6 +52,7 @@ import {
   listOpenEnquiries,
 } from "@/services/enquiries";
 import { getExpensesThisMonth } from "@/services/expenses";
+import { getFranchiseCommissionDashboard } from "@/services/franchise-commissions";
 import {
   getCollectionsThisMonth,
   getOutstandingInvoicesTotal,
@@ -82,6 +86,8 @@ export default async function DashboardPage() {
     : [null, null, null, []];
 
   const showManagerStats = user.role === "super_admin" || user.role === "manager";
+  const isBackofficeAdmin = user.role === "manager" && scope.team !== "workforce";
+  const isWorkforceManager = user.role === "manager" && scope.team === "workforce";
   const [enquiriesByStatus, revenue, ordersByStatus, overdueTasks, topServices] = showManagerStats
     ? await Promise.all([
         getEnquiriesThisMonthByStatus(scope),
@@ -92,6 +98,7 @@ export default async function DashboardPage() {
       ])
     : [[], { thisMonthPaise: 0, lastMonthPaise: 0 }, [], [], []];
 
+  const isFranchise = user.role === "executive" && scope.employeeType === "franchise";
   const isSalesExecutive = user.role === "executive" && scope.team === "sales";
   const isOperationsExecutive = user.role === "executive" && scope.team === "operations";
   const showExecutiveStats =
@@ -187,7 +194,13 @@ export default async function DashboardPage() {
         [],
       ];
 
+  const franchiseCommission = isFranchise ? await getFranchiseCommissionDashboard(scope) : null;
+
   const ordersByStatusMap = new Map(ordersByStatus.map((row) => [row.status, row.count]));
+  const activeJobCardCount = ordersByStatus
+    .filter((row) => row.status !== "completed" && row.status !== "cancelled")
+    .reduce((total, row) => total + row.count, 0);
+  const portalRole = getPortalRole(user.role, scope.team, scope.employeeType);
 
   const headline = showAccountantStats
     ? {
@@ -228,7 +241,16 @@ export default async function DashboardPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <DashboardHero userName={user.name} headline={headline} />
+      <DashboardHero userName={user.name} roleLabel={portalRole} headline={headline} />
+
+      {isBackofficeAdmin || isWorkforceManager ? (
+        <RoleWorkspaceDashboard
+          workspace={isWorkforceManager ? "workforce" : "backoffice"}
+          enquiryCount={enquiriesByStatus.reduce((total, row) => total + row.count, 0)}
+          jobCardCount={activeJobCardCount}
+          overdueTaskCount={overdueTasks.length}
+        />
+      ) : null}
 
       {showAccountantStats ? (
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -302,6 +324,8 @@ export default async function DashboardPage() {
           services={salesServices}
         />
       ) : null}
+
+      {franchiseCommission ? <FranchiseDashboard data={franchiseCommission} /> : null}
 
       {isOperationsExecutive ? (
         <OperationsExecutiveDashboard

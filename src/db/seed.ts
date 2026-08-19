@@ -38,7 +38,7 @@ import {
   sendInvoice,
 } from "@/services/invoices";
 import { createOrder, updateOrderStatus } from "@/services/orders";
-import { updateStaffTeam } from "@/services/staff";
+import { updateStaffEmployeeType, updateStaffTeam } from "@/services/staff";
 
 /** A couple of seeded enquiries get genuinely closed as sales so conversion-rate reports have non-zero data. */
 const WON_ENQUIRY_PHONES = ["+919833100033", "+919900100010"] as const;
@@ -59,6 +59,51 @@ const STAFF: { role: Role; count: number }[] = [
   { role: "manager", count: 3 },
   { role: "executive", count: 3 },
   { role: "accountant", count: 3 },
+];
+
+const PORTAL_USERS: {
+  email: string;
+  name: string;
+  role: Role;
+  employeeType?: "internal" | "franchise" | "associate";
+  team?: "sales" | "operations" | "backoffice" | "workforce";
+}[] = [
+  {
+    email: "backoffice@firstman.in",
+    name: "Backoffice Admin",
+    role: "manager",
+    team: "backoffice",
+  },
+  { email: "sales@firstman.in", name: "Sales Executive", role: "executive", team: "sales" },
+  {
+    email: "operations@firstman.in",
+    name: "Operations Executive",
+    role: "executive",
+    team: "operations",
+  },
+  { email: "accounts@firstman.in", name: "Accounts", role: "accountant" },
+  { email: "workforce@firstman.in", name: "Workforce Manager", role: "manager", team: "workforce" },
+  {
+    email: "franchise@firstman.in",
+    name: "Franchise",
+    role: "executive",
+    employeeType: "franchise",
+    team: "sales",
+  },
+  {
+    email: "associate.sales@firstman.in",
+    name: "Associate Sales",
+    role: "executive",
+    employeeType: "associate",
+    team: "sales",
+  },
+  {
+    email: "associate.operations@firstman.in",
+    name: "Associate Operations",
+    role: "executive",
+    employeeType: "associate",
+    team: "operations",
+  },
 ];
 
 async function upsertUser(email: string, name: string, role: Role): Promise<string> {
@@ -525,6 +570,15 @@ async function main(): Promise<void> {
 
   const adminId = await upsertUser("admin@firstman.in", "Admin", "super_admin");
   const actor = actorScope(adminId);
+
+  for (const portalUser of PORTAL_USERS) {
+    const portalUserId = await upsertUser(portalUser.email, portalUser.name, portalUser.role);
+    if (portalUser.employeeType) {
+      await updateStaffEmployeeType(portalUserId, portalUser.employeeType, actor);
+    }
+    if (portalUser.team) await updateStaffTeam(portalUserId, portalUser.team, actor);
+  }
+  console.log("created portal-role demo users");
 
   const executiveIds: string[] = [];
   for (const group of STAFF) {

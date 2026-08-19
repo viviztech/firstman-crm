@@ -24,12 +24,16 @@ export type ActorScope = {
   team: StaffTeam | null;
 };
 
+export function isAssignedEmployee(scope: ActorScope): boolean {
+  return scope.employeeType === "internal" || scope.employeeType === "associate";
+}
+
 /** Internal-type executives only ever see/act on rows assigned to them (spec 3). */
 export function assignedToCondition(
   assignedToColumn: AnyPgColumn,
   scope: ActorScope,
 ): SQL | undefined {
-  if (scope.role !== "executive" || scope.employeeType !== "internal") return undefined;
+  if (scope.role !== "executive" || !isAssignedEmployee(scope)) return undefined;
   return eq(assignedToColumn, scope.userId);
 }
 

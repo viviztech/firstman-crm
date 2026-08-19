@@ -81,8 +81,8 @@
 }
 
 :root {
-  /* Soft off-white app canvas (not pure white) so white cards read as raised surfaces — QuickBooks-style content area. */
-  --background: oklch(0.981 0.002 197.1);
+  /* Light grey app canvas (not pure white) so white cards read as raised surfaces — QuickBooks-style content area. */
+  --background: oklch(0.955 0.003 240);
   --foreground: oklch(0.148 0.004 228.8);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.148 0.004 228.8);
@@ -131,47 +131,9 @@
   --brand-light: #e68caf;
 }
 
-.dark {
-  --background: oklch(0.148 0.004 228.8);
-  --foreground: oklch(0.987 0.002 197.1);
-  --card: oklch(0.218 0.008 223.9);
-  --card-foreground: oklch(0.987 0.002 197.1);
-  --popover: oklch(0.218 0.008 223.9);
-  --popover-foreground: oklch(0.987 0.002 197.1);
-  --primary: #e68caf;
-  --primary-foreground: #29292d;
-  --secondary: oklch(0.274 0.006 286.033);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.275 0.011 216.9);
-  --muted-foreground: oklch(0.723 0.014 214.4);
-  --accent: oklch(0.275 0.011 216.9);
-  --accent-foreground: oklch(0.987 0.002 197.1);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.56 0.021 213.5);
-  --chart-1: oklch(0.872 0.007 219.6);
-  --chart-2: oklch(0.56 0.021 213.5);
-  --chart-3: oklch(0.45 0.017 213.2);
-  --chart-4: oklch(0.378 0.015 216);
-  --chart-5: oklch(0.275 0.011 216.9);
-  --sidebar: oklch(0.218 0.008 223.9);
-  --sidebar-foreground: oklch(0.987 0.002 197.1);
-  --sidebar-primary: #e68caf;
-  --sidebar-primary-foreground: #29292d;
-  --sidebar-accent: oklch(0.275 0.011 216.9);
-  --sidebar-accent-foreground: oklch(0.987 0.002 197.1);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.56 0.021 213.5);
-
-  --brand: var(--primary);
-  --brand-foreground: var(--primary-foreground);
-  --brand-muted: #421023;
-  --brand-ink: #ffffff;
-  --brand-graphite: #58585b;
-  --brand-deep: #29292d;
-  --brand-light: #e68caf;
-}
+/* No dark theme: FirstMan ships one light, brand-forward surface. The `dark` variant registered
+   above is kept only because a few vendor (shadcn) components reference it defensively; with no
+   `.dark` class ever applied to the tree, those rules never match. */
 
 @layer base {
   * {
@@ -254,9 +216,11 @@
     height: 52rem;
     right: -20rem;
     top: -18rem;
-    border: 1px solid rgb(255 255 255 / 0.08);
+    border: 1px solid rgb(186 42 102 / 0.1);
     border-radius: 9999px;
-    box-shadow: 0 0 0 8rem rgb(255 255 255 / 0.025), 0 0 0 16rem rgb(255 255 255 / 0.015);
+    box-shadow:
+      0 0 0 8rem rgb(186 42 102 / 0.035),
+      0 0 0 16rem rgb(186 42 102 / 0.02);
   }
 
   .marketing-site section[id] {

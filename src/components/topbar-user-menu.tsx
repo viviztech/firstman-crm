@@ -26,10 +26,12 @@ export function TopbarUserMenu({
   name,
   role,
   showSettings,
+  roleLabel,
 }: {
   name: string;
   role: string;
   showSettings: boolean;
+  roleLabel?: string;
 }) {
   const router = useRouter();
 
@@ -47,7 +49,9 @@ export function TopbarUserMenu({
         </Avatar>
         <span className="hidden flex-col items-start leading-tight sm:flex">
           <span className="text-sm font-medium">{name}</span>
-          <span className="text-xs text-muted-foreground capitalize">{role.replace("_", " ")}</span>
+          <span className="text-xs text-muted-foreground">
+            {roleLabel ?? role.replace("_", " ")}
+          </span>
         </span>
         <ChevronDownIcon className="size-4 text-muted-foreground" />
       </DropdownMenuTrigger>
@@ -56,7 +60,7 @@ export function TopbarUserMenu({
           <DropdownMenuLabel>
             <span className="flex flex-col">
               <span className="font-medium text-foreground">{name}</span>
-              <span className="text-xs capitalize">{role.replace("_", " ")}</span>
+              <span className="text-xs">{roleLabel ?? role.replace("_", " ")}</span>
             </span>
           </DropdownMenuLabel>
         </DropdownMenuGroup>

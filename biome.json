@@ -40,6 +40,7 @@
         "**/src/db/seed.ts",
         "**/src/db/migrate.ts",
         "**/src/db/truncate.ts",
+        "**/src/db/reset-admin-password.ts",
         "**/*.config.ts",
         "**/*.config.mts"
       ],
