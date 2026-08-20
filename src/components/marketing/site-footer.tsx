@@ -38,7 +38,7 @@ export async function SiteFooter() {
       </div>
       <div className="mx-auto grid max-w-7xl gap-12 px-4 py-14 sm:px-6 md:grid-cols-2 lg:grid-cols-[1.2fr_1fr_1fr_1fr] lg:px-8">
         <div>
-          <Logo className="w-fit rounded-lg border border-slate-200 bg-white px-3 py-2" />
+          <Logo className="w-fit" />
           <p className="mt-5 max-w-sm text-sm leading-7 text-slate-500">
             Formation, licensing, tax, accounting, intellectual property and statutory
             compliance—managed by one corporate services team.

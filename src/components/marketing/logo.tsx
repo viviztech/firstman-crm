@@ -4,26 +4,14 @@ import { cn } from "@/lib/utils";
 
 export function Logo({ className }: { className?: string }) {
   return (
-    <Link
-      href="/"
-      aria-label="FirstMan home"
-      className={cn("flex items-center gap-2.5", className)}
-    >
+    <Link href="/" aria-label="FirstMan home" className={cn("flex items-center", className)}>
       <Image
-        src="/brand/firstman-mark.png"
-        alt=""
-        width={512}
-        height={512}
+        src="/fm-corp-logo-tp.png"
+        alt="FirstMan — Your First Step"
+        width={1050}
+        height={239}
         priority
-        className="size-9 shrink-0 object-contain"
-      />
-      <Image
-        src="/brand/firstman-wordmark.png"
-        alt="FirstMan"
-        width={1255}
-        height={220}
-        priority
-        className="h-7 w-auto"
+        className="h-11 w-auto object-contain"
       />
     </Link>
   );
