@@ -5,7 +5,6 @@ import { MobileNav } from "@/components/marketing/mobile-nav";
 import { ServicesMegaMenu } from "@/components/marketing/services-mega-menu";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { getCompanyProfile } from "@/services/company-profile";
 import { getPublicCatalog } from "@/services/marketing-catalog";
 
 const SECONDARY_LINKS = [
@@ -15,16 +14,10 @@ const SECONDARY_LINKS = [
 ];
 
 export async function SiteHeader() {
-  const [profile, catalog] = await Promise.all([getCompanyProfile(), getPublicCatalog()]);
+  const catalog = await getPublicCatalog();
 
   return (
     <header className="marketing-header sticky top-0 z-50 border-b border-slate-200/80 bg-white/95 backdrop-blur-xl">
-      <div className="border-b border-slate-200 bg-slate-100 text-slate-600">
-        <div className="mx-auto flex h-8 max-w-7xl items-center justify-between px-4 text-[11px] font-medium sm:px-6 lg:px-8">
-          <span>Business registration, tax, licensing and compliance</span>
-          <span className="hidden sm:inline">Serving {profile.areasServed}</span>
-        </div>
-      </div>
       <div className="mx-auto flex h-[72px] max-w-7xl items-center gap-7 px-4 sm:px-6 lg:px-8">
         <Logo className="shrink-0" />
 

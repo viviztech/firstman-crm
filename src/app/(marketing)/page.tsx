@@ -5,15 +5,11 @@ import {
   CheckCircle2,
   FileCheck2,
   Landmark,
-  Scale,
   ShieldCheck,
-  Sparkles,
 } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { MarketingEnquiryForm } from "@/components/marketing/enquiry-form";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatMoney } from "@/lib/money";
 import { getCompanyProfile } from "@/services/company-profile";
 import { getPublicCatalog, getPublicServices } from "@/services/marketing-catalog";
@@ -73,10 +69,7 @@ export default async function MarketingHomePage() {
         <div className="marketing-orbit" aria-hidden="true" />
         <div className="relative mx-auto grid max-w-7xl gap-14 px-4 py-20 sm:px-6 sm:py-28 lg:grid-cols-[1.15fr_.85fr] lg:items-center lg:px-8 lg:py-32">
           <div>
-            <Badge className="border-pink-200 bg-pink-50 text-pink-800">
-              <Sparkles /> Corporate services, without the black box
-            </Badge>
-            <h1 className="mt-7 max-w-4xl text-5xl leading-[1.02] font-semibold tracking-[-0.045em] text-balance text-slate-950 sm:text-6xl lg:text-7xl">
+            <h1 className="max-w-4xl text-5xl leading-[1.02] font-semibold tracking-[-0.045em] text-balance text-slate-950 sm:text-6xl lg:text-7xl">
               Build the business.
               <br />
               <span className="text-pink-600">We’ll manage the filings.</span>
@@ -161,55 +154,36 @@ export default async function MarketingHomePage() {
       </section>
 
       <section className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8 lg:py-28">
-        <div className="grid gap-12 lg:grid-cols-[.75fr_1.25fr]">
+        <div className="grid gap-12 lg:grid-cols-[.9fr_1.1fr] lg:items-start">
           <div>
-            <p className="marketing-kicker">Practice areas</p>
-            <h2 className="marketing-heading mt-4">
-              A specialist desk for every business obligation.
-            </h2>
+            <p className="marketing-kicker">About FirstMan</p>
+            <h2 className="marketing-heading mt-4">Entrepreneurship, simplified.</h2>
             <p className="mt-5 max-w-md leading-7 text-slate-600">
-              Services are organised around how a business actually operates—not around government
-              portal names.
+              FirstMan Corporate Services is an arm of Technology &amp; Consulting company{" "}
+              <span className="font-semibold text-slate-900">
+                FirstMan Techno Enterprises Limited
+              </span>
+              , working with new-age entrepreneurs across {profile.areasServed} to realize their
+              dreams.
             </p>
             <Link
-              href="/services"
+              href="/about"
               className="mt-7 inline-flex items-center gap-2 text-sm font-bold text-pink-700"
             >
-              See the complete service directory <ArrowRight className="size-4" />
+              Learn more about us <ArrowRight className="size-4" />
             </Link>
           </div>
-          <div className="grid gap-4 sm:grid-cols-2">
-            {catalog.map((vertical, index) => {
-              const Icon =
-                [Building2, Landmark, Scale, FileCheck2, ShieldCheck][index] ?? FileCheck2;
-              const count = vertical.categories.reduce((sum, c) => sum + c.services.length, 0);
-              return (
-                <Card
-                  key={vertical.id}
-                  className="border-slate-200 py-0 shadow-none transition-all hover:-translate-y-1 hover:border-pink-200 hover:shadow-xl hover:shadow-slate-950/5"
-                >
-                  <CardHeader className="p-6 pb-3">
-                    <span className="flex size-11 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-                      <Icon className="size-5" />
-                    </span>
-                    <CardTitle className="mt-5 text-lg font-bold text-slate-950">
-                      {vertical.name}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="px-6 pb-5 text-sm leading-6 text-slate-600">
-                    {count} services across{" "}
-                    {vertical.categories
-                      .map((c) => c.name)
-                      .slice(0, 2)
-                      .join(" and ")}
-                    .
-                  </CardContent>
-                  <CardFooter className="border-slate-100 bg-slate-50 px-6 py-3 text-xs font-bold text-slate-600">
-                    Explore practice area <ArrowRight className="ml-auto size-3.5" />
-                  </CardFooter>
-                </Card>
-              );
-            })}
+          <div className="rounded-3xl border border-slate-200 bg-slate-50 p-8 sm:p-10">
+            <Building2 className="size-7 text-pink-700" />
+            <p className="mt-5 text-xl font-bold tracking-tight text-slate-950">
+              One shop for every aspiring entrepreneur.
+            </p>
+            <p className="mt-3 leading-7 text-slate-600">
+              We specialize in Business Consulting Services — incorporation, business operations,
+              and all statutory registrations and licensing needed to run a business and scale it
+              beyond MSME. Alongside this, we provide Research and Analytics solutions that help
+              organisations thrive in a world of volatility, uncertainty, complexity, and ambiguity.
+            </p>
           </div>
         </div>
       </section>

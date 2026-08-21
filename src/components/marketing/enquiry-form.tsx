@@ -107,3 +107,46 @@ export function MarketingEnquiryForm({
     </form>
   );
 }
+
+/** Minimal name + phone capture for tight spaces (e.g. a service page hero) — full detail is gathered on follow-up. */
+export function QuickEnquiryForm({ defaultServiceId }: { defaultServiceId?: string }) {
+  const [state, formAction, isPending] = useActionState(submitMarketingEnquiryAction, undefined);
+
+  if (state?.ok) {
+    return (
+      <div className="flex flex-col items-center gap-2 py-4 text-center">
+        <CheckCircle2 className="text-brand size-8" />
+        <p className="text-sm font-semibold">Thanks — we've got your details</p>
+        <p className="text-xs text-muted-foreground">Our team will reach out shortly.</p>
+      </div>
+    );
+  }
+
+  return (
+    <form action={formAction} className="flex flex-col gap-3">
+      {defaultServiceId ? (
+        <input type="hidden" name="serviceInterestedId" value={defaultServiceId} />
+      ) : null}
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="quick-enquiry-name" className="sr-only">
+          Name
+        </Label>
+        <Input id="quick-enquiry-name" name="name" required placeholder="Your name" />
+      </div>
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="quick-enquiry-phone" className="sr-only">
+          Phone
+        </Label>
+        <Input id="quick-enquiry-phone" name="phone" required placeholder="98765 43210" />
+      </div>
+      {state && !state.ok ? <p className="text-sm text-destructive">{state.error}</p> : null}
+      <Button
+        type="submit"
+        disabled={isPending}
+        className="bg-brand text-brand-foreground hover:bg-brand/90"
+      >
+        {isPending ? "Sending…" : "Request a callback"}
+      </Button>
+    </form>
+  );
+}

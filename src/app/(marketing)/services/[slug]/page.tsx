@@ -2,7 +2,7 @@ import { ArrowRight, CheckCircle2, Clock3, FileText, IndianRupee, ShieldCheck } 
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { MarketingEnquiryForm } from "@/components/marketing/enquiry-form";
+import { QuickEnquiryForm } from "@/components/marketing/enquiry-form";
 import { JsonLd } from "@/components/marketing/json-ld";
 import { Badge } from "@/components/ui/badge";
 import { getServicePageContent } from "@/content/service-content";
@@ -29,13 +29,9 @@ export async function generateMetadata({
 
 export default async function ServiceDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const [service, allServices] = await Promise.all([
-    getPublicServiceBySlug(slug),
-    getPublicServices(),
-  ]);
+  const service = await getPublicServiceBySlug(slug);
   if (!service) notFound();
   const content = getServicePageContent(service);
-  const total = service.basePricePaise + (service.govtFeePaise ?? 0);
   const faqs = [
     {
       question: `What is included in ${service.name}?`,
@@ -68,41 +64,46 @@ export default async function ServiceDetailPage({ params }: { params: Promise<{ 
             <span className="mx-2">/</span>
             {service.categoryName}
           </nav>
-          <div className="mt-8 grid gap-10 lg:grid-cols-[1fr_360px] lg:items-end">
+          <div className="mt-8 grid gap-10 lg:grid-cols-[1fr_380px] lg:items-start">
             <div>
               <Badge className="border-pink-200 bg-pink-50 text-pink-800">{content.eyebrow}</Badge>
               <h1 className="mt-5 max-w-4xl text-4xl font-semibold tracking-[-.035em] text-balance text-slate-950 sm:text-5xl lg:text-6xl">
                 {service.name}
               </h1>
               <p className="mt-6 max-w-3xl text-lg leading-8 text-slate-600">{content.summary}</p>
-            </div>
-            <div className="grid grid-cols-2 gap-3 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-              <div>
-                <IndianRupee className="size-4 text-pink-600" />
-                <p className="mt-3 text-xs text-slate-500">Professional fee</p>
-                <p className="mt-1 font-bold text-slate-950">
+              <div className="mt-7 flex flex-wrap gap-x-8 gap-y-3 text-sm text-slate-600">
+                <span className="flex items-center gap-2">
+                  <IndianRupee className="size-4 text-pink-600" />
                   From {formatMoney(service.basePricePaise)}
-                </p>
-              </div>
-              <div>
-                <Clock3 className="size-4 text-pink-600" />
-                <p className="mt-3 text-xs text-slate-500">Typical timeline</p>
-                <p className="mt-1 font-bold text-slate-950">
+                  {service.govtFeePaise ? (
+                    <span className="text-slate-400">
+                      + {formatMoney(service.govtFeePaise)} govt. fee
+                    </span>
+                  ) : null}
+                </span>
+                <span className="flex items-center gap-2">
+                  <Clock3 className="size-4 text-pink-600" />
                   {service.estimatedDays} business days
-                </p>
+                </span>
               </div>
-              {service.govtFeePaise ? (
-                <p className="col-span-2 border-t border-slate-100 pt-3 text-xs text-slate-500">
-                  Typical government fee: {formatMoney(service.govtFeePaise)} · Indicative total
-                  from {formatMoney(total)}
-                </p>
-              ) : null}
+            </div>
+            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xl shadow-slate-950/5">
+              <p className="text-xs font-bold tracking-[.14em] text-pink-700 uppercase">
+                Discuss this service
+              </p>
+              <h2 className="mt-2 text-lg font-bold text-slate-950">Get a callback today.</h2>
+              <p className="mt-1 text-sm leading-6 text-slate-600">
+                Share your name and number — a specialist will call you back.
+              </p>
+              <div className="mt-4">
+                <QuickEnquiryForm defaultServiceId={service.id} />
+              </div>
             </div>
           </div>
         </div>
       </section>
       <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 lg:py-24">
-        <div className="grid gap-14 lg:grid-cols-[1fr_380px]">
+        <div className="mx-auto max-w-3xl">
           <main className="space-y-16">
             <section>
               <p className="marketing-kicker">What you receive</p>
@@ -195,32 +196,13 @@ export default async function ServiceDetailPage({ params }: { params: Promise<{ 
                 ))}
               </div>
             </section>
-          </main>
-          <aside className="lg:sticky lg:top-32 lg:self-start">
-            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-2 shadow-xl shadow-slate-950/5">
-              <div className="p-5 pb-3">
-                <p className="text-xs font-bold tracking-[.14em] text-pink-700 uppercase">
-                  Discuss this service
-                </p>
-                <h2 className="mt-2 text-xl font-bold text-slate-950">
-                  Get scope, fees and next steps.
-                </h2>
-                <p className="mt-2 text-sm leading-6 text-slate-600">
-                  Share your details. A specialist will review the requirement and respond.
-                </p>
-              </div>
-              <MarketingEnquiryForm
-                services={allServices.map((s) => ({ id: s.id, name: s.name }))}
-                defaultServiceId={service.id}
-              />
-            </div>
             <Link
               href="/pricing"
-              className="mt-4 flex items-center justify-between rounded-xl border border-slate-200 p-4 text-sm font-bold text-slate-700 hover:border-pink-300 hover:text-pink-700"
+              className="flex items-center justify-between rounded-xl border border-slate-200 p-4 text-sm font-bold text-slate-700 hover:border-pink-300 hover:text-pink-700"
             >
               Compare all service fees <ArrowRight className="size-4" />
             </Link>
-          </aside>
+          </main>
         </div>
       </section>
       <JsonLd
