@@ -8,6 +8,7 @@ import { services } from "@/db/schema/catalog";
 import { clients } from "@/db/schema/clients";
 import { complianceItems } from "@/db/schema/compliance";
 import { documents } from "@/db/schema/documents";
+import { states } from "@/db/schema/geography";
 import { orders, orderTasks } from "@/db/schema/orders";
 import { makeScope } from "@/lib/test-scope";
 import {
@@ -44,6 +45,7 @@ describe("compliance service (integration)", () => {
   const managerId = randomUUID();
   const execAId = randomUUID();
   const execBId = randomUUID();
+  const franchiseId = randomUUID();
 
   const managerScope = makeScope(managerId, "manager");
   const execAScope = makeScope(execAId, "executive");
@@ -70,6 +72,13 @@ describe("compliance service (integration)", () => {
         id: execBId,
         name: "Compliance Test Exec B",
         email: `compliance-execB-${execBId}@test.local`,
+        emailVerified: true,
+        role: "executive",
+      },
+      {
+        id: franchiseId,
+        name: "Compliance Test Franchise",
+        email: `compliance-franchise-${franchiseId}@test.local`,
         emailVerified: true,
         role: "executive",
       },
@@ -112,6 +121,7 @@ describe("compliance service (integration)", () => {
     await db.delete(user).where(eq(user.id, managerId));
     await db.delete(user).where(eq(user.id, execAId));
     await db.delete(user).where(eq(user.id, execBId));
+    await db.delete(user).where(eq(user.id, franchiseId));
   });
 
   describe("rollComplianceStatuses (time-frozen)", () => {
@@ -350,6 +360,48 @@ describe("compliance service (integration)", () => {
       const aList = await listComplianceItems(execAScope, { search: "compliance-test-marker" });
       expect(aList.rows.map((r) => r.id)).toContain(itemForA.id);
       expect(aList.rows.map((r) => r.id)).not.toContain(itemForB.id);
+    });
+
+    it("lets a state-level franchise executive create and fetch compliance items for any client in the state (regression: previously only area-level franchises worked)", async () => {
+      const karnataka = await db.query.states.findFirst({ where: eq(states.name, "Karnataka") });
+      if (!karnataka) throw new Error("Seed geography first — Karnataka not found");
+
+      const franchiseScope = makeScope(franchiseId, "executive", {
+        employeeType: "franchise",
+        franchiseTerritory: {
+          id: randomUUID(),
+          level: "state",
+          stateId: karnataka.id,
+          parliamentaryConstituencyId: null,
+          assemblyConstituencyId: null,
+          pincode: null,
+        },
+      });
+
+      const [client] = await db
+        .insert(clients)
+        .values({
+          type: "individual",
+          name: "Compliance Test Franchise Client",
+          phone: "+919876604099",
+          pincode: "560001",
+          createdBy: managerId,
+        })
+        .returning();
+      if (!client) throw new Error("Failed to create test client");
+
+      const item = await createComplianceItem(
+        {
+          clientId: client.id,
+          title: "compliance-test-marker franchise state",
+          dueDate: new Date("2026-06-01T00:00:00.000Z"),
+          recurrence: "none",
+        },
+        franchiseScope,
+      );
+      expect(item).not.toBeNull();
+
+      expect(await getComplianceItem(item?.id as string, franchiseScope)).toBeTruthy();
     });
   });
 

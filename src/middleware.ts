@@ -6,6 +6,12 @@ import { type NextRequest, NextResponse } from "next/server";
  * pages opt into protection explicitly rather than the middleware defaulting to "protect
  * everything except an allowlist", since the public marketing site now lives at "/" and
  * sibling routes in this same app.
+ *
+ * `/portal/*` (customer magic-link portal, ADR 0009) is deliberately left off this list too —
+ * it has no better-auth session at all, so `getSessionCookie()` below can't gate it. Its own
+ * auth is enforced at the page/route level via `requirePortalClient()`/`getCurrentPortalClient()`
+ * (src/lib/portal-session.ts), the same "cheap gate here, real check deeper" pattern this file
+ * already uses for staff role checks.
  */
 const PROTECTED_PREFIXES = [
   "/dashboard",

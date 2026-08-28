@@ -10,7 +10,7 @@ import {
   type complianceStatusEnum,
 } from "@/db/schema/compliance";
 import type { ActorScope } from "@/lib/scope";
-import { visibilityConditions } from "@/lib/scope";
+import { isPincodeInFranchiseTerritory, visibilityConditions } from "@/lib/scope";
 import { optionalTrimmed, optionalUuid } from "@/lib/validation/helpers";
 import { recordActivity } from "@/services/activity-log";
 import { createOrder } from "@/services/orders";
@@ -55,11 +55,7 @@ async function canAccessClient(clientId: string, scope: ActorScope): Promise<boo
   });
   if (!client) return false;
   if (scope.employeeType === "franchise") {
-    return (
-      scope.pincodes.length > 0 &&
-      client.pincode !== null &&
-      scope.pincodes.includes(client.pincode)
-    );
+    return isPincodeInFranchiseTerritory(client.pincode, scope);
   }
   return client.assignedTo === scope.userId;
 }
@@ -216,9 +212,7 @@ export async function getComplianceItem(id: string, scope: ActorScope) {
   if (scope.role === "executive") {
     const inTerritory =
       scope.employeeType === "franchise"
-        ? scope.pincodes.length > 0 &&
-          item.client.pincode !== null &&
-          scope.pincodes.includes(item.client.pincode)
+        ? await isPincodeInFranchiseTerritory(item.client.pincode, scope)
         : item.client.assignedTo === scope.userId;
     if (!inTerritory) return undefined;
     if (

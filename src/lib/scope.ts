@@ -2,11 +2,21 @@ import { and, eq, inArray, type SQL, sql } from "drizzle-orm";
 import type { AnyPgColumn } from "drizzle-orm/pg-core";
 import { db } from "@/db";
 import { clients } from "@/db/schema/clients";
+import { assemblyConstituencies, pincodeConstituencies } from "@/db/schema/franchise";
+import { pincodes } from "@/db/schema/geography";
 import type { employeeTypeEnum, staffTeamEnum } from "@/db/schema/staff";
 import type { Role } from "@/lib/auth";
 
 export type EmployeeType = (typeof employeeTypeEnum.enumValues)[number];
 export type StaffTeam = (typeof staffTeamEnum.enumValues)[number];
+export type FranchiseTerritoryScope = {
+  id: string;
+  level: "state" | "parliamentary" | "assembly" | "area";
+  stateId: string;
+  parliamentaryConstituencyId: string | null;
+  assemblyConstituencyId: string | null;
+  pincode: string | null;
+};
 
 /**
  * Identifies the acting user for service-layer authorization and row scoping (spec 3, extended
@@ -22,6 +32,7 @@ export type ActorScope = {
   pincodes: string[];
   serviceIds: string[];
   team: StaffTeam | null;
+  franchiseTerritory?: FranchiseTerritoryScope | null;
 };
 
 export function isAssignedEmployee(scope: ActorScope): boolean {
@@ -46,8 +57,118 @@ export function assignedToCondition(
  */
 export function territoryCondition(pincodeColumn: AnyPgColumn, scope: ActorScope): SQL | undefined {
   if (scope.role !== "executive" || scope.employeeType !== "franchise") return undefined;
+  const territory = scope.franchiseTerritory;
+  if (territory) {
+    if (territory.level === "state") {
+      return inArray(
+        pincodeColumn,
+        db
+          .select({ pincode: pincodes.pincode })
+          .from(pincodes)
+          .where(eq(pincodes.stateId, territory.stateId)),
+      );
+    }
+    if (territory.level === "parliamentary" && territory.parliamentaryConstituencyId) {
+      return inArray(
+        pincodeColumn,
+        db
+          .select({ pincode: pincodeConstituencies.pincode })
+          .from(pincodeConstituencies)
+          .innerJoin(
+            assemblyConstituencies,
+            eq(pincodeConstituencies.assemblyConstituencyId, assemblyConstituencies.id),
+          )
+          .where(
+            eq(
+              assemblyConstituencies.parliamentaryConstituencyId,
+              territory.parliamentaryConstituencyId,
+            ),
+          ),
+      );
+    }
+    if (territory.level === "assembly" && territory.assemblyConstituencyId) {
+      return inArray(
+        pincodeColumn,
+        db
+          .select({ pincode: pincodeConstituencies.pincode })
+          .from(pincodeConstituencies)
+          .where(
+            eq(pincodeConstituencies.assemblyConstituencyId, territory.assemblyConstituencyId),
+          ),
+      );
+    }
+    if (territory.level === "area" && territory.pincode)
+      return eq(pincodeColumn, territory.pincode);
+    return sql`false`;
+  }
   if (scope.pincodes.length === 0) return sql`false`;
   return inArray(pincodeColumn, scope.pincodes);
+}
+
+/**
+ * Point-check version of `territoryCondition` for call sites that already have a single pincode in
+ * hand (ad hoc single-row authorization checks, e.g. "can this franchise touch this one document or
+ * compliance item") rather than a column to filter a list query by. Mirrors each level's rule from
+ * `territoryCondition` exactly, branch for branch, rather than re-deriving the check against
+ * `scope.pincodes` (which is only ever populated for legacy flat allocations, so it silently denies
+ * every state/parliamentary/assembly-level franchise regardless of their real territory).
+ */
+export async function isPincodeInFranchiseTerritory(
+  pincode: string | null,
+  scope: ActorScope,
+): Promise<boolean> {
+  if (scope.role !== "executive" || scope.employeeType !== "franchise") return true;
+  if (!pincode) return false;
+
+  const territory = scope.franchiseTerritory;
+  if (!territory) return scope.pincodes.includes(pincode);
+
+  if (territory.level === "area") return territory.pincode === pincode;
+
+  if (territory.level === "state") {
+    const row = await db.query.pincodes.findFirst({
+      where: and(eq(pincodes.pincode, pincode), eq(pincodes.stateId, territory.stateId)),
+      columns: { id: true },
+    });
+    return Boolean(row);
+  }
+
+  if (territory.level === "parliamentary" && territory.parliamentaryConstituencyId) {
+    const rows = await db
+      .select({ id: pincodeConstituencies.id })
+      .from(pincodeConstituencies)
+      .innerJoin(
+        assemblyConstituencies,
+        eq(pincodeConstituencies.assemblyConstituencyId, assemblyConstituencies.id),
+      )
+      .where(
+        and(
+          eq(pincodeConstituencies.pincode, pincode),
+          eq(
+            assemblyConstituencies.parliamentaryConstituencyId,
+            territory.parliamentaryConstituencyId,
+          ),
+        ),
+      )
+      .limit(1);
+    return rows.length > 0;
+  }
+
+  if (territory.level === "assembly" && territory.assemblyConstituencyId) {
+    const rows = await db
+      .select({ id: pincodeConstituencies.id })
+      .from(pincodeConstituencies)
+      .where(
+        and(
+          eq(pincodeConstituencies.pincode, pincode),
+          eq(pincodeConstituencies.assemblyConstituencyId, territory.assemblyConstituencyId),
+        ),
+      )
+      .limit(1);
+    return rows.length > 0;
+  }
+
+  return false;
 }
 
 /**
@@ -60,11 +181,9 @@ export function territoryConditionViaClientIds(
   scope: ActorScope,
 ): SQL | undefined {
   if (scope.role !== "executive" || scope.employeeType !== "franchise") return undefined;
-  if (scope.pincodes.length === 0) return sql`false`;
-  return inArray(
-    clientIdColumn,
-    db.select({ id: clients.id }).from(clients).where(inArray(clients.pincode, scope.pincodes)),
-  );
+  const pincodeScope = territoryCondition(clients.pincode, scope);
+  if (!pincodeScope) return undefined;
+  return inArray(clientIdColumn, db.select({ id: clients.id }).from(clients).where(pincodeScope));
 }
 
 /**

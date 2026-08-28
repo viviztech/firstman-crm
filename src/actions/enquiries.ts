@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { type ActionResult, firstIssueMessage, toScope } from "@/actions/shared";
 import { enqueueEnquiryAssignedNotification } from "@/jobs/enquiry-notifications";
+import { enqueueMarketingEnquiryReceivedNotification } from "@/jobs/marketing-enquiry-notifications";
+import { enqueueSaleProformaIssuedNotification } from "@/jobs/sale-proforma-notifications";
 import type { Role } from "@/lib/auth";
 import { requireUser } from "@/lib/session";
 import {
@@ -57,6 +59,11 @@ export async function createEnquiryAction(
       assignedTo: created.assignedTo,
     });
   }
+  await enqueueMarketingEnquiryReceivedNotification({
+    enquiryId: created.id,
+    name: created.name,
+    phone: created.phone,
+  });
 
   revalidatePath("/enquiries");
   return { ok: true, data: { id: created.id } };
@@ -180,6 +187,11 @@ export async function closeEnquiryAsSaleAction(
   if (!result) {
     return { ok: false, error: "Enquiry not found, already converted, or already lost." };
   }
+
+  await enqueueSaleProformaIssuedNotification({
+    clientId: result.client.id,
+    proformaInvoiceIds: result.proformaInvoices.map((invoice) => invoice.id),
+  });
 
   revalidatePath("/dashboard");
   revalidatePath("/enquiries");

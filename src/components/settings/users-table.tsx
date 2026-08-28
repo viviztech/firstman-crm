@@ -62,7 +62,11 @@ function buildColumns(currentUserId: string, services: ServiceOption[]): ColumnD
       header: "Team",
       cell: ({ row }) =>
         row.original.role === "executive" || row.original.role === "manager" ? (
-          <StaffTeamSelect userId={row.original.id} team={row.original.team} />
+          <StaffTeamSelect
+            userId={row.original.id}
+            role={row.original.role as Role}
+            team={row.original.team}
+          />
         ) : (
           <span className="text-sm text-muted-foreground">—</span>
         ),
@@ -73,9 +77,12 @@ function buildColumns(currentUserId: string, services: ServiceOption[]): ColumnD
       cell: ({ row }) =>
         row.original.role === "executive" ? (
           <div className="flex flex-col items-start gap-1">
-            {row.original.employeeType === "franchise" && row.original.pincodes.length > 0 ? (
+            {row.original.employeeType === "franchise" && row.original.franchiseTerritory ? (
               <span className="text-xs text-muted-foreground">
-                {row.original.pincodes.join(", ")}
+                <span className="capitalize">{row.original.franchiseTerritory.level}</span>
+                {row.original.franchiseTerritory.pincode
+                  ? ` · ${row.original.franchiseTerritory.pincode}`
+                  : " territory"}
               </span>
             ) : null}
             {row.original.serviceIds.length > 0 ? (

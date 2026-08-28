@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { type ActionResult, firstIssueMessage, toScope } from "@/actions/shared";
+import { enqueueInvoiceSentNotification } from "@/jobs/invoice-notifications";
 import { enqueueOrderStatusChangedNotification } from "@/jobs/order-notifications";
 import type { Role } from "@/lib/auth";
 import { requireUser } from "@/lib/session";
@@ -93,6 +94,14 @@ export async function updateOrderStatusAction(
       orderNo: updated.orderNo,
       status: updated.status,
     });
+
+    if (updated.finalInvoice?.isNew) {
+      await enqueueInvoiceSentNotification({
+        invoiceId: updated.finalInvoice.invoice.id,
+        invoiceNo: updated.finalInvoice.invoice.invoiceNo,
+        clientId: updated.finalInvoice.invoice.clientId,
+      });
+    }
   } catch (error) {
     return {
       ok: false,

@@ -796,7 +796,8 @@ describe("invoices service (integration)", () => {
         }),
       ).toBeUndefined();
 
-      await updateOrderStatus(order.id, "completed", managerScope);
+      const completed = await updateOrderStatus(order.id, "completed", managerScope);
+      expect(completed?.finalInvoice?.isNew).toBe(true);
 
       const taxInvoice = await db.query.invoices.findFirst({
         where: and(eq(invoices.proformaInvoiceId, proforma.id), eq(invoices.kind, "tax")),
@@ -805,6 +806,7 @@ describe("invoices service (integration)", () => {
       expect(taxInvoice?.totalPaise).toBe(proforma.totalPaise);
       expect(taxInvoice?.clientId).toBe(proforma.clientId);
       expect(taxInvoice?.orderId).toBe(order.id);
+      expect(completed?.finalInvoice?.invoice.id).toBe(taxInvoice?.id);
     });
 
     it("generates the tax invoice once the final payment lands after the order is already completed", async () => {
@@ -824,12 +826,18 @@ describe("invoices service (integration)", () => {
         }),
       ).toBeUndefined();
 
-      await recordPayment(proforma.id, { amountPaise: 118000, method: "cash" }, managerScope);
+      const result = await recordPayment(
+        proforma.id,
+        { amountPaise: 118000, method: "cash" },
+        managerScope,
+      );
+      expect(result?.finalInvoice?.isNew).toBe(true);
 
       const taxInvoice = await db.query.invoices.findFirst({
         where: and(eq(invoices.proformaInvoiceId, proforma.id), eq(invoices.kind, "tax")),
       });
       expect(taxInvoice?.status).toBe("paid");
+      expect(result?.finalInvoice?.invoice.id).toBe(taxInvoice?.id);
     });
 
     it("never generates a tax invoice while the order is incomplete, or while the proforma is only partially paid", async () => {
@@ -855,13 +863,16 @@ describe("invoices service (integration)", () => {
       );
 
       await recordPayment(proforma.id, { amountPaise: 118000, method: "upi" }, managerScope);
-      await updateOrderStatus(order.id, "completed", managerScope);
-      await updateOrderStatus(order.id, "completed", managerScope);
+      const first = await updateOrderStatus(order.id, "completed", managerScope);
+      const second = await updateOrderStatus(order.id, "completed", managerScope);
 
       const taxInvoices = await db.query.invoices.findMany({
         where: and(eq(invoices.proformaInvoiceId, proforma.id), eq(invoices.kind, "tax")),
       });
       expect(taxInvoices).toHaveLength(1);
+      expect(first?.finalInvoice?.isNew).toBe(true);
+      expect(second?.finalInvoice?.isNew).toBe(false);
+      expect(second?.finalInvoice?.invoice.id).toBe(first?.finalInvoice?.invoice.id);
     });
   });
 });

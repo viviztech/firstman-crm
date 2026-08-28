@@ -6,7 +6,7 @@ import { clients } from "@/db/schema/clients";
 import { documentKindEnum, documents } from "@/db/schema/documents";
 import { orders } from "@/db/schema/orders";
 import { type DetectedFileKind, extensionForKind, mimeTypeForKind } from "@/lib/file-validation";
-import type { ActorScope } from "@/lib/scope";
+import { type ActorScope, isPincodeInFranchiseTerritory } from "@/lib/scope";
 import { getStorageDriver } from "@/lib/storage";
 import { recordActivity } from "@/services/activity-log";
 
@@ -34,15 +34,13 @@ type UploadedFile = { buffer: Buffer; detectedKind: DetectedFileKind };
  * Executives may only touch documents belonging to a client/order in scope — internal-type by
  * assignedTo, franchise-type by pincode territory (spec 3, ADR 0001).
  */
-function isOwnerInTerritory(
+async function isOwnerInTerritory(
   owner: { assignedTo: string | null; pincode: string | null } | undefined,
   scope: ActorScope,
-): boolean {
+): Promise<boolean> {
   if (!owner) return false;
   if (scope.employeeType === "franchise") {
-    return (
-      scope.pincodes.length > 0 && owner.pincode !== null && scope.pincodes.includes(owner.pincode)
-    );
+    return isPincodeInFranchiseTerritory(owner.pincode, scope);
   }
   return owner.assignedTo === scope.userId;
 }
@@ -68,7 +66,10 @@ async function canAccessOwner(
     with: { client: { columns: { pincode: true } } },
   });
   if (!order) return false;
-  return isOwnerInTerritory({ assignedTo: order.assignedTo, pincode: order.client.pincode }, scope);
+  return await isOwnerInTerritory(
+    { assignedTo: order.assignedTo, pincode: order.client.pincode },
+    scope,
+  );
 }
 
 function storageKeyFor(ownerType: OwnerType, ownerId: string, kind: DetectedFileKind): string {

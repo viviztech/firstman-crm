@@ -6,7 +6,8 @@ import { getBoss } from "@/lib/queue";
 import { getInvoicePdfUrl } from "@/lib/signed-url";
 import { getInvoiceForNotification } from "@/services/invoices";
 import { recordMessageLog } from "@/services/message-log";
-import { listStaffEmailsByRole } from "@/services/users";
+import { createNotification } from "@/services/notifications";
+import { listStaffByRole } from "@/services/users";
 import { sendWhatsAppDocument } from "@/services/whatsapp";
 
 export const INVOICE_SENT_JOB = "invoice-sent";
@@ -141,10 +142,10 @@ export async function registerInvoiceNotificationJobs(): Promise<void> {
 
   await boss.work<OverdueInvoicesDigestPayload>(OVERDUE_INVOICES_DIGEST_JOB, async (jobs) => {
     for (const job of jobs) {
-      const recipients = await listStaffEmailsByRole(["manager", "accountant"]);
-      for (const to of recipients) {
+      const recipients = await listStaffByRole(["manager", "accountant"]);
+      for (const recipient of recipients) {
         await notifyEmail({
-          to,
+          to: recipient.email,
           subject: `${job.data.count} overdue invoice${job.data.count === 1 ? "" : "s"}`,
           heading: "Overdue invoices digest",
           lines: [
@@ -153,6 +154,15 @@ export async function registerInvoiceNotificationJobs(): Promise<void> {
           ctaLabel: "View invoices",
           ctaUrl: getAppUrl("/invoices?status=overdue"),
           template: "overdue_invoices_digest",
+          entityType: "digest",
+        });
+
+        await createNotification({
+          userId: recipient.id,
+          type: "invoice_overdue_digest",
+          title: `${job.data.count} overdue invoice${job.data.count === 1 ? "" : "s"}`,
+          body: `Totalling ${formatMoney(job.data.totalOutstandingPaise)}`,
+          href: "/invoices?status=overdue",
           entityType: "digest",
         });
       }

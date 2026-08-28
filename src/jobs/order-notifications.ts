@@ -2,6 +2,7 @@ import { notifyClientWhatsApp, notifyEmail } from "@/jobs/notify";
 import { getAppUrl } from "@/lib/app-url";
 import { logger } from "@/lib/logger";
 import { getBoss } from "@/lib/queue";
+import { createNotification } from "@/services/notifications";
 import { getOrderForNotification } from "@/services/orders";
 
 export const ORDER_STATUS_CHANGED_JOB = "order-status-changed";
@@ -48,6 +49,18 @@ export async function registerOrderNotificationJobs(): Promise<void> {
         entityType: "order",
         entityId: order.id,
       });
+
+      if (order.assignedTo) {
+        await createNotification({
+          userId: order.assignedTo,
+          type: "order_status_changed",
+          title: `Order ${order.orderNo} — ${job.data.status.replace(/_/g, " ")}`,
+          body: order.client.name,
+          href: `/orders/${order.id}`,
+          entityType: "order",
+          entityId: order.id,
+        });
+      }
     }
   });
 }

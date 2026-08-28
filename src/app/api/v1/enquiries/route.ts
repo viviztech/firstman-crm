@@ -1,6 +1,7 @@
 import { timingSafeEqual } from "node:crypto";
 import { type NextRequest, NextResponse } from "next/server";
 import { enqueueEnquiryAssignedNotification } from "@/jobs/enquiry-notifications";
+import { enqueueMarketingEnquiryReceivedNotification } from "@/jobs/marketing-enquiry-notifications";
 import { env } from "@/lib/env";
 import { logger } from "@/lib/logger";
 import { rateLimit } from "@/lib/rate-limit";
@@ -53,6 +54,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       assignedTo: created.assignedTo,
     });
   }
+  await enqueueMarketingEnquiryReceivedNotification({
+    enquiryId: created.id,
+    name: created.name,
+    phone: created.phone,
+  });
 
   logger.info({ enquiryId: created.id }, "enquiries API: enquiry created");
   return NextResponse.json({ id: created.id }, { status: 201 });

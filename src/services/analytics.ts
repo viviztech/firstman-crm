@@ -107,6 +107,18 @@ export async function getOverdueTasks(scope: ActorScope, limit = 10, now: Date =
   });
 }
 
+/** Unscoped, company-wide fetch for the task-overdue notification cron — system-context, not a user request (mirrors getEnquiryForNotification). */
+export async function listOverdueTasksForNotification(now: Date = new Date()) {
+  return db.query.orderTasks.findMany({
+    where: and(
+      isNull(orderTasks.deletedAt),
+      ne(orderTasks.status, "done"),
+      lt(orderTasks.dueAt, now),
+    ),
+    with: { order: { columns: { id: true, orderNo: true } } },
+  });
+}
+
 /** Manager/Admin dashboard: services generating the most order revenue (quoted price, non-cancelled). */
 export async function getTopServicesByRevenue(scope: ActorScope, limit = 5) {
   const rows = await db

@@ -1,9 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
-import { updateStaffPincodesAction, updateStaffServiceAssignmentsAction } from "@/actions/staff";
-import { Badge } from "@/components/ui/badge";
+import { updateStaffServiceAssignmentsAction } from "@/actions/staff";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -16,7 +16,6 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import type { EmployeeType } from "@/lib/scope";
 
 type ServiceOption = { id: string; name: string };
@@ -37,7 +36,6 @@ export function StaffScopeDialog({
   services: ServiceOption[];
 }) {
   const [open, setOpen] = useState(false);
-  const [pincodeText, setPincodeText] = useState(pincodes.join(", "));
   const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>(serviceIds);
   const [isPending, startTransition] = useTransition();
 
@@ -49,22 +47,6 @@ export function StaffScopeDialog({
 
   function handleSave() {
     startTransition(async () => {
-      if (employeeType === "franchise") {
-        const parsedPincodes = Array.from(
-          new Set(
-            pincodeText
-              .split(/[,\n]/)
-              .map((value) => value.trim())
-              .filter(Boolean),
-          ),
-        );
-        const pincodeResult = await updateStaffPincodesAction(userId, parsedPincodes);
-        if (!pincodeResult.ok) {
-          toast.error(pincodeResult.error);
-          return;
-        }
-      }
-
       const serviceResult = await updateStaffServiceAssignmentsAction(userId, selectedServiceIds);
       if (!serviceResult.ok) {
         toast.error(serviceResult.error);
@@ -84,33 +66,26 @@ export function StaffScopeDialog({
           <DialogTitle>Scope for {userName}</DialogTitle>
           <DialogDescription>
             {employeeType === "franchise"
-              ? "Pincodes this franchise covers, and which services they handle. Leave services empty for no restriction."
+              ? "Territories are managed centrally. Choose which services this franchise handles here."
               : "Services this employee handles. Leave empty for no restriction."}
           </DialogDescription>
         </DialogHeader>
 
         <div className="flex flex-col gap-4">
           {employeeType === "franchise" ? (
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="staff-pincodes">Pincodes</Label>
-              <Textarea
-                id="staff-pincodes"
-                value={pincodeText}
-                onChange={(event) => setPincodeText(event.target.value)}
-                placeholder="560001, 560002"
-                rows={3}
-              />
-              <div className="flex flex-wrap gap-1">
-                {pincodeText
-                  .split(/[,\n]/)
-                  .map((value) => value.trim())
-                  .filter(Boolean)
-                  .map((pincode) => (
-                    <Badge key={pincode} variant="secondary">
-                      {pincode}
-                    </Badge>
-                  ))}
-              </div>
+            <div className="rounded-md border p-3 text-sm">
+              <p className="text-muted-foreground">
+                Legacy pincodes: {pincodes.length > 0 ? pincodes.join(", ") : "none"}
+              </p>
+              <Button
+                className="mt-2"
+                size="sm"
+                variant="outline"
+                nativeButton={false}
+                render={<Link href="/settings/franchises" />}
+              >
+                Manage franchise territory
+              </Button>
             </div>
           ) : null}
 

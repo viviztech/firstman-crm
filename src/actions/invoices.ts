@@ -153,6 +153,14 @@ export async function recordPaymentAction(
     amountPaise: result.payment.amountPaise,
   });
 
+  if (result.finalInvoice?.isNew) {
+    await enqueueInvoiceSentNotification({
+      invoiceId: result.finalInvoice.invoice.id,
+      invoiceNo: result.finalInvoice.invoice.invoiceNo,
+      clientId: result.finalInvoice.invoice.clientId,
+    });
+  }
+
   revalidatePath("/invoices");
   revalidatePath(`/invoices/${invoiceId}`);
   return { ok: true, data: undefined };

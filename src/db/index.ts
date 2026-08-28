@@ -8,10 +8,13 @@ import * as complianceSchema from "@/db/schema/compliance";
 import * as documentsSchema from "@/db/schema/documents";
 import * as enquiriesSchema from "@/db/schema/enquiries";
 import * as expensesSchema from "@/db/schema/expenses";
+import * as franchiseSchema from "@/db/schema/franchise";
 import * as geographySchema from "@/db/schema/geography";
 import * as invoicesSchema from "@/db/schema/invoices";
 import * as messageLogsSchema from "@/db/schema/message-logs";
+import * as notificationsSchema from "@/db/schema/notifications";
 import * as ordersSchema from "@/db/schema/orders";
+import * as portalSchema from "@/db/schema/portal";
 import * as referralPartnersSchema from "@/db/schema/referral-partners";
 import * as settingsSchema from "@/db/schema/settings";
 import * as staffSchema from "@/db/schema/staff";
@@ -29,10 +32,13 @@ const schema = {
   ...complianceSchema,
   ...invoicesSchema,
   ...expensesSchema,
+  ...franchiseSchema,
   ...messageLogsSchema,
+  ...notificationsSchema,
   ...staffSchema,
   ...referralPartnersSchema,
   ...geographySchema,
+  ...portalSchema,
 };
 
 declare global {

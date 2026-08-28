@@ -448,6 +448,36 @@ prescribe an exact answer:
     "Professional Tax Registration" had Vertical Code "AA" (Company Registration)
     instead of "RL" (Registration & Licensing) like every other row in that
     group — corrected to match its Group.
+19. **Closed the enquiry→sale→job→invoice notification gaps; added real in-app
+    notifications and a customer portal (ADR 0009,
+    `docs/adr/0009-customer-portal.md`)**: an audit found the transactional
+    backbone (client/order/proforma/final-invoice creation) already worked, but
+    almost every notification around it was missing or just a DB status flag.
+    Fixed: an enquiry now gets a thank-you email on every creation path (public
+    API, marketing form, and staff-entered), not just the marketing form's
+    WhatsApp-only ack; closing a sale now sends one combined email (with a line
+    per service/proforma, since `sendNotificationEmail` supports only one
+    heading/CTA) plus one WhatsApp document per proforma
+    (`src/jobs/sale-proforma-notifications.ts`); and a freshly auto-generated
+    final tax invoice now triggers the same `INVOICE_SENT_JOB` a manually-sent
+    invoice does, by having `generateFinalInvoiceIfEligibleInTx` return
+    `{invoice, isNew}` threaded through both its call sites
+    (`recordPayment`/`updateOrderStatus` — the latter now returns
+    `{...order, finalInvoice}`, additive rather than a breaking shape change, so
+    every existing caller reading order columns directly kept working). The
+    topbar bell was rebuilt on a real `notifications` table (event-driven inserts
+    from the enquiry-assigned/order-status-changed/overdue-invoices-digest job
+    handlers, plus a new hourly `task-overdue-cron` with a dedupe guard) instead
+    of its old per-request "what's overdue right now" query. A new customer-
+    facing portal (`/portal/*`) lets a client see their own orders/invoices/
+    documents via a passwordless magic link (15-minute single-use token, 30-day
+    session, both stored as hashes only) — deliberately not integrated with
+    better-auth's `user` table (mirrors ADR 0001's staff/`user` separation) and
+    deliberately left off `middleware.ts`'s `PROTECTED_PREFIXES`, since that
+    list is keyed to better-auth's session cookie; portal auth is enforced at
+    the page/route level instead. This is an explicit, ADR-recorded deviation
+    from CLAUDE.md §6's "No client-facing portal in v1," scoped read-only for
+    now (no uploads/payments/messaging).
 
 ## Phase checklists (per `CLAUDE.md` §5)
 

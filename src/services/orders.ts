@@ -306,7 +306,7 @@ export async function getOrder(id: string, scope: ActorScope) {
 export async function getOrderForNotification(id: string) {
   return db.query.orders.findFirst({
     where: and(eq(orders.id, id), isNull(orders.deletedAt)),
-    columns: { id: true, orderNo: true, status: true },
+    columns: { id: true, orderNo: true, status: true, assignedTo: true },
     with: {
       client: {
         columns: { id: true, name: true, phone: true, email: true, whatsappOptedOut: true },
@@ -727,11 +727,15 @@ export async function updateOrderStatus(
     // proforma paid in full) — this covers the "job finished after payment" ordering; recordPayment
     // covers the reverse (spec 4.7 extension). A forced completion with an unpaid proforma simply
     // won't satisfy this check yet — the tax invoice still waits for the payment to land.
+    let finalInvoice: Awaited<ReturnType<typeof generateFinalInvoiceIfEligibleInTx>> = null;
     if (status === "completed") {
-      await generateFinalInvoiceIfEligibleInTx(tx, updated.id, actor);
+      finalInvoice = await generateFinalInvoiceIfEligibleInTx(tx, updated.id, actor);
     }
 
-    return updated;
+    // Spread rather than nest, so every existing caller reading order columns directly
+    // (`updated.status`, `updated.completedAt`, ...) keeps working unchanged; `finalInvoice`
+    // is additive, read only by the action layer that needs to enqueue on a genuinely new one.
+    return { ...updated, finalInvoice };
   });
 }
 

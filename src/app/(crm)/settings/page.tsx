@@ -1,4 +1,4 @@
-import { ChevronRight, Handshake, Trash2, Users } from "lucide-react";
+import { ChevronRight, Handshake, MapPinned, Trash2, Users } from "lucide-react";
 import Link from "next/link";
 import { EnquiryAutoAssignmentToggle } from "@/components/settings/enquiry-auto-assignment-toggle";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -41,6 +41,23 @@ export default async function SettingsPage() {
                 <CardTitle>Referral partners</CardTitle>
                 <CardDescription>
                   External associates tracked for enquiry attribution and commission.
+                </CardDescription>
+              </div>
+            </div>
+            <ChevronRight className="text-muted-foreground size-4" />
+          </CardHeader>
+        </Card>
+      </Link>
+
+      <Link href="/settings/franchises">
+        <Card className="transition-colors hover:bg-muted/50">
+          <CardHeader className="flex-row items-center justify-between space-y-0">
+            <div className="flex items-center gap-3">
+              <MapPinned className="text-muted-foreground size-5" />
+              <div>
+                <CardTitle>Franchise territories</CardTitle>
+                <CardDescription>
+                  Manage hierarchy, exclusive territory assignments, mappings, and commission rates.
                 </CardDescription>
               </div>
             </div>

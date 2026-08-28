@@ -9,8 +9,12 @@ import { env } from "@/lib/env";
 vi.mock("@/jobs/enquiry-notifications", () => ({
   enqueueEnquiryAssignedNotification: vi.fn().mockResolvedValue(undefined),
 }));
+vi.mock("@/jobs/marketing-enquiry-notifications", () => ({
+  enqueueMarketingEnquiryReceivedNotification: vi.fn().mockResolvedValue(undefined),
+}));
 
 import { POST } from "@/app/api/v1/enquiries/route";
+import { enqueueMarketingEnquiryReceivedNotification } from "@/jobs/marketing-enquiry-notifications";
 
 function makeRequest(body: unknown, opts: { token?: string; ip?: string } = {}): NextRequest {
   const headers = new Headers({ "content-type": "application/json" });
@@ -71,6 +75,10 @@ describe("POST /api/v1/enquiries (integration)", () => {
     const created = await db.query.enquiries.findFirst({ where: eq(enquiries.id, body.id) });
     expect(created?.name).toBe("Public API Enquiry");
     expect(created?.createdBy).toBeNull();
+
+    expect(enqueueMarketingEnquiryReceivedNotification).toHaveBeenCalledWith(
+      expect.objectContaining({ enquiryId: body.id, name: "Public API Enquiry" }),
+    );
   });
 
   it("never accepts an assignedTo from the request body", async () => {

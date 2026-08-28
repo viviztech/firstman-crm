@@ -289,6 +289,26 @@ export async function getInvoiceForNotification(id: string) {
   });
 }
 
+/**
+ * Unscoped fetch for the sale-close notification job — mirrors getInvoiceForNotification, but for
+ * the set of proforma invoices a single sale produced (one per service line). Callers re-fetch by
+ * id rather than trust job-payload data (spec 4.8 convention).
+ */
+export async function getProformaInvoicesForNotification(proformaInvoiceIds: string[]) {
+  if (proformaInvoiceIds.length === 0) return [];
+
+  return db.query.invoices.findMany({
+    where: and(inArray(invoices.id, proformaInvoiceIds), isNull(invoices.deletedAt)),
+    columns: { id: true, invoiceNo: true, totalPaise: true, dueDate: true },
+    with: {
+      client: {
+        columns: { id: true, name: true, phone: true, email: true, whatsappOptedOut: true },
+      },
+      order: { columns: { orderNo: true } },
+    },
+  });
+}
+
 export async function createInvoice(input: InvoiceInput, actor: ActorScope) {
   if (!canAccessInvoices(actor)) return null;
 
@@ -415,7 +435,7 @@ export async function generateFinalInvoiceIfEligibleInTx(
   const existingTaxInvoice = await tx.query.invoices.findFirst({
     where: and(eq(invoices.proformaInvoiceId, proforma.id), eq(invoices.kind, "tax")),
   });
-  if (existingTaxInvoice) return existingTaxInvoice;
+  if (existingTaxInvoice) return { invoice: existingTaxInvoice, isNew: false as const };
 
   const invoiceNo = await generateTaxInvoiceNo(tx, actor);
 
@@ -452,7 +472,7 @@ export async function generateFinalInvoiceIfEligibleInTx(
     tx,
   );
 
-  return created;
+  return { invoice: created, isNew: true as const };
 }
 
 /** Only draft invoices can be edited — once sent, the numbers must stay fixed. */
@@ -567,11 +587,12 @@ export async function recordPayment(invoiceId: string, input: PaymentInput, acto
       tx,
     );
 
+    let finalInvoice: Awaited<ReturnType<typeof generateFinalInvoiceIfEligibleInTx>> = null;
     if (newStatus === "paid" && invoice.kind === "proforma" && invoice.orderId) {
-      await generateFinalInvoiceIfEligibleInTx(tx, invoice.orderId, actor);
+      finalInvoice = await generateFinalInvoiceIfEligibleInTx(tx, invoice.orderId, actor);
     }
 
-    return { payment, invoice: updatedInvoice };
+    return { payment, invoice: updatedInvoice, finalInvoice };
   });
 }
 

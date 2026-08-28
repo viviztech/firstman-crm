@@ -363,7 +363,7 @@ export async function getEnquiry(id: string, scope: ActorScope) {
 export async function getEnquiryForNotification(id: string) {
   return db.query.enquiries.findFirst({
     where: and(eq(enquiries.id, id), isNull(enquiries.deletedAt), ne(enquiries.status, "lost")),
-    columns: { id: true, name: true, phone: true },
+    columns: { id: true, name: true, phone: true, email: true },
     with: { assignee: { columns: { id: true, name: true, email: true } } },
   });
 }

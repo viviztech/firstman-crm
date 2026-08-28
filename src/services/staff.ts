@@ -1,6 +1,7 @@
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/db";
+import { franchiseTerritories } from "@/db/schema/franchise";
 import {
   employeeTypeEnum,
   staffPincodeAllocations,
@@ -8,7 +9,7 @@ import {
   staffServiceAssignments,
   staffTeamEnum,
 } from "@/db/schema/staff";
-import type { ActorScope, EmployeeType, StaffTeam } from "@/lib/scope";
+import type { ActorScope, EmployeeType, FranchiseTerritoryScope, StaffTeam } from "@/lib/scope";
 import { recordActivity } from "@/services/activity-log";
 
 type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
@@ -34,6 +35,7 @@ export type StaffScope = {
   pincodes: string[];
   serviceIds: string[];
   team: StaffTeam | null;
+  franchiseTerritory: FranchiseTerritoryScope | null;
 };
 
 const UNRESTRICTED_INTERNAL: StaffScope = {
@@ -41,6 +43,7 @@ const UNRESTRICTED_INTERNAL: StaffScope = {
   pincodes: [],
   serviceIds: [],
   team: null,
+  franchiseTerritory: null,
 };
 
 /**
@@ -49,7 +52,7 @@ const UNRESTRICTED_INTERNAL: StaffScope = {
  * 0002 (no backfill migration).
  */
 export async function getStaffScope(userId: string): Promise<StaffScope> {
-  const [profile, assignments] = await Promise.all([
+  const [profile, assignments, territory] = await Promise.all([
     db.query.staffProfiles.findFirst({
       where: eq(staffProfiles.userId, userId),
       with: { pincodeAllocations: true },
@@ -58,6 +61,17 @@ export async function getStaffScope(userId: string): Promise<StaffScope> {
       .select({ serviceId: staffServiceAssignments.serviceId })
       .from(staffServiceAssignments)
       .where(eq(staffServiceAssignments.userId, userId)),
+    db.query.franchiseTerritories.findFirst({
+      where: eq(franchiseTerritories.userId, userId),
+      columns: {
+        id: true,
+        level: true,
+        stateId: true,
+        parliamentaryConstituencyId: true,
+        assemblyConstituencyId: true,
+        pincode: true,
+      },
+    }),
   ]);
 
   const serviceIds = assignments.map((row) => row.serviceId);
@@ -70,6 +84,7 @@ export async function getStaffScope(userId: string): Promise<StaffScope> {
     pincodes: profile.pincodeAllocations.map((row) => row.pincode),
     serviceIds,
     team: profile.team,
+    franchiseTerritory: territory ?? null,
   };
 }
 
@@ -78,13 +93,15 @@ export type StaffProfileSummary = {
   pincodes: string[];
   serviceIds: string[];
   team: StaffTeam | null;
+  franchiseTerritory: FranchiseTerritoryScope | null;
 };
 
 /** Every user's staff profile summary, keyed by userId — for the /settings/users admin table. */
 export async function listStaffProfileSummaries(): Promise<Map<string, StaffProfileSummary>> {
-  const [profiles, assignments] = await Promise.all([
+  const [profiles, assignments, territories] = await Promise.all([
     db.query.staffProfiles.findMany({ with: { pincodeAllocations: true } }),
     db.select().from(staffServiceAssignments),
+    db.select().from(franchiseTerritories),
   ]);
 
   const map = new Map<string, StaffProfileSummary>();
@@ -94,6 +111,7 @@ export async function listStaffProfileSummaries(): Promise<Map<string, StaffProf
       pincodes: profile.pincodeAllocations.map((row) => row.pincode),
       serviceIds: [],
       team: profile.team,
+      franchiseTerritory: null,
     });
   }
   for (const assignment of assignments) {
@@ -106,6 +124,28 @@ export async function listStaffProfileSummaries(): Promise<Map<string, StaffProf
         pincodes: [],
         serviceIds: [assignment.serviceId],
         team: null,
+        franchiseTerritory: null,
+      });
+    }
+  }
+  for (const territory of territories) {
+    const existing = map.get(territory.userId);
+    const summary = {
+      id: territory.id,
+      level: territory.level,
+      stateId: territory.stateId,
+      parliamentaryConstituencyId: territory.parliamentaryConstituencyId,
+      assemblyConstituencyId: territory.assemblyConstituencyId,
+      pincode: territory.pincode,
+    };
+    if (existing) existing.franchiseTerritory = summary;
+    else {
+      map.set(territory.userId, {
+        employeeType: "internal",
+        pincodes: [],
+        serviceIds: [],
+        team: null,
+        franchiseTerritory: summary,
       });
     }
   }

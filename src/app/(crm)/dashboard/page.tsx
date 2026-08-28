@@ -19,6 +19,7 @@ import { ComplianceStatusBadge } from "@/components/compliance/compliance-status
 import { DashboardHero } from "@/components/dashboard/dashboard-hero";
 import { EnquiriesFunnelChart } from "@/components/dashboard/enquiries-funnel-chart";
 import { FranchiseDashboard } from "@/components/dashboard/franchise-dashboard";
+import { FranchiseManagerDashboard } from "@/components/dashboard/franchise-manager-dashboard";
 import { OperationsExecutiveDashboard } from "@/components/dashboard/operations-executive-dashboard";
 import { RevenueChart } from "@/components/dashboard/revenue-chart";
 import { RoleWorkspaceDashboard } from "@/components/dashboard/role-workspace-dashboard";
@@ -52,7 +53,11 @@ import {
   listOpenEnquiries,
 } from "@/services/enquiries";
 import { getExpensesThisMonth } from "@/services/expenses";
-import { getFranchiseCommissionDashboard } from "@/services/franchise-commissions";
+import {
+  getFranchiseCommissionDashboard,
+  getFranchiseNetworkOverview,
+  getFranchiseTerritoryHierarchy,
+} from "@/services/franchise-commissions";
 import {
   getCollectionsThisMonth,
   getOutstandingInvoicesTotal,
@@ -86,8 +91,9 @@ export default async function DashboardPage() {
     : [null, null, null, []];
 
   const showManagerStats = user.role === "super_admin" || user.role === "manager";
-  const isBackofficeAdmin = user.role === "manager" && scope.team !== "workforce";
   const isWorkforceManager = user.role === "manager" && scope.team === "workforce";
+  const isFranchiseManager = user.role === "manager" && scope.team === "franchise";
+  const isBackofficeAdmin = user.role === "manager" && !isWorkforceManager && !isFranchiseManager;
   const [enquiriesByStatus, revenue, ordersByStatus, overdueTasks, topServices] = showManagerStats
     ? await Promise.all([
         getEnquiriesThisMonthByStatus(scope),
@@ -195,6 +201,8 @@ export default async function DashboardPage() {
       ];
 
   const franchiseCommission = isFranchise ? await getFranchiseCommissionDashboard(scope) : null;
+  const franchiseHierarchy = isFranchise ? await getFranchiseTerritoryHierarchy(scope) : null;
+  const franchiseNetwork = isFranchiseManager ? await getFranchiseNetworkOverview(scope) : null;
 
   const ordersByStatusMap = new Map(ordersByStatus.map((row) => [row.status, row.count]));
   const activeJobCardCount = ordersByStatus
@@ -242,6 +250,8 @@ export default async function DashboardPage() {
   return (
     <div className="flex flex-col gap-4">
       <DashboardHero userName={user.name} roleLabel={portalRole} headline={headline} />
+
+      {franchiseNetwork ? <FranchiseManagerDashboard data={franchiseNetwork} /> : null}
 
       {isBackofficeAdmin || isWorkforceManager ? (
         <RoleWorkspaceDashboard
@@ -325,7 +335,9 @@ export default async function DashboardPage() {
         />
       ) : null}
 
-      {franchiseCommission ? <FranchiseDashboard data={franchiseCommission} /> : null}
+      {franchiseCommission ? (
+        <FranchiseDashboard data={franchiseCommission} hierarchy={franchiseHierarchy} />
+      ) : null}
 
       {isOperationsExecutive ? (
         <OperationsExecutiveDashboard
@@ -401,8 +413,7 @@ export default async function DashboardPage() {
         <SectionCard title="Your scope" icon={MapPinIcon} color="teal">
           {scope.employeeType === "franchise" ? (
             <span>
-              Territory:{" "}
-              {scope.pincodes.length > 0 ? scope.pincodes.join(", ") : "No pincodes allocated yet"}
+              Territory: {franchiseCommission?.territory?.label ?? "No territory allocated yet"}
             </span>
           ) : null}
           {scope.serviceIds.length > 0 ? (

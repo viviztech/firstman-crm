@@ -70,6 +70,13 @@ export async function listStaffEmailsByRole(roles: Role[]): Promise<string[]> {
   return rows.map((row) => row.email);
 }
 
+/** Same recipients as listStaffEmailsByRole, but carrying the id an in-app notification needs. */
+export async function listStaffByRole(
+  roles: Role[],
+): Promise<Array<{ id: string; email: string }>> {
+  return db.select({ id: user.id, email: user.email }).from(user).where(inArray(user.role, roles));
+}
+
 /**
  * Full staff roster for the admin user-management screen (spec 4.10, extended by ADR 0001 with
  * employeeType/pincodes/serviceIds and ADR 0002 with team) — super_admin only.
@@ -98,6 +105,7 @@ export async function listAllStaffForAdmin() {
       pincodes: profile?.pincodes ?? [],
       serviceIds: profile?.serviceIds ?? [],
       team: profile?.team ?? null,
+      franchiseTerritory: profile?.franchiseTerritory ?? null,
     };
   });
 }

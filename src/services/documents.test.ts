@@ -6,6 +6,7 @@ import { user } from "@/db/schema/auth-schema";
 import { services } from "@/db/schema/catalog";
 import { clients } from "@/db/schema/clients";
 import { documents } from "@/db/schema/documents";
+import { states } from "@/db/schema/geography";
 import { orders, orderTasks } from "@/db/schema/orders";
 import { localStorageDriver } from "@/lib/storage/local";
 import { makeScope } from "@/lib/test-scope";
@@ -26,6 +27,7 @@ describe("documents service (integration)", () => {
   const managerId = randomUUID();
   const execAId = randomUUID();
   const execBId = randomUUID();
+  const franchiseId = randomUUID();
 
   const managerScope = makeScope(managerId, "manager");
   const execAScope = makeScope(execAId, "executive");
@@ -54,6 +56,13 @@ describe("documents service (integration)", () => {
         id: execBId,
         name: "Doc Test Exec B",
         email: `doc-execB-${execBId}@test.local`,
+        emailVerified: true,
+        role: "executive",
+      },
+      {
+        id: franchiseId,
+        name: "Doc Test Franchise",
+        email: `doc-franchise-${franchiseId}@test.local`,
         emailVerified: true,
         role: "executive",
       },
@@ -94,6 +103,7 @@ describe("documents service (integration)", () => {
     await db.delete(user).where(eq(user.id, managerId));
     await db.delete(user).where(eq(user.id, execAId));
     await db.delete(user).where(eq(user.id, execBId));
+    await db.delete(user).where(eq(user.id, franchiseId));
   });
 
   async function makeClient(phone: string, assignedTo?: string) {
@@ -307,5 +317,45 @@ describe("documents service (integration)", () => {
 
   it("getDocument returns null for an unknown id", async () => {
     expect(await getDocument("00000000-0000-0000-0000-000000000000")).toBeUndefined();
+  });
+
+  it("lets a state-level franchise executive access documents for any client in the state (regression: previously only area-level franchises worked)", async () => {
+    const karnataka = await db.query.states.findFirst({ where: eq(states.name, "Karnataka") });
+    if (!karnataka) throw new Error("Seed geography first — Karnataka not found");
+
+    const franchiseScope = makeScope(franchiseId, "executive", {
+      employeeType: "franchise",
+      franchiseTerritory: {
+        id: randomUUID(),
+        level: "state",
+        stateId: karnataka.id,
+        parliamentaryConstituencyId: null,
+        assemblyConstituencyId: null,
+        pincode: null,
+      },
+    });
+
+    const client = await db
+      .insert(clients)
+      .values({
+        type: "individual",
+        name: "Doc Test Franchise Client",
+        phone: "+919876603008",
+        pincode: "560001",
+        createdBy: managerId,
+      })
+      .returning()
+      .then((rows) => rows[0]);
+    if (!client) throw new Error("Failed to create test client");
+
+    const created = await createClientDocument(
+      { ownerType: "client", ownerId: client.id, kind: "pan_card", label: "doc-test-marker state" },
+      { buffer: PDF_BYTES, detectedKind: "pdf" },
+      franchiseScope,
+    );
+    expect(created).not.toBeNull();
+    if (created?.path) savedKeys.push(created.path);
+
+    expect(await getDocumentForDownload(created?.id as string, franchiseScope)).not.toBeNull();
   });
 });

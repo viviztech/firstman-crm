@@ -10,27 +10,36 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import type { Role } from "@/lib/roles";
 import type { StaffTeam } from "@/lib/scope";
 
 const NONE = "none";
 
-const TEAMS: { value: string; label: string }[] = [
+const EXECUTIVE_TEAMS: { value: string; label: string }[] = [
   { value: NONE, label: "Unset" },
   { value: "sales", label: "Sales" },
   { value: "operations", label: "Operations" },
+];
+
+const MANAGER_TEAMS: { value: string; label: string }[] = [
+  { value: NONE, label: "Unset" },
   { value: "backoffice", label: "Backoffice Admin" },
   { value: "workforce", label: "Workforce Manager" },
+  { value: "franchise", label: "Franchise Manager" },
 ];
 
 export function StaffTeamSelect({
   userId,
+  role,
   team,
   disabled,
 }: {
   userId: string;
+  role: Role;
   team: StaffTeam | null;
   disabled?: boolean;
 }) {
+  const TEAMS = role === "manager" ? MANAGER_TEAMS : EXECUTIVE_TEAMS;
   const [value, setValue] = useState<string>(team ?? NONE);
   const [isPending, startTransition] = useTransition();
 

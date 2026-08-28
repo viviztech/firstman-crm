@@ -2,6 +2,7 @@
 
 import { BellIcon } from "lucide-react";
 import Link from "next/link";
+import { markNotificationReadAction } from "@/actions/notifications";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -51,7 +52,10 @@ export function NotificationsBell({
           </div>
         ) : (
           items.map((item) => (
-            <DropdownMenuItem key={item.id} render={<Link href={item.href} />}>
+            <DropdownMenuItem
+              key={item.id}
+              render={<Link href={item.href} onClick={() => markNotificationReadAction(item.id)} />}
+            >
               <div className="flex flex-col gap-0.5">
                 <span className="font-medium">{item.label}</span>
                 <span className="text-xs text-muted-foreground">{item.sublabel}</span>

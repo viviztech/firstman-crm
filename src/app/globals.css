@@ -190,6 +190,140 @@
   }
 }
 
+/* Login screen: CSS-only (no JS timers) synchronized crossfade + rotating brand rings. */
+@layer utilities {
+  .login-orbit-ring {
+    animation: login-spin 70s linear infinite;
+  }
+  .login-orbit-ring-reverse {
+    animation: login-spin 100s linear infinite reverse;
+  }
+
+  .login-showcase-slide {
+    animation: login-showcase-fade 14s ease-in-out infinite;
+  }
+  .login-showcase-slide[data-i="0"] {
+    animation-delay: 0s;
+  }
+  .login-showcase-slide[data-i="1"] {
+    animation-delay: -3.5s;
+  }
+  .login-showcase-slide[data-i="2"] {
+    animation-delay: -7s;
+  }
+  .login-showcase-slide[data-i="3"] {
+    animation-delay: -10.5s;
+  }
+
+  .login-showcase-dot {
+    animation: login-showcase-dot 14s ease-in-out infinite;
+  }
+  .login-showcase-dot[data-i="0"] {
+    animation-delay: 0s;
+  }
+  .login-showcase-dot[data-i="1"] {
+    animation-delay: -3.5s;
+  }
+  .login-showcase-dot[data-i="2"] {
+    animation-delay: -7s;
+  }
+  .login-showcase-dot[data-i="3"] {
+    animation-delay: -10.5s;
+  }
+
+  .login-shake {
+    animation: login-shake 0.45s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+  }
+}
+
+@keyframes login-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes login-showcase-fade {
+  0% {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  4% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  21% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  25% {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes login-showcase-dot {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scaleX(1);
+    background-color: rgb(255 255 255 / 0.35);
+  }
+  4%,
+  21% {
+    opacity: 1;
+    transform: scaleX(1);
+    background-color: var(--color-pink-400);
+  }
+  25% {
+    opacity: 0.35;
+    transform: scaleX(1);
+    background-color: rgb(255 255 255 / 0.35);
+  }
+}
+
+@keyframes login-shake {
+  10%,
+  90% {
+    transform: translateX(-1px);
+  }
+  20%,
+  80% {
+    transform: translateX(2px);
+  }
+  30%,
+  50%,
+  70% {
+    transform: translateX(-3px);
+  }
+  40%,
+  60% {
+    transform: translateX(3px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login-orbit-ring,
+  .login-orbit-ring-reverse,
+  .login-shake {
+    animation: none;
+  }
+
+  .login-showcase-slide {
+    position: static;
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+
+  .login-showcase-dots {
+    display: none;
+  }
+}
+
 /* Public corporate site: deliberately independent from the denser CRM shell. */
 @layer utilities {
   .marketing-heading {

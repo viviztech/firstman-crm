@@ -66,7 +66,7 @@ const PORTAL_USERS: {
   name: string;
   role: Role;
   employeeType?: "internal" | "franchise" | "associate";
-  team?: "sales" | "operations" | "backoffice" | "workforce";
+  team?: "sales" | "operations" | "backoffice" | "workforce" | "franchise";
 }[] = [
   {
     email: "backoffice@firstman.in",
@@ -83,6 +83,12 @@ const PORTAL_USERS: {
   },
   { email: "accounts@firstman.in", name: "Accounts", role: "accountant" },
   { email: "workforce@firstman.in", name: "Workforce Manager", role: "manager", team: "workforce" },
+  {
+    email: "franchise-manager@firstman.in",
+    name: "Franchise Manager",
+    role: "manager",
+    team: "franchise",
+  },
   {
     email: "franchise@firstman.in",
     name: "Franchise",

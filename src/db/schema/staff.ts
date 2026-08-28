@@ -18,14 +18,16 @@ export const employeeTypeEnum = pgEnum("employee_type", ["internal", "franchise"
  * module an executive works — the sales pipeline (enquiries/follow-ups/Sales conversion) or
  * fulfillment of converted jobs (job cards). Nullable: no value means unrestricted, matching
  * the same "absence = unrestricted" rule employeeType/service-assignment already use.
- * `backoffice`/`workforce` (ADR 0006) are manager-only values that pick a dashboard workspace —
- * they don't restrict a manager's permissions or nav, unlike `sales`/`operations` on executives.
+ * `backoffice`/`workforce` (ADR 0006) and `franchise` (ADR 0008) are manager-only values that
+ * pick a dashboard workspace — they don't restrict a manager's permissions or nav, unlike
+ * `sales`/`operations` on executives.
  */
 export const staffTeamEnum = pgEnum("staff_team", [
   "sales",
   "operations",
   "backoffice",
   "workforce",
+  "franchise",
 ]);
 
 export const staffProfiles = pgTable("staff_profiles", {

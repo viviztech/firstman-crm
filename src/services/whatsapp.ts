@@ -12,6 +12,7 @@ const DEFAULT_TEMPLATES: Record<string, string> = {
   payment_received: "payment_received",
   docs_pending_reminder: "docs_pending_reminder",
   enquiry_received_ack: "enquiry_received_ack",
+  portal_login_link: "portal_login_link",
 };
 
 export async function getWhatsAppTemplateName(eventKey: string): Promise<string> {

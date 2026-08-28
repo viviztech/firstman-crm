@@ -8,6 +8,7 @@ export type PortalRole =
   | "Operations"
   | "Accounts"
   | "Workforce Manager"
+  | "Franchise Manager"
   | "Franchise"
   | "Associate Sales"
   | "Associate Operations";
@@ -20,6 +21,7 @@ export function getPortalRole(
   if (role === "super_admin") return "Super Admin";
   if (role === "accountant") return "Accounts";
   if (role === "manager" && team === "workforce") return "Workforce Manager";
+  if (role === "manager" && team === "franchise") return "Franchise Manager";
   if (role === "manager") return "Backoffice Admin";
   if (employeeType === "franchise") return "Franchise";
   if (employeeType === "associate" && team === "sales") return "Associate Sales";
