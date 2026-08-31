@@ -1,7 +1,13 @@
 import { expect, test } from "@playwright/test";
 
-test("unauthenticated visitor is redirected to login", async ({ page }) => {
+test("unauthenticated visitor sees the public marketing homepage", async ({ page }) => {
   await page.goto("/");
+  await expect(page).toHaveURL("/");
+  await expect(page).toHaveTitle(/FirstMan Corporate Services/);
+});
+
+test("unauthenticated visitor to a protected route is redirected to login", async ({ page }) => {
+  await page.goto("/dashboard");
   await expect(page).toHaveURL(/\/login/);
 });
 

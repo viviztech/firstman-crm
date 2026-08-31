@@ -63,9 +63,9 @@ export function middleware(request: NextRequest): NextResponse {
     return withSecurityHeaders(NextResponse.redirect(loginUrl));
   }
 
-  // Signed-in staff hitting the login page or the marketing homepage land on the dashboard
-  // instead — the marketing site at "/" is for signed-out visitors.
-  if (sessionCookie && (isAuthPath || pathname === "/")) {
+  // Signed-in staff hitting the login page land on the dashboard instead — the marketing
+  // homepage stays visible to everyone, signed in or not.
+  if (sessionCookie && isAuthPath) {
     return withSecurityHeaders(NextResponse.redirect(new URL("/dashboard", request.url)));
   }
 

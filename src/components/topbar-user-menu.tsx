@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDownIcon, LogOutIcon, SettingsIcon } from "lucide-react";
+import { ChevronDownIcon, GlobeIcon, LogOutIcon, SettingsIcon } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -65,6 +65,10 @@ export function TopbarUserMenu({
           </DropdownMenuLabel>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
+        <DropdownMenuItem render={<Link href="/" />}>
+          <GlobeIcon />
+          Go to website
+        </DropdownMenuItem>
         {showSettings ? (
           <DropdownMenuItem render={<Link href="/settings" />}>
             <SettingsIcon />
