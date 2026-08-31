@@ -1,6 +1,10 @@
 import { Fraunces } from "next/font/google";
 import type { ReactNode } from "react";
 import { GoogleAnalytics } from "@/components/marketing/google-analytics";
+import {
+  GoogleTagManagerNoScript,
+  GoogleTagManagerScript,
+} from "@/components/marketing/google-tag-manager";
 import { JsonLd } from "@/components/marketing/json-ld";
 import { SiteFooter } from "@/components/marketing/site-footer";
 import { SiteHeader } from "@/components/marketing/site-header";
@@ -21,6 +25,8 @@ export default async function MarketingLayout({ children }: { children: ReactNod
     <div
       className={`${fraunces.variable} marketing-root flex min-h-screen flex-col bg-white text-slate-950`}
     >
+      <GoogleTagManagerScript />
+      <GoogleTagManagerNoScript />
       <GoogleAnalytics />
       <SiteHeader />
       <main className="flex-1">{children}</main>

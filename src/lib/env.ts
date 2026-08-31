@@ -35,6 +35,7 @@ const envSchema = z.object({
   NEXT_PUBLIC_SENTRY_DSN: z.string().default(""),
 
   NEXT_PUBLIC_GA_MEASUREMENT_ID: z.string().default(""),
+  NEXT_PUBLIC_GTM_ID: z.string().default(""),
 });
 
 export type Env = z.infer<typeof envSchema>;
