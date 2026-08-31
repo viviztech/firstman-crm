@@ -7,6 +7,7 @@ import {
   getPublicCatalog,
   getPublicServiceBySlug,
   getPublicServices,
+  getRelatedServices,
 } from "@/services/marketing-catalog";
 
 describe("marketing-catalog service (integration)", () => {
@@ -14,6 +15,7 @@ describe("marketing-catalog service (integration)", () => {
   let verticalId: string;
   let categoryId: string;
   let activeServiceId: string;
+  let siblingServiceId: string;
   let deletedServiceId: string;
   let deletedCategoryId: string;
   let deletedCategoryServiceId: string;
@@ -51,6 +53,21 @@ describe("marketing-catalog service (integration)", () => {
       .returning();
     if (!activeService) throw new Error("Failed to create test service");
     activeServiceId = activeService.id;
+
+    const [siblingService] = await db
+      .insert(services)
+      .values({
+        categoryId,
+        name: `${marker} Sibling Service`,
+        slug: `${marker.toLowerCase()}-sibling`,
+        basePricePaise: 150000,
+        estimatedDays: 4,
+        checklistTemplate: [],
+        requiredDocuments: [],
+      })
+      .returning();
+    if (!siblingService) throw new Error("Failed to create sibling test service");
+    siblingServiceId = siblingService.id;
 
     const [deletedService] = await db
       .insert(services)
@@ -93,6 +110,7 @@ describe("marketing-catalog service (integration)", () => {
 
   afterAll(async () => {
     await db.delete(services).where(eq(services.id, activeServiceId));
+    await db.delete(services).where(eq(services.id, siblingServiceId));
     await db.delete(services).where(eq(services.id, deletedServiceId));
     await db.delete(services).where(eq(services.id, deletedCategoryServiceId));
     await db.delete(serviceCategories).where(eq(serviceCategories.id, categoryId));
@@ -163,6 +181,21 @@ describe("marketing-catalog service (integration)", () => {
     it("returns null when the service's category is soft-deleted", async () => {
       const result = await getPublicServiceBySlug(`${marker.toLowerCase()}-orphaned`);
       expect(result).toBeNull();
+    });
+  });
+
+  describe("getRelatedServices", () => {
+    it("returns other active services in the same category, excluding the given slug", async () => {
+      const related = await getRelatedServices(categoryId, `${marker.toLowerCase()}-recurring`);
+      const ids = related.map((s) => s.id);
+      expect(ids).toContain(siblingServiceId);
+      expect(ids).not.toContain(activeServiceId);
+      expect(ids).not.toContain(deletedServiceId);
+    });
+
+    it("returns an empty array for a category with no services", async () => {
+      const related = await getRelatedServices(randomUUID(), "no-such-slug");
+      expect(related).toEqual([]);
     });
   });
 });

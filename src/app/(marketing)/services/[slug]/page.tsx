@@ -5,10 +5,16 @@ import { notFound } from "next/navigation";
 import { QuickEnquiryForm } from "@/components/marketing/enquiry-form";
 import { JsonLd } from "@/components/marketing/json-ld";
 import { Badge } from "@/components/ui/badge";
+import { getArticlesForService } from "@/content/resources";
 import { getServicePageContent } from "@/content/service-content";
 import { getAppUrl } from "@/lib/app-url";
+import { buildMarketingMetadata } from "@/lib/marketing-metadata";
 import { formatMoney } from "@/lib/money";
-import { getPublicServiceBySlug, getPublicServices } from "@/services/marketing-catalog";
+import {
+  getPublicServiceBySlug,
+  getPublicServices,
+  getRelatedServices,
+} from "@/services/marketing-catalog";
 
 export async function generateStaticParams() {
   return (await getPublicServices()).map((s) => ({ slug: s.slug }));
@@ -21,10 +27,11 @@ export async function generateMetadata({
   const { slug } = await params;
   const s = await getPublicServiceBySlug(slug);
   if (!s) return {};
-  return {
-    title: `${s.name} — Fees, documents & process | FirstMan`,
-    description: `Get ${s.name} handled end to end. Starting ${formatMoney(s.basePricePaise)}, typical turnaround ${s.estimatedDays} business days. See documents, process and deliverables.`,
-  };
+  return buildMarketingMetadata({
+    title: `${s.name} — Fees, documents & process`,
+    description: `Get ${s.name} handled end to end across Tamil Nadu. Starting ${formatMoney(s.basePricePaise)}, typical turnaround ${s.estimatedDays} business days. See documents, process and deliverables.`,
+    path: `/services/${slug}`,
+  });
 }
 
 export default async function ServiceDetailPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -32,6 +39,8 @@ export default async function ServiceDetailPage({ params }: { params: Promise<{ 
   const service = await getPublicServiceBySlug(slug);
   if (!service) notFound();
   const content = getServicePageContent(service);
+  const relatedServices = await getRelatedServices(service.categoryId, service.slug);
+  const relatedGuides = getArticlesForService(service.slug);
   const faqs = [
     {
       question: `What is included in ${service.name}?`,
@@ -196,6 +205,46 @@ export default async function ServiceDetailPage({ params }: { params: Promise<{ 
                 ))}
               </div>
             </section>
+            {relatedServices.length ? (
+              <section>
+                <p className="marketing-kicker">{service.categoryName}</p>
+                <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-950">
+                  Related services in this category.
+                </h2>
+                <div className="mt-7 grid gap-3 sm:grid-cols-2">
+                  {relatedServices.map((related) => (
+                    <Link
+                      key={related.id}
+                      href={`/services/${related.slug}`}
+                      className="group flex items-center justify-between rounded-xl border border-slate-200 p-4 text-sm font-bold text-slate-800 hover:border-pink-300 hover:text-pink-700"
+                    >
+                      {related.name}
+                      <ArrowRight className="size-4 shrink-0 text-slate-400 group-hover:translate-x-1 group-hover:text-pink-700" />
+                    </Link>
+                  ))}
+                </div>
+              </section>
+            ) : null}
+            {relatedGuides.length ? (
+              <section>
+                <p className="marketing-kicker">Read next</p>
+                <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-950">
+                  Guides that cover this in more depth.
+                </h2>
+                <div className="mt-7 grid gap-3 sm:grid-cols-2">
+                  {relatedGuides.map((guide) => (
+                    <Link
+                      key={guide.slug}
+                      href={`/resources/${guide.slug}`}
+                      className="group flex items-center justify-between rounded-xl border border-slate-200 p-4 text-sm font-bold text-slate-800 hover:border-pink-300 hover:text-pink-700"
+                    >
+                      {guide.title}
+                      <ArrowRight className="size-4 shrink-0 text-slate-400 group-hover:translate-x-1 group-hover:text-pink-700" />
+                    </Link>
+                  ))}
+                </div>
+              </section>
+            ) : null}
             <Link
               href="/pricing"
               className="flex items-center justify-between rounded-xl border border-slate-200 p-4 text-sm font-bold text-slate-700 hover:border-pink-300 hover:text-pink-700"
@@ -205,6 +254,27 @@ export default async function ServiceDetailPage({ params }: { params: Promise<{ 
           </main>
         </div>
       </section>
+      <JsonLd
+        data={{
+          "@context": "https://schema.org",
+          "@type": "BreadcrumbList",
+          itemListElement: [
+            { "@type": "ListItem", position: 1, name: "Services", item: getAppUrl("/services") },
+            {
+              "@type": "ListItem",
+              position: 2,
+              name: service.categoryName,
+              item: getAppUrl("/services"),
+            },
+            {
+              "@type": "ListItem",
+              position: 3,
+              name: service.name,
+              item: getAppUrl(`/services/${service.slug}`),
+            },
+          ],
+        }}
+      />
       <JsonLd
         data={{
           "@context": "https://schema.org",

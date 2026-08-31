@@ -25,3 +25,8 @@ export function resolveRelatedArticles(article: ResourceArticle): ResourceArticl
     .map((slug) => getArticleBySlug(slug))
     .filter((related): related is ResourceArticle => Boolean(related));
 }
+
+/** Reverse lookup of resolveRelatedArticles' service direction — guides that reference a given service, for the service page's "Related guides" back-link. */
+export function getArticlesForService(serviceSlug: string): ResourceArticle[] {
+  return ALL_ARTICLES.filter((article) => article.relatedServiceSlugs?.includes(serviceSlug));
+}

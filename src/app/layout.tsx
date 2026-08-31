@@ -22,6 +22,16 @@ export const metadata: Metadata = {
   },
   description:
     "Business registration, tax, licensing, accounting, intellectual property and compliance services from FirstMan.",
+  openGraph: {
+    siteName: "FirstMan Corporate Services",
+    locale: "en_IN",
+    type: "website",
+    images: [{ url: "/brand/firstman-logo.png" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    images: ["/brand/firstman-logo.png"],
+  },
   icons: {
     icon: [
       { url: "/favicon.ico", sizes: "any" },

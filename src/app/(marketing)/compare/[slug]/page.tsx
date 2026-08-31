@@ -3,8 +3,13 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { JsonLd } from "@/components/marketing/json-ld";
 import { COMPARISONS, getComparisonBySlug } from "@/content/comparisons";
+import { getArticleBySlug } from "@/content/resources";
+import { getAppUrl } from "@/lib/app-url";
+import { buildMarketingMetadata } from "@/lib/marketing-metadata";
 import { formatMoney } from "@/lib/money";
 import { getPublicServiceBySlug } from "@/services/marketing-catalog";
+
+const STRUCTURE_GUIDE_SLUG = "how-to-choose-a-business-structure";
 
 export async function generateStaticParams() {
   return COMPARISONS.map((comparison) => ({ slug: comparison.slug }));
@@ -19,10 +24,11 @@ export async function generateMetadata({
   const comparison = getComparisonBySlug(slug);
   if (!comparison) return {};
 
-  return {
-    title: `${comparison.title} — FirstMan Corporate Services`,
+  return buildMarketingMetadata({
+    title: comparison.title,
     description: comparison.description,
-  };
+    path: `/compare/${slug}`,
+  });
 }
 
 export default async function ComparePage({ params }: { params: Promise<{ slug: string }> }) {
@@ -34,6 +40,8 @@ export default async function ComparePage({ params }: { params: Promise<{ slug: 
     getPublicServiceBySlug(comparison.entityA.serviceSlug),
     getPublicServiceBySlug(comparison.entityB.serviceSlug),
   ]);
+  const otherComparisons = COMPARISONS.filter((c) => c.slug !== slug);
+  const structureGuide = getArticleBySlug(STRUCTURE_GUIDE_SLUG);
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-16 sm:px-6">
@@ -115,6 +123,31 @@ export default async function ComparePage({ params }: { params: Promise<{ slug: 
         </div>
       </section>
 
+      {structureGuide || otherComparisons.length ? (
+        <section className="mt-12">
+          <h2 className="mb-4 text-lg font-bold">Related comparisons</h2>
+          <div className="flex flex-col gap-2">
+            {structureGuide ? (
+              <Link
+                href={`/resources/${structureGuide.slug}`}
+                className="hover:border-brand/40 rounded-xl border p-4 text-sm font-semibold transition-colors"
+              >
+                {structureGuide.title} →
+              </Link>
+            ) : null}
+            {otherComparisons.map((other) => (
+              <Link
+                key={other.slug}
+                href={`/compare/${other.slug}`}
+                className="hover:border-brand/40 rounded-xl border p-4 text-sm font-semibold transition-colors"
+              >
+                {other.title} →
+              </Link>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
       <div className="mt-12 rounded-xl border bg-muted/30 p-6">
         <h2 className="font-semibold">Still not sure which one fits?</h2>
         <p className="mt-1 text-sm text-muted-foreground">
@@ -128,6 +161,21 @@ export default async function ComparePage({ params }: { params: Promise<{ slug: 
         </Link>
       </div>
 
+      <JsonLd
+        data={{
+          "@context": "https://schema.org",
+          "@type": "BreadcrumbList",
+          itemListElement: [
+            { "@type": "ListItem", position: 1, name: "Compare", item: getAppUrl("/compare") },
+            {
+              "@type": "ListItem",
+              position: 2,
+              name: comparison.title,
+              item: getAppUrl(`/compare/${comparison.slug}`),
+            },
+          ],
+        }}
+      />
       <JsonLd
         data={{
           "@context": "https://schema.org",

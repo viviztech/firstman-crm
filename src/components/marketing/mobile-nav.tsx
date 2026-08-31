@@ -1,8 +1,9 @@
 "use client";
 
-import { ArrowRight, ChevronDown, Menu } from "lucide-react";
+import { ArrowRight, ChevronDown, Menu, Phone } from "lucide-react";
 import Link from "next/link";
 import { useRef } from "react";
+import { telHref } from "@/lib/phone";
 import type { PublicServiceVertical } from "@/services/marketing-catalog";
 
 const SECONDARY_LINKS = [
@@ -11,7 +12,13 @@ const SECONDARY_LINKS = [
   { href: "/about", label: "About" },
 ];
 
-export function MobileNav({ catalog }: { catalog: PublicServiceVertical[] }) {
+export function MobileNav({
+  catalog,
+  phone,
+}: {
+  catalog: PublicServiceVertical[];
+  phone?: string;
+}) {
   const detailsRef = useRef<HTMLDetailsElement>(null);
 
   function closeMenu() {
@@ -71,6 +78,23 @@ export function MobileNav({ catalog }: { catalog: PublicServiceVertical[] }) {
               {link.label}
             </Link>
           ))}
+          <Link
+            href="/login"
+            onClick={closeMenu}
+            className="rounded-lg px-4 py-3 font-semibold text-slate-800 hover:bg-slate-50"
+          >
+            Client login
+          </Link>
+          {phone ? (
+            <a
+              href={telHref(phone)}
+              onClick={closeMenu}
+              className="flex items-center gap-2 rounded-lg px-4 py-3 font-semibold text-slate-800 hover:bg-slate-50"
+            >
+              <Phone className="size-4" />
+              {phone}
+            </a>
+          ) : null}
           <Link
             href="/contact"
             onClick={closeMenu}

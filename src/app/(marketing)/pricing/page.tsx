@@ -1,13 +1,16 @@
+import { ArrowRight } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { buildMarketingMetadata } from "@/lib/marketing-metadata";
 import { formatMoney } from "@/lib/money";
 import { getPublicCatalog } from "@/services/marketing-catalog";
 
-export const metadata: Metadata = {
-  title: "Transparent business service pricing — FirstMan",
+export const metadata: Metadata = buildMarketingMetadata({
+  title: "Transparent business service pricing",
   description:
     "Published starting fees for company registration, tax, licensing, accounting, IP and compliance services.",
-};
+  path: "/pricing",
+});
 export default async function PricingPage() {
   const catalog = await getPublicCatalog();
   return (
@@ -23,6 +26,14 @@ export default async function PricingPage() {
           <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-600">
             Compare standard starting fees and typical turnaround times before you speak to anyone.
           </p>
+          <div className="mt-9">
+            <Link
+              href="/contact"
+              className="inline-flex h-12 items-center gap-2 rounded-lg bg-pink-600 px-6 text-sm font-bold text-white hover:bg-pink-500"
+            >
+              Talk to an expert <ArrowRight className="size-4" />
+            </Link>
+          </div>
         </div>
       </section>
       <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 lg:py-24">

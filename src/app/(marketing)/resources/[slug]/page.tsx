@@ -9,6 +9,7 @@ import {
   resolveRelatedArticles,
 } from "@/content/resources";
 import { getAppUrl } from "@/lib/app-url";
+import { buildMarketingMetadata } from "@/lib/marketing-metadata";
 import { getPublicServices } from "@/services/marketing-catalog";
 
 export async function generateStaticParams() {
@@ -24,10 +25,11 @@ export async function generateMetadata({
   const article = getArticleBySlug(slug);
   if (!article) return {};
 
-  return {
-    title: `${article.title} — FirstMan Corporate Services`,
+  return buildMarketingMetadata({
+    title: article.title,
     description: article.description,
-  };
+    path: `/resources/${slug}`,
+  });
 }
 
 function formatDate(iso: string): string {
@@ -168,10 +170,41 @@ export default async function ResourceArticlePage({
       <JsonLd
         data={{
           "@context": "https://schema.org",
+          "@type": "BreadcrumbList",
+          itemListElement: [
+            { "@type": "ListItem", position: 1, name: "Resources", item: getAppUrl("/resources") },
+            ...(!article.isPillar && pillar
+              ? [
+                  {
+                    "@type": "ListItem",
+                    position: 2,
+                    name: pillar.title,
+                    item: getAppUrl(`/resources/${pillar.slug}`),
+                  },
+                ]
+              : []),
+            {
+              "@type": "ListItem",
+              position: article.isPillar || !pillar ? 2 : 3,
+              name: article.title,
+              item: getAppUrl(`/resources/${article.slug}`),
+            },
+          ],
+        }}
+      />
+      <JsonLd
+        data={{
+          "@context": "https://schema.org",
           "@type": "Article",
           headline: article.title,
           description: article.description,
+          image: getAppUrl("/brand/firstman-logo.png"),
           author: { "@type": "Organization", name: article.author },
+          publisher: {
+            "@type": "Organization",
+            name: "FirstMan Corporate Services",
+            logo: { "@type": "ImageObject", url: getAppUrl("/brand/firstman-logo.png") },
+          },
           datePublished: article.publishedAt,
           dateModified: article.updatedAt,
           mainEntityOfPage: getAppUrl(`/resources/${article.slug}`),

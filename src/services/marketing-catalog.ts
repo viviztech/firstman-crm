@@ -23,6 +23,8 @@ export type PublicService = {
   isRecurring: boolean;
   recurrence: "monthly" | "quarterly" | "yearly" | null;
   requiredDocuments: string[];
+  /** Real content-update timestamp — used for sitemap lastModified rather than a build-time stamp. */
+  updatedAt: Date;
 };
 
 export type PublicServiceCategory = {
@@ -49,6 +51,7 @@ function toPublicService(row: typeof services.$inferSelect): PublicService {
     isRecurring: row.isRecurring,
     recurrence: row.recurrence,
     requiredDocuments: row.requiredDocuments,
+    updatedAt: row.updatedAt,
   };
 }
 
@@ -103,7 +106,9 @@ export async function getPublicServices(): Promise<PublicService[]> {
 /** A single service by slug, for a service detail page — 404s (returns null) if unpublished. */
 export async function getPublicServiceBySlug(
   slug: string,
-): Promise<(PublicService & { categoryName: string; verticalName: string }) | null> {
+): Promise<
+  (PublicService & { categoryId: string; categoryName: string; verticalName: string }) | null
+> {
   const row = await db.query.services.findFirst({
     where: and(eq(services.slug, slug), isNull(services.deletedAt)),
     with: { category: { with: { vertical: true } } },
@@ -112,7 +117,20 @@ export async function getPublicServiceBySlug(
 
   return {
     ...toPublicService(row),
+    categoryId: row.categoryId,
     categoryName: row.category.name,
     verticalName: row.category.vertical.name,
   };
+}
+
+/** Sibling services in the same category, for a "Related services" cross-link section — excludes the current service. */
+export async function getRelatedServices(
+  categoryId: string,
+  excludeSlug: string,
+): Promise<PublicService[]> {
+  const rows = await db.query.services.findMany({
+    where: and(eq(services.categoryId, categoryId), isNull(services.deletedAt)),
+    orderBy: () => [byNameCaseInsensitive],
+  });
+  return rows.filter((row) => row.slug !== excludeSlug).map(toPublicService);
 }

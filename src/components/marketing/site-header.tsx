@@ -1,10 +1,12 @@
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Phone } from "lucide-react";
 import Link from "next/link";
 import { Logo } from "@/components/marketing/logo";
 import { MobileNav } from "@/components/marketing/mobile-nav";
 import { ServicesMegaMenu } from "@/components/marketing/services-mega-menu";
 import { buttonVariants } from "@/components/ui/button";
+import { telHref } from "@/lib/phone";
 import { cn } from "@/lib/utils";
+import { getCompanyProfile } from "@/services/company-profile";
 import { getPublicCatalog } from "@/services/marketing-catalog";
 
 const SECONDARY_LINKS = [
@@ -14,7 +16,7 @@ const SECONDARY_LINKS = [
 ];
 
 export async function SiteHeader() {
-  const catalog = await getPublicCatalog();
+  const [catalog, profile] = await Promise.all([getPublicCatalog(), getCompanyProfile()]);
 
   return (
     <header className="marketing-header sticky top-0 z-50 border-b border-slate-200/80 bg-white/95 backdrop-blur-xl">
@@ -35,6 +37,15 @@ export async function SiteHeader() {
         </nav>
 
         <div className="ml-auto hidden items-center gap-2 sm:flex">
+          {profile.phone ? (
+            <a
+              href={telHref(profile.phone)}
+              className="flex items-center gap-2 px-3 py-2 text-sm font-semibold text-slate-700 hover:text-pink-700"
+            >
+              <Phone className="size-4" />
+              {profile.phone}
+            </a>
+          ) : null}
           <Link
             href="/login"
             className={cn(buttonVariants({ variant: "ghost", size: "lg" }), "text-slate-700")}
@@ -52,7 +63,17 @@ export async function SiteHeader() {
           </Link>
         </div>
 
-        <MobileNav catalog={catalog} />
+        {profile.phone ? (
+          <a
+            href={telHref(profile.phone)}
+            aria-label={`Call ${profile.phone}`}
+            className="flex size-10 items-center justify-center rounded-lg border border-slate-200 text-slate-700 hover:border-pink-300 hover:text-pink-700 sm:hidden"
+          >
+            <Phone className="size-4" />
+          </a>
+        ) : null}
+
+        <MobileNav catalog={catalog} phone={profile.phone} />
       </div>
     </header>
   );

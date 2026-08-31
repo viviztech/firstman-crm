@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Terms of Service — FirstMan Corporate Services",
+  title: "Terms of Service",
   robots: { index: false, follow: true },
 };
 

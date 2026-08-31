@@ -10,15 +10,17 @@ import {
 import type { Metadata } from "next";
 import Link from "next/link";
 import { MarketingEnquiryForm } from "@/components/marketing/enquiry-form";
+import { buildMarketingMetadata } from "@/lib/marketing-metadata";
 import { formatMoney } from "@/lib/money";
 import { getCompanyProfile } from "@/services/company-profile";
 import { getPublicCatalog, getPublicServices } from "@/services/marketing-catalog";
 
-export const metadata: Metadata = {
-  title: "FirstMan Corporate Services — Start, run and protect your business",
+export const metadata: Metadata = buildMarketingMetadata({
+  title: "Start, run and protect your business",
   description:
     "Company registration, GST, licensing, accounting, IP and compliance services with transparent pricing and accountable execution.",
-};
+  path: "/",
+});
 
 const lifecycle = [
   {

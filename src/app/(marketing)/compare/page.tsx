@@ -1,12 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { COMPARISONS } from "@/content/comparisons";
+import { buildMarketingMetadata } from "@/lib/marketing-metadata";
 
-export const metadata: Metadata = {
-  title: "Compare business structures — FirstMan Corporate Services",
+export const metadata: Metadata = buildMarketingMetadata({
+  title: "Compare business structures",
   description:
     "Private Limited, LLP, OPC, and Proprietorship compared side by side — liability, compliance, funding, and cost.",
-};
+  path: "/compare",
+});
 
 export default function CompareHubPage() {
   return (

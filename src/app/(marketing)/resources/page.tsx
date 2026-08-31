@@ -1,12 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getClusterArticles, PILLARS } from "@/content/resources";
+import { buildMarketingMetadata } from "@/lib/marketing-metadata";
 
-export const metadata: Metadata = {
-  title: "Resources — FirstMan Corporate Services",
+export const metadata: Metadata = buildMarketingMetadata({
+  title: "Resources",
   description:
     "Guides on company registration and annual compliance in India — written from what we actually file for clients.",
-};
+  path: "/resources",
+});
 
 export default function ResourcesHubPage() {
   return (

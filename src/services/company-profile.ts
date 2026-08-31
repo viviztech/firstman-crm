@@ -7,7 +7,14 @@ export type CompanyProfile = {
   legalName: string;
   /** LLP Identification Number. */
   llpin: string;
+  /** Full postal address as shown to visitors (footer, contact page). */
   address: string;
+  /** Structured address parts, for PostalAddress JSON-LD — kept separate from `address` so existing display copy is untouched. */
+  addressStreet: string;
+  addressLocality: string;
+  addressRegion: string;
+  addressPostalCode: string;
+  addressCountry: string;
   gstin: string;
   logoUrl: string;
   /** Public contact channels — the marketing site only renders a Call/WhatsApp CTA once these are set. */
@@ -26,14 +33,22 @@ const DEFAULT_COMPANY_PROFILE: CompanyProfile = {
   legalName: "FirstMan Corporate Services LLP",
   llpin: "AAI-5319",
   address: "W-426A, Second Floor, 2nd Avenue, C Sector, Anna Nagar West, Chennai - 600 101",
+  addressStreet: "W-426A, Second Floor, 2nd Avenue, C Sector, Anna Nagar West",
+  addressLocality: "Chennai",
+  addressRegion: "Tamil Nadu",
+  addressPostalCode: "600101",
+  addressCountry: "IN",
   gstin: "33AAFFF0744H1ZS",
   logoUrl: "/logo.png",
-  phone: "",
+  phone: "+91 97878 97000",
   email: "",
   whatsappNumber: "",
   areasServed: "Tamil Nadu",
 };
 
 export async function getCompanyProfile(): Promise<CompanyProfile> {
-  return getSetting<CompanyProfile>("companyProfile", DEFAULT_COMPANY_PROFILE);
+  // Merged rather than replaced outright: a settings row saved before a field existed on this
+  // type (e.g. before addressLocality was added) shouldn't resurrect that field as undefined.
+  const stored = await getSetting<Partial<CompanyProfile>>("companyProfile", {});
+  return { ...DEFAULT_COMPANY_PROFILE, ...stored };
 }

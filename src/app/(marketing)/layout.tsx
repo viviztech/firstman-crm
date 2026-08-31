@@ -34,13 +34,25 @@ export default async function MarketingLayout({ children }: { children: ReactNod
       <JsonLd
         data={{
           "@context": "https://schema.org",
-          "@type": "Organization",
+          "@type": "ProfessionalService",
           name: profile.name,
           ...(profile.legalName ? { legalName: profile.legalName } : {}),
           url: getAppUrl("/"),
           areaServed: profile.areasServed,
           logo: getAppUrl("/brand/firstman-logo.png"),
-          ...(profile.address ? { address: profile.address } : {}),
+          image: getAppUrl("/brand/firstman-logo.png"),
+          ...(profile.address
+            ? {
+                address: {
+                  "@type": "PostalAddress",
+                  streetAddress: profile.addressStreet || profile.address,
+                  addressLocality: profile.addressLocality,
+                  addressRegion: profile.addressRegion,
+                  postalCode: profile.addressPostalCode,
+                  addressCountry: profile.addressCountry,
+                },
+              }
+            : {}),
           ...(profile.gstin ? { taxID: profile.gstin } : {}),
           ...(profile.llpin
             ? { identifier: { "@type": "PropertyValue", name: "LLPIN", value: profile.llpin } }

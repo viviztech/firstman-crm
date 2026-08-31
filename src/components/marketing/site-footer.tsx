@@ -1,6 +1,7 @@
 import { ArrowRight, Mail, MapPin, Phone } from "lucide-react";
 import Link from "next/link";
 import { Logo } from "@/components/marketing/logo";
+import { telHref } from "@/lib/phone";
 import { getCompanyProfile } from "@/services/company-profile";
 import { getPublicCatalog } from "@/services/marketing-catalog";
 
@@ -51,7 +52,7 @@ export async function SiteFooter() {
               </p>
             ) : null}
             {profile.phone ? (
-              <a href={`tel:${profile.phone}`} className="flex gap-2 hover:text-slate-950">
+              <a href={telHref(profile.phone)} className="flex gap-2 hover:text-slate-950">
                 <Phone className="size-4 text-pink-600" />
                 {profile.phone}
               </a>

@@ -1,14 +1,17 @@
 import { Mail, MapPin, Phone } from "lucide-react";
 import type { Metadata } from "next";
 import { MarketingEnquiryForm } from "@/components/marketing/enquiry-form";
+import { buildMarketingMetadata } from "@/lib/marketing-metadata";
+import { telHref } from "@/lib/phone";
 import { getCompanyProfile } from "@/services/company-profile";
 import { getPublicServices } from "@/services/marketing-catalog";
 
-export const metadata: Metadata = {
-  title: "Contact a business services expert — FirstMan",
+export const metadata: Metadata = buildMarketingMetadata({
+  title: "Contact a business services expert",
   description:
     "Discuss company registration, tax, licensing, accounting, IP or compliance requirements with FirstMan.",
-};
+  path: "/contact",
+});
 export default async function ContactPage() {
   const [profile, services] = await Promise.all([getCompanyProfile(), getPublicServices()]);
   return (
@@ -32,7 +35,7 @@ export default async function ContactPage() {
             </li>
             {profile.phone ? (
               <li>
-                <a href={`tel:${profile.phone}`} className="flex gap-3 hover:text-slate-950">
+                <a href={telHref(profile.phone)} className="flex gap-3 hover:text-slate-950">
                   <Phone className="size-4 text-pink-600" />
                   {profile.phone}
                 </a>
@@ -47,6 +50,19 @@ export default async function ContactPage() {
               </li>
             ) : null}
           </ul>
+          {profile.address ? (
+            <div className="mt-8 overflow-hidden rounded-2xl border border-slate-200">
+              <iframe
+                title="FirstMan Corporate Services office location"
+                src={`https://maps.google.com/maps?q=${encodeURIComponent(profile.address)}&z=15&output=embed`}
+                width="100%"
+                height="220"
+                style={{ border: 0 }}
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+              />
+            </div>
+          ) : null}
         </div>
         <div>
           <p className="mb-5 text-sm leading-6 text-slate-600">

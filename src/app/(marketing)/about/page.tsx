@@ -2,13 +2,15 @@ import { Award, Building2, Compass, ShieldCheck, Sparkles, Target, Users } from 
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { buildMarketingMetadata } from "@/lib/marketing-metadata";
 import { getCompanyProfile } from "@/services/company-profile";
 
-export const metadata: Metadata = {
-  title: "About FirstMan Corporate Services",
+export const metadata: Metadata = buildMarketingMetadata({
+  title: "About Us",
   description:
     "FirstMan Corporate Services is an arm of FirstMan Techno Enterprises Limited, working with new-age entrepreneurs on incorporation, compliance, and business growth.",
-};
+  path: "/about",
+});
 
 const coreValues = [
   {

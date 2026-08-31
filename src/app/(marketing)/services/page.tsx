@@ -11,14 +11,16 @@ import {
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
+import { buildMarketingMetadata } from "@/lib/marketing-metadata";
 import { formatMoney } from "@/lib/money";
 import { getPublicCatalog } from "@/services/marketing-catalog";
 
-export const metadata: Metadata = {
-  title: "Business Services Directory — FirstMan",
+export const metadata: Metadata = buildMarketingMetadata({
+  title: "Business Services Directory",
   description:
     "Explore company registration, licensing, tax, accounting, audit, IP and compliance services with transparent pricing.",
-};
+  path: "/services",
+});
 
 export default async function ServicesHubPage() {
   const catalog = await getPublicCatalog();
