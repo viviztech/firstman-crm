@@ -114,6 +114,9 @@ See `.env.example` for the full list with placeholder values. Notable ones:
 - `ENQUIRIES_API_TOKEN` — bearer token for the public `POST /api/v1/enquiries`
   endpoint (Phase 2).
 - `SENTRY_DSN` / `NEXT_PUBLIC_SENTRY_DSN` — leave blank to disable Sentry.
+- `NEXT_PUBLIC_GA_MEASUREMENT_ID` — Google Analytics measurement ID for the
+  public marketing site; leave blank to disable (not loaded on the CRM or
+  customer portal, only public marketing pages).
 
 All env vars are validated at boot with Zod (`src/lib/env.ts`) — the app throws on
 startup with a clear error rather than failing confusingly later.
