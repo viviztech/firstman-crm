@@ -1,5 +1,6 @@
 import { CalendarClock, ClipboardCheck, Receipt, UsersRound } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 
 const showcase = [
   {
@@ -48,7 +49,7 @@ export function LoginBrandPanel() {
         aria-hidden="true"
       />
 
-      <div className="reveal relative flex items-center gap-3">
+      <Link href="/" className="reveal relative flex items-center gap-3">
         <Image
           src="/brand/firstman-mark.png"
           alt="FirstMan"
@@ -63,7 +64,7 @@ export function LoginBrandPanel() {
             Corporate Services CRM
           </p>
         </div>
-      </div>
+      </Link>
 
       <div className="reveal reveal-delay-1 relative max-w-md">
         <h1 className="text-3xl leading-tight font-semibold tracking-tight text-balance text-white xl:text-4xl">

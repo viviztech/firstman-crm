@@ -43,7 +43,7 @@ const DEFAULT_COMPANY_PROFILE: CompanyProfile = {
   phone: "+91 97878 97000",
   email: "",
   whatsappNumber: "",
-  areasServed: "Tamil Nadu",
+  areasServed: "Across India",
 };
 
 export async function getCompanyProfile(): Promise<CompanyProfile> {

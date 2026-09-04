@@ -69,7 +69,7 @@ export default async function MarketingHomePage() {
     <div className="marketing-site">
       <section className="relative overflow-hidden border-b border-slate-200 bg-linear-to-b from-pink-50/70 via-white to-white">
         <div className="marketing-orbit" aria-hidden="true" />
-        <div className="relative mx-auto grid max-w-7xl gap-14 px-4 py-20 sm:px-6 sm:py-28 lg:grid-cols-[1.15fr_.85fr] lg:items-center lg:px-8 lg:py-32">
+        <div className="relative mx-auto grid max-w-7xl gap-14 px-4 py-12 sm:px-6 sm:py-16 lg:grid-cols-[1.15fr_.85fr] lg:items-center lg:px-8 lg:py-20">
           <div>
             <h1 className="max-w-4xl text-5xl leading-[1.02] font-semibold tracking-[-0.045em] text-balance text-slate-950 sm:text-6xl lg:text-7xl">
               Build the business.
@@ -190,6 +190,38 @@ export default async function MarketingHomePage() {
         </div>
       </section>
 
+      <section className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8 lg:py-28">
+        <div className="grid overflow-hidden rounded-3xl border border-slate-200 lg:grid-cols-[.8fr_1.2fr]">
+          <div className="bg-slate-50 p-8 sm:p-12">
+            <p className="text-xs font-bold tracking-[.18em] text-pink-700 uppercase">
+              Start with clarity
+            </p>
+            <h2 className="mt-4 text-3xl font-semibold tracking-tight text-slate-950">
+              Tell us what the business needs next.
+            </h2>
+            <p className="mt-4 leading-7 text-slate-600">
+              We’ll identify the right service, prerequisites, realistic timeline, and total
+              expected fee before you commit.
+            </p>
+            <div className="mt-8 space-y-3 text-sm text-slate-600">
+              {[
+                "No-obligation requirement review",
+                "Same-day response during business hours",
+                "One point of contact from the first conversation",
+              ].map((x) => (
+                <p key={x} className="flex gap-2">
+                  <CheckCircle2 className="mt-0.5 size-4 text-pink-600" />
+                  {x}
+                </p>
+              ))}
+            </div>
+          </div>
+          <div className="bg-white p-4 sm:p-8">
+            <MarketingEnquiryForm services={services.map((s) => ({ id: s.id, name: s.name }))} />
+          </div>
+        </div>
+      </section>
+
       <section className="bg-slate-50 py-20 lg:py-28">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
@@ -226,38 +258,6 @@ export default async function MarketingHomePage() {
                 </div>
               </Link>
             ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8 lg:py-28">
-        <div className="grid overflow-hidden rounded-3xl border border-slate-200 lg:grid-cols-[.8fr_1.2fr]">
-          <div className="bg-slate-50 p-8 sm:p-12">
-            <p className="text-xs font-bold tracking-[.18em] text-pink-700 uppercase">
-              Start with clarity
-            </p>
-            <h2 className="mt-4 text-3xl font-semibold tracking-tight text-slate-950">
-              Tell us what the business needs next.
-            </h2>
-            <p className="mt-4 leading-7 text-slate-600">
-              We’ll identify the right service, prerequisites, realistic timeline, and total
-              expected fee before you commit.
-            </p>
-            <div className="mt-8 space-y-3 text-sm text-slate-600">
-              {[
-                "No-obligation requirement review",
-                "Same-day response during business hours",
-                "One point of contact from the first conversation",
-              ].map((x) => (
-                <p key={x} className="flex gap-2">
-                  <CheckCircle2 className="mt-0.5 size-4 text-pink-600" />
-                  {x}
-                </p>
-              ))}
-            </div>
-          </div>
-          <div className="bg-white p-4 sm:p-8">
-            <MarketingEnquiryForm services={services.map((s) => ({ id: s.id, name: s.name }))} />
           </div>
         </div>
       </section>

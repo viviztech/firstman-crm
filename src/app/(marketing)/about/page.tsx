@@ -1,6 +1,5 @@
 import { Award, Building2, Compass, ShieldCheck, Sparkles, Target, Users } from "lucide-react";
 import type { Metadata } from "next";
-import Link from "next/link";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { buildMarketingMetadata } from "@/lib/marketing-metadata";
 import { getCompanyProfile } from "@/services/company-profile";
@@ -163,23 +162,6 @@ export default async function AboutPage() {
             </p>
           </TabsContent>
         </Tabs>
-      </section>
-
-      <section className="mx-auto max-w-7xl px-4 pb-20 sm:px-6 lg:px-8 lg:pb-28">
-        <div className="rounded-3xl bg-slate-50 p-8 sm:flex sm:items-center sm:justify-between sm:p-10">
-          <div>
-            <h2 className="text-2xl font-bold text-slate-950">Bring us the business goal.</h2>
-            <p className="mt-2 text-slate-600">
-              We’ll map the registrations, filings, and order of work.
-            </p>
-          </div>
-          <Link
-            href="/contact"
-            className="mt-5 inline-flex h-11 items-center rounded-lg bg-pink-700 px-5 text-sm font-bold text-white hover:bg-pink-800 sm:mt-0"
-          >
-            Talk to an expert
-          </Link>
-        </div>
       </section>
     </div>
   );

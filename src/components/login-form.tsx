@@ -2,6 +2,7 @@
 
 import { AlertCircle, CheckCircle2, Eye, EyeOff, Loader2, Lock, Mail } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -46,7 +47,10 @@ export function LoginForm() {
   return (
     <div className="flex min-h-svh items-center justify-center bg-background p-6 sm:p-10">
       <div className="w-full max-w-sm">
-        <div className="reveal mb-8 flex flex-col items-center gap-2 text-center lg:hidden">
+        <Link
+          href="/"
+          className="reveal mb-8 flex flex-col items-center gap-2 text-center lg:hidden"
+        >
           <Image
             src="/brand/firstman-logo.png"
             alt="FirstMan"
@@ -58,7 +62,7 @@ export function LoginForm() {
           <p className="text-xs font-semibold tracking-[0.18em] text-muted-foreground uppercase">
             Corporate Services CRM
           </p>
-        </div>
+        </Link>
 
         <div className="reveal">
           <h1 className="text-2xl font-semibold tracking-tight text-foreground">Welcome back</h1>
