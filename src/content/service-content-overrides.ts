@@ -13,6 +13,7 @@ export type ServiceContentOverride = {
       "eyebrow" | "summary" | "idealFor" | "outcomes" | "includes" | "process"
     >
   >;
+  heroNote?: string;
   decisionFramework?: {
     intro: string;
     chooseInstead: { structure: string; when: string; href: string }[];
@@ -51,8 +52,7 @@ export const SERVICE_CONTENT_OVERRIDES: Record<string, ServiceContentOverride> =
       ],
       outcomes: [
         "A separate legal entity with limited liability, recognised under Section 2(68)",
-        "Certificate of Incorporation, DIN, PAN, and TAN in one coordinated filing",
-        "A pre-check against the most common SPICe+ resubmission triggers before we file",
+        "Certificate of Incorporation, DIN, PAN, TAN, and your MoA/AoA in one coordinated filing",
       ],
       includes: [
         "Name availability and trademark-conflict check before filing",
@@ -80,6 +80,8 @@ export const SERVICE_CONTENT_OVERRIDES: Record<string, ServiceContentOverride> =
         },
       ],
     },
+    heroNote:
+      "The ₹10,999 professional fee excludes government fees, DSC charges, and stamp duty on the MoA/AoA. Figures on this page use Tamil Nadu's stamp duty schedule; other states set their own rates and may vary.",
     decisionFramework: {
       intro:
         "Register a Private Limited Company if you plan to raise funding, issue ESOPs, or add shareholders. Consider LLP, OPC, or a proprietorship instead if you don't need equity fundraising or want a lighter compliance load.",
@@ -326,7 +328,7 @@ export const SERVICE_CONTENT_OVERRIDES: Record<string, ServiceContentOverride> =
     ],
     localNote: {
       heading: "Registering from Chennai or Tamil Nadu",
-      body: "The MCA process is identical nationwide, but Tamil Nadu applies its own stamp duty schedule on the MoA and AoA, distinct from other states. RoC Chennai processes filings for companies registered with a Tamil Nadu address, and familiarity with how that office raises and resolves queries shortens resubmission cycles. Founders who prefer to hand over physical documents rather than scan and upload them can do so at our Anna Nagar West office before we file.",
+      body: "The MCA process is identical nationwide, but every state sets its own stamp duty schedule for the MoA and AoA, so the amount you pay depends on where your registered office is. RoC Chennai processes filings for companies registered with a Tamil Nadu address, and familiarity with how that office raises and resolves queries shortens resubmission cycles. Founders who prefer to hand over physical documents rather than scan and upload them can do so at our Anna Nagar West office before we file.",
     },
     scopeTable: {
       included: [
