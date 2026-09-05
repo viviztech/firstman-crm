@@ -1,6 +1,28 @@
 import type { ServicePageContent } from "@/content/service-content";
 
 /**
+ * Keys for the override-driven sections rendered between "What you receive" and the FAQ.
+ * Order defaults to DEFAULT_EXTRA_SECTION_ORDER; a page can supply its own extraSectionOrder
+ * to render them in a different sequence without affecting other pages sharing the template.
+ */
+export type ExtraSectionKey =
+  | "avoidResubmission"
+  | "afterIncorporation"
+  | "decisionFramework"
+  | "localNote"
+  | "scope"
+  | "tco";
+
+export const DEFAULT_EXTRA_SECTION_ORDER: ExtraSectionKey[] = [
+  "avoidResubmission",
+  "afterIncorporation",
+  "decisionFramework",
+  "localNote",
+  "scope",
+  "tco",
+];
+
+/**
  * Per-slug replacements for the generic classifier in service-content.ts, plus extra
  * page sections the shared /services/[slug] template doesn't render by default.
  * Only populate a slug here when the generic template is genuinely too thin for it —
@@ -34,16 +56,18 @@ export type ServiceContentOverride = {
   complianceCalendar?: { milestone: string; dueBy: string; penalty: string }[];
   localNote?: { heading: string; body: string };
   scopeTable?: { included: string[]; excluded: string[] };
+  scopeIntro?: string;
   faqs?: { question: string; answer: string }[];
   lastUpdated?: string;
   metaTitle?: string;
   metaDescription?: string;
+  extraSectionOrder?: ExtraSectionKey[];
 };
 
 export const SERVICE_CONTENT_OVERRIDES: Record<string, ServiceContentOverride> = {
   "pvt-ltd-registration": {
     base: {
-      eyebrow: "Company incorporation",
+      eyebrow: "Private Limited Company Registration",
       summary:
         "Private limited company registration is the process of incorporating a company under Section 2(68) of the Companies Act, 2013, through the MCA's SPICe+ form. It needs 2 directors, 2 shareholders, and one resident director, with no minimum paid-up capital. FirstMan's professional fee starts at {{FEE}}, with government fees, DSC, and stamp duty billed separately.",
       idealFor: [
@@ -52,8 +76,13 @@ export const SERVICE_CONTENT_OVERRIDES: Record<string, ServiceContentOverride> =
         "Teams that want the credibility and limited liability of a Pvt Ltd structure from day one",
       ],
       outcomes: [
-        "A separate legal entity with limited liability, recognised under Section 2(68)",
-        "Certificate of Incorporation, DIN, PAN, TAN, and your MoA/AoA in one coordinated filing",
+        "Name approval from the Registrar of Companies",
+        "Digital Signature Certificate (DSC) for directors",
+        "Director Identification Number (DIN)",
+        "Certificate of Incorporation",
+        "MoA (Memorandum of Association) and AoA (Articles of Association)",
+        "Company PAN",
+        "Company TAN",
       ],
       includes: [
         "Name availability and trademark-conflict check before filing",
@@ -328,10 +357,8 @@ export const SERVICE_CONTENT_OVERRIDES: Record<string, ServiceContentOverride> =
         penalty: "Interest under Section 234A/B/C; loss of carry-forward benefits",
       },
     ],
-    localNote: {
-      heading: "Registering from Chennai or Tamil Nadu",
-      body: "The MCA process is identical nationwide, but every state sets its own stamp duty schedule for the MoA and AoA, so the amount you pay depends on where your registered office is. RoC Chennai processes filings for companies registered with a Tamil Nadu address, and familiarity with how that office raises and resolves queries shortens resubmission cycles. Founders who prefer to hand over physical documents rather than scan and upload them can do so at our Anna Nagar West office before we file.",
-    },
+    scopeIntro:
+      "Stamp duty on the MoA and AoA differs state by state, so what you pay depends on where your registered office is; the figures on this page use Tamil Nadu's schedule. RoC Chennai processes filings for companies registered with a Tamil Nadu address, and founders who prefer to hand over physical documents rather than scan and upload them can do so at our Anna Nagar West office before we file.",
     scopeTable: {
       included: [
         "Name availability check and reservation (SPICe+ Part A)",
@@ -439,6 +466,13 @@ export const SERVICE_CONTENT_OVERRIDES: Record<string, ServiceContentOverride> =
       },
     ],
     lastUpdated: "September 2026",
+    extraSectionOrder: [
+      "scope",
+      "tco",
+      "afterIncorporation",
+      "avoidResubmission",
+      "decisionFramework",
+    ],
     metaTitle: "Private Limited Company Registration India",
     metaDescription:
       "Private limited company registration from {{FEE}} professional fee, typically completed in 7 business days. Full scope and fee confirmed before you pay.",

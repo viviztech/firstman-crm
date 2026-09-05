@@ -1,13 +1,19 @@
-import { ArrowRight, CheckCircle2, Clock3, FileText, IndianRupee, ShieldCheck } from "lucide-react";
+import { ArrowRight, CheckCircle2, Clock3, IndianRupee, ShieldCheck } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Fragment, type ReactNode } from "react";
 import { QuickEnquiryForm } from "@/components/marketing/enquiry-form";
 import { JsonLd } from "@/components/marketing/json-ld";
 import { Badge } from "@/components/ui/badge";
 import { getArticlesForService } from "@/content/resources";
 import { getServicePageContent } from "@/content/service-content";
-import { getServiceContentOverride, resolveOverrideFee } from "@/content/service-content-overrides";
+import {
+  DEFAULT_EXTRA_SECTION_ORDER,
+  type ExtraSectionKey,
+  getServiceContentOverride,
+  resolveOverrideFee,
+} from "@/content/service-content-overrides";
 import { getAppUrl } from "@/lib/app-url";
 import { buildMarketingMetadata } from "@/lib/marketing-metadata";
 import { formatMoney } from "@/lib/money";
@@ -73,6 +79,187 @@ export default async function ServiceDetailPage({ params }: { params: Promise<{ 
         "Your FirstMan contact coordinates the matter end to end and shares milestone updates, outstanding requirements, and final records by your agreed communication channel.",
     },
   ];
+  const extraSections: Record<ExtraSectionKey, ReactNode> = {
+    avoidResubmission: override?.rejectionReasons ? (
+      <section>
+        <p className="marketing-kicker">Avoid resubmission</p>
+        <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-950">
+          Why SPICe+ filings get rejected, and how we prevent it.
+        </h2>
+        <div className="mt-7 grid gap-4 sm:grid-cols-2">
+          {override.rejectionReasons.map((item) => (
+            <div key={item.reason} className="rounded-xl border border-slate-200 p-5">
+              <p className="font-bold text-slate-950">{item.reason}</p>
+              <p className="mt-2 text-sm leading-6 text-slate-600">{item.detail}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+    ) : null,
+    afterIncorporation: override?.complianceCalendar ? (
+      <section>
+        <p className="marketing-kicker">After incorporation</p>
+        <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-950">
+          Your first 12 months of compliance.
+        </h2>
+        <div className="mt-6 overflow-x-auto rounded-xl border border-slate-200">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-slate-200 bg-slate-50 text-left text-xs font-medium tracking-wide text-slate-500 uppercase">
+                <th className="px-4 py-3">Milestone</th>
+                <th className="px-4 py-3">Due by</th>
+                <th className="px-4 py-3">Penalty for missing it</th>
+              </tr>
+            </thead>
+            <tbody>
+              {override.complianceCalendar.map((row) => (
+                <tr key={row.milestone} className="border-b border-slate-200 last:border-0">
+                  <td className="px-4 py-3 font-medium text-slate-700">{row.milestone}</td>
+                  <td className="px-4 py-3 text-slate-600">{row.dueBy}</td>
+                  <td className="px-4 py-3 text-slate-600">{row.penalty}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    ) : null,
+    decisionFramework: override?.decisionFramework ? (
+      <section>
+        <p className="marketing-kicker">Is this the right structure?</p>
+        <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-950">
+          {override.decisionFramework.heading}
+        </h2>
+        <p className="mt-5 max-w-3xl text-sm leading-7 text-slate-600">
+          {override.decisionFramework.intro}
+        </p>
+        <div className="mt-6 grid gap-3 sm:grid-cols-3">
+          {override.decisionFramework.chooseInstead.map((option) => (
+            <Link
+              key={option.structure}
+              href={option.href}
+              className="group rounded-xl border border-slate-200 p-5 hover:border-pink-300"
+            >
+              <p className="flex items-center justify-between font-bold text-slate-950 group-hover:text-pink-700">
+                Choose {option.structure} instead
+                <ArrowRight className="size-4 shrink-0 text-slate-400 group-hover:translate-x-1 group-hover:text-pink-700" />
+              </p>
+              <p className="mt-2 text-sm leading-6 text-slate-600">if {option.when}</p>
+            </Link>
+          ))}
+        </div>
+        {override.structureComparison ? (
+          <div className="mt-8 overflow-x-auto rounded-xl border border-slate-200">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-slate-200 bg-slate-50 text-left text-xs font-medium tracking-wide text-slate-500 uppercase">
+                  <th className="px-4 py-3">Factor</th>
+                  {override.structureComparison.columns.map((col) => (
+                    <th key={col} className="px-4 py-3">
+                      {col}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {override.structureComparison.rows.map((row) => (
+                  <tr
+                    key={row.factor}
+                    className="border-b border-slate-200 align-top last:border-0"
+                  >
+                    <td className="px-4 py-3 font-medium text-slate-700">{row.factor}</td>
+                    {row.values.map((value, i) => (
+                      <td
+                        key={`${row.factor}-${override.structureComparison?.columns[i]}`}
+                        className="px-4 py-3 text-slate-600"
+                      >
+                        {value}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : null}
+      </section>
+    ) : null,
+    localNote: override?.localNote ? (
+      <section className="rounded-2xl bg-slate-50 p-7">
+        <h2 className="text-xl font-bold text-slate-950">{override.localNote.heading}</h2>
+        <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-600">{override.localNote.body}</p>
+      </section>
+    ) : null,
+    scope: override?.scopeTable ? (
+      <section>
+        <p className="marketing-kicker">Scope</p>
+        <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-950">
+          What the {feeFormatted} fee includes and excludes.
+        </h2>
+        {override.scopeIntro ? (
+          <p className="mt-5 max-w-3xl text-sm leading-7 text-slate-600">{override.scopeIntro}</p>
+        ) : null}
+        <div className="mt-7 grid gap-6 sm:grid-cols-2">
+          <div>
+            <h3 className="font-bold text-emerald-700">Included</h3>
+            <ul className="mt-3 space-y-2">
+              {override.scopeTable.included.map((item) => (
+                <li key={item} className="flex gap-2 text-sm leading-6 text-slate-700">
+                  <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-emerald-600" />
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div>
+            <h3 className="font-bold text-slate-500">Not included, billed separately</h3>
+            <ul className="mt-3 space-y-2">
+              {override.scopeTable.excluded.map((item) => (
+                <li key={item} className="flex gap-2 text-sm leading-6 text-slate-600">
+                  <span className="mt-0.5 size-4 shrink-0 text-center text-slate-400">•</span>
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </section>
+    ) : null,
+    tco: override?.costBreakdown ? (
+      <section>
+        <p className="marketing-kicker">Total cost of ownership</p>
+        <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-950">
+          What this actually costs in year one.
+        </h2>
+        <p className="mt-5 max-w-3xl text-sm leading-7 text-slate-600">
+          {override.costBreakdown.intro}
+        </p>
+        <div className="mt-6 overflow-x-auto rounded-xl border border-slate-200">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-slate-200 bg-slate-50 text-left text-xs font-medium tracking-wide text-slate-500 uppercase">
+                <th className="px-4 py-3">Cost head</th>
+                <th className="px-4 py-3">When</th>
+                <th className="px-4 py-3">Typical range</th>
+                <th className="px-4 py-3">In {feeFormatted} fee?</th>
+              </tr>
+            </thead>
+            <tbody>
+              {override.costBreakdown.rows.map((row) => (
+                <tr key={row.item} className="border-b border-slate-200 last:border-0">
+                  <td className="px-4 py-3 font-medium text-slate-700">{row.item}</td>
+                  <td className="px-4 py-3 text-slate-600">{row.when}</td>
+                  <td className="px-4 py-3 text-slate-600">{row.range}</td>
+                  <td className="px-4 py-3 text-slate-600">{row.includedInFee}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p className="mt-3 text-xs text-slate-500">{override.costBreakdown.note}</p>
+      </section>
+    ) : null,
+  };
   return (
     <div className="marketing-site bg-white">
       <section className="border-b border-slate-200 bg-linear-to-b from-pink-50/70 via-white to-white">
@@ -136,10 +323,10 @@ export default async function ServiceDetailPage({ params }: { params: Promise<{ 
         <main className="space-y-16">
           {override?.documentGroups ? (
             <section className="rounded-2xl bg-slate-50 p-7">
-              <div className="flex items-center gap-3">
-                <FileText className="size-5 text-pink-700" />
-                <h2 className="text-xl font-bold text-slate-950">Documents required</h2>
-              </div>
+              <p className="marketing-kicker">Documents</p>
+              <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-950">
+                Documents required for incorporation.
+              </h2>
               <p className="mt-2 text-sm text-slate-600">
                 Requirements differ by who is involved in the filing.
               </p>
@@ -164,10 +351,10 @@ export default async function ServiceDetailPage({ params }: { params: Promise<{ 
             </section>
           ) : service.requiredDocuments.length ? (
             <section className="rounded-2xl bg-slate-50 p-7">
-              <div className="flex items-center gap-3">
-                <FileText className="size-5 text-pink-700" />
-                <h2 className="text-xl font-bold text-slate-950">Documents to prepare</h2>
-              </div>
+              <p className="marketing-kicker">Documents</p>
+              <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-950">
+                Documents to prepare.
+              </h2>
               <p className="mt-2 text-sm text-slate-600">
                 We confirm the final checklist for your case. The standard starting set is:
               </p>
@@ -266,184 +453,9 @@ export default async function ServiceDetailPage({ params }: { params: Promise<{ 
               </ul>
             </section>
           </div>
-          {override?.rejectionReasons ? (
-            <section>
-              <p className="marketing-kicker">Avoid resubmission</p>
-              <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-950">
-                Why SPICe+ filings get rejected, and how we prevent it.
-              </h2>
-              <div className="mt-7 grid gap-4 sm:grid-cols-2">
-                {override.rejectionReasons.map((item) => (
-                  <div key={item.reason} className="rounded-xl border border-slate-200 p-5">
-                    <p className="font-bold text-slate-950">{item.reason}</p>
-                    <p className="mt-2 text-sm leading-6 text-slate-600">{item.detail}</p>
-                  </div>
-                ))}
-              </div>
-            </section>
-          ) : null}
-          {override?.complianceCalendar ? (
-            <section>
-              <p className="marketing-kicker">After incorporation</p>
-              <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-950">
-                Your first 12 months of compliance.
-              </h2>
-              <div className="mt-6 overflow-x-auto rounded-xl border border-slate-200">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-slate-200 bg-slate-50 text-left text-xs font-medium tracking-wide text-slate-500 uppercase">
-                      <th className="px-4 py-3">Milestone</th>
-                      <th className="px-4 py-3">Due by</th>
-                      <th className="px-4 py-3">Penalty for missing it</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {override.complianceCalendar.map((row) => (
-                      <tr key={row.milestone} className="border-b border-slate-200 last:border-0">
-                        <td className="px-4 py-3 font-medium text-slate-700">{row.milestone}</td>
-                        <td className="px-4 py-3 text-slate-600">{row.dueBy}</td>
-                        <td className="px-4 py-3 text-slate-600">{row.penalty}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </section>
-          ) : null}
-          {override?.decisionFramework ? (
-            <section>
-              <p className="marketing-kicker">Is this the right structure?</p>
-              <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-950">
-                {override.decisionFramework.heading}
-              </h2>
-              <p className="mt-5 max-w-3xl text-sm leading-7 text-slate-600">
-                {override.decisionFramework.intro}
-              </p>
-              <div className="mt-6 grid gap-3 sm:grid-cols-3">
-                {override.decisionFramework.chooseInstead.map((option) => (
-                  <Link
-                    key={option.structure}
-                    href={option.href}
-                    className="group rounded-xl border border-slate-200 p-5 hover:border-pink-300"
-                  >
-                    <p className="flex items-center justify-between font-bold text-slate-950 group-hover:text-pink-700">
-                      Choose {option.structure} instead
-                      <ArrowRight className="size-4 shrink-0 text-slate-400 group-hover:translate-x-1 group-hover:text-pink-700" />
-                    </p>
-                    <p className="mt-2 text-sm leading-6 text-slate-600">if {option.when}</p>
-                  </Link>
-                ))}
-              </div>
-              {override.structureComparison ? (
-                <div className="mt-8 overflow-x-auto rounded-xl border border-slate-200">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-slate-200 bg-slate-50 text-left text-xs font-medium tracking-wide text-slate-500 uppercase">
-                        <th className="px-4 py-3">Factor</th>
-                        {override.structureComparison.columns.map((col) => (
-                          <th key={col} className="px-4 py-3">
-                            {col}
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {override.structureComparison.rows.map((row) => (
-                        <tr
-                          key={row.factor}
-                          className="border-b border-slate-200 align-top last:border-0"
-                        >
-                          <td className="px-4 py-3 font-medium text-slate-700">{row.factor}</td>
-                          {row.values.map((value, i) => (
-                            <td
-                              key={`${row.factor}-${override.structureComparison?.columns[i]}`}
-                              className="px-4 py-3 text-slate-600"
-                            >
-                              {value}
-                            </td>
-                          ))}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : null}
-            </section>
-          ) : null}
-          {override?.localNote ? (
-            <section className="rounded-2xl bg-slate-50 p-7">
-              <h2 className="text-xl font-bold text-slate-950">{override.localNote.heading}</h2>
-              <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-600">
-                {override.localNote.body}
-              </p>
-            </section>
-          ) : null}
-          {override?.scopeTable ? (
-            <section>
-              <p className="marketing-kicker">Scope</p>
-              <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-950">
-                What the {feeFormatted} fee includes and excludes.
-              </h2>
-              <div className="mt-7 grid gap-6 sm:grid-cols-2">
-                <div>
-                  <h3 className="font-bold text-emerald-700">Included</h3>
-                  <ul className="mt-3 space-y-2">
-                    {override.scopeTable.included.map((item) => (
-                      <li key={item} className="flex gap-2 text-sm leading-6 text-slate-700">
-                        <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-emerald-600" />
-                        {item}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-                <div>
-                  <h3 className="font-bold text-slate-500">Not included, billed separately</h3>
-                  <ul className="mt-3 space-y-2">
-                    {override.scopeTable.excluded.map((item) => (
-                      <li key={item} className="flex gap-2 text-sm leading-6 text-slate-600">
-                        <span className="mt-0.5 size-4 shrink-0 text-center text-slate-400">•</span>
-                        {item}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-            </section>
-          ) : null}
-          {override?.costBreakdown ? (
-            <section>
-              <p className="marketing-kicker">Total cost of ownership</p>
-              <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-950">
-                What this actually costs in year one.
-              </h2>
-              <p className="mt-5 max-w-3xl text-sm leading-7 text-slate-600">
-                {override.costBreakdown.intro}
-              </p>
-              <div className="mt-6 overflow-x-auto rounded-xl border border-slate-200">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-slate-200 bg-slate-50 text-left text-xs font-medium tracking-wide text-slate-500 uppercase">
-                      <th className="px-4 py-3">Cost head</th>
-                      <th className="px-4 py-3">When</th>
-                      <th className="px-4 py-3">Typical range</th>
-                      <th className="px-4 py-3">In {feeFormatted} fee?</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {override.costBreakdown.rows.map((row) => (
-                      <tr key={row.item} className="border-b border-slate-200 last:border-0">
-                        <td className="px-4 py-3 font-medium text-slate-700">{row.item}</td>
-                        <td className="px-4 py-3 text-slate-600">{row.when}</td>
-                        <td className="px-4 py-3 text-slate-600">{row.range}</td>
-                        <td className="px-4 py-3 text-slate-600">{row.includedInFee}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <p className="mt-3 text-xs text-slate-500">{override.costBreakdown.note}</p>
-            </section>
-          ) : null}
+          {(override?.extraSectionOrder ?? DEFAULT_EXTRA_SECTION_ORDER).map((key) => (
+            <Fragment key={key}>{extraSections[key]}</Fragment>
+          ))}
           <section>
             <p className="marketing-kicker">Questions</p>
             <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-950">
