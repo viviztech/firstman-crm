@@ -1639,6 +1639,382 @@ export const SERVICE_CONTENT_OVERRIDES: Record<string, ServiceContentOverride> =
     metaDescription:
       "Sole proprietorship registration (Udyam and GST) from {{FEE}} professional fee, typically completed in 5 business days.",
   },
+  "partnership-registration": {
+    base: {
+      eyebrow: "Partnership formation",
+      summary:
+        "Partnership firm registration is the process of drafting a Partnership Deed under the Indian Partnership Act, 1932, and optionally registering it with your state's Registrar of Firms. It needs at least 2 partners, no minimum capital, and no MCA filing. FirstMan's professional fee starts at {{FEE}}, with stamp duty and Registrar of Firms charges billed separately.",
+      idealFor: [
+        "Two or more partners who want a formal, documented business arrangement without company-level compliance",
+        "Family businesses and professional practices that don't need limited liability or outside investment",
+        "Partners who want the option to register with the Registrar of Firms now or later, as their business needs change",
+      ],
+      outcomes: [
+        "A legally valid Partnership Deed defining each partner's capital, profit share, and responsibilities",
+        "A firm PAN and, if you choose registration, a Certificate of Registration from the Registrar of Firms",
+      ],
+      includes: [
+        "Partnership Deed drafting, covering capital, profit-sharing, and partner responsibilities",
+        "Deed notarisation and stamp paper coordination",
+        "Firm PAN application",
+        "Registrar of Firms registration, if you choose to register",
+        "WhatsApp progress updates through the process",
+      ],
+      process: [
+        {
+          title: "Deed drafting",
+          body: "We draft the Partnership Deed covering capital contribution, profit and loss sharing, and each partner's role and authority.",
+        },
+        {
+          title: "Notarisation and stamping",
+          body: "The deed is executed on stamp paper and notarised. Stamp duty is calculated on your capital contribution and varies by state.",
+        },
+        {
+          title: "Firm PAN application",
+          body: "The firm applies for its own PAN, separate from each partner's individual PAN, needed for banking, GST, and tax filing.",
+        },
+        {
+          title: "Registrar of Firms registration, if chosen",
+          body: "Registration under Section 58 of the Indian Partnership Act, 1932 is optional but strengthens the firm's legal standing. We file Form 1 with the deed and required documents.",
+        },
+      ],
+    },
+    heroNote:
+      "The {{FEE}} professional fee excludes stamp duty on the Partnership Deed and the Registrar of Firms' registration fee, if you choose to register. Figures on this page use Tamil Nadu's schedule; other states set their own rates and may vary.",
+    decisionFramework: {
+      heading: "Who should, and should not, form a partnership firm.",
+      intro:
+        "Form a partnership firm if two or more of you want a simple, documented arrangement without company-level compliance, and you're comfortable with personal liability. Choose an LLP or Private Limited Company instead if you want limited liability, and a sole proprietorship if there's actually only one owner.",
+      chooseInstead: [
+        {
+          structure: "LLP",
+          when: "you want limited liability for every partner without giving up the partnership structure.",
+          href: "/services/llp-registration",
+        },
+        {
+          structure: "Private Limited Company",
+          when: "you plan to raise equity funding or need the credibility of a registered company.",
+          href: "/services/pvt-ltd-registration",
+        },
+        {
+          structure: "Sole proprietorship",
+          when: "there's actually only one owner, not two or more partners.",
+          href: "/services/proprietorship-registration",
+        },
+      ],
+    },
+    structureComparison: {
+      columns: ["Partnership Firm", "LLP", "Private Limited", "Proprietorship"],
+      rows: [
+        {
+          factor: "Liability",
+          values: [
+            "Unlimited, joint and several across partners",
+            "Limited to capital contribution",
+            "Limited to shares held",
+            "Unlimited, personal",
+          ],
+        },
+        {
+          factor: "Legal identity",
+          values: [
+            "Not a separate legal entity from its partners",
+            "Separate legal entity",
+            "Separate legal entity",
+            "Same legal person as the owner",
+          ],
+        },
+        {
+          factor: "Registration",
+          values: [
+            "Optional, with the state Registrar of Firms",
+            "Mandatory, with the MCA",
+            "Mandatory, with the MCA",
+            "No central registration; Udyam and GST as needed",
+          ],
+        },
+        {
+          factor: "Number of owners",
+          values: ["2 to 50 partners", "2 partners, no upper limit", "2 to 200 shareholders", "1"],
+        },
+        {
+          factor: "Compliance load",
+          values: [
+            "Lowest of the registered structures: ITR only, no ROC filings",
+            "Moderate: Form 8, Form 11, audit only above threshold",
+            "Highest: mandatory audit, AOC-4, MGT-7",
+            "Lowest: ITR and GST returns only",
+          ],
+        },
+        {
+          factor: "Investor/lender credibility",
+          values: ["Low to moderate", "Moderate", "Highest", "Lowest"],
+        },
+      ],
+    },
+    documentGroups: [
+      {
+        title: "All partners",
+        note: "Address proof must not be older than 2 months.",
+        items: [
+          "PAN card of each partner, with name matching Aadhaar exactly",
+          "Aadhaar card of each partner",
+          "Recent passport-size photograph of each partner",
+          "Address proof: bank statement, electricity, or mobile bill (within 2 months)",
+          "Identity proof: voter ID, driving licence, or passport",
+        ],
+      },
+      {
+        title: "Firm's place of business",
+        items: [
+          "Utility bill: electricity, water, or gas (within 2 months), or a rent agreement",
+          "No Objection Certificate from the property owner, mandatory when rented or family-owned",
+        ],
+      },
+    ],
+    timeline: [
+      { day: "Day 1-3", milestone: "Deed drafted and reviewed with all partners" },
+      { day: "Day 3-5", milestone: "Deed executed on stamp paper and notarised" },
+      { day: "Day 5-7", milestone: "Firm PAN application filed" },
+      {
+        day: "Day 7-10",
+        milestone: "Registrar of Firms application (Form 1) filed, if registration is chosen",
+      },
+      {
+        day: "Day 10-15",
+        milestone:
+          "Registrar of Firms processes the application; Certificate of Registration issued",
+      },
+    ],
+    costBreakdown: {
+      intro:
+        "A partnership firm has no MCA incorporation cost, but stamp duty on the deed and the optional Registrar of Firms fee both vary by state and by your capital contribution. Expect a realistic all-in range of roughly ₹10,000 to ₹25,000 for the full first year, not the {{FEE}} headline figure alone.",
+      rows: [
+        {
+          item: "Professional fee (deed and registration support)",
+          when: "At filing",
+          range: "{{FEE}}",
+          includedInFee: "Yes",
+        },
+        {
+          item: "Stamp duty on the Partnership Deed",
+          when: "At execution",
+          range: "Varies by state and capital contribution",
+          includedInFee: "No, statutory",
+        },
+        {
+          item: "Notarisation charges",
+          when: "At execution",
+          range: "₹500 – ₹2,000",
+          includedInFee: "No",
+        },
+        {
+          item: "Registrar of Firms registration fee, if chosen",
+          when: "At filing",
+          range: "Varies by state",
+          includedInFee: "No, statutory",
+        },
+        {
+          item: "Firm PAN application",
+          when: "At filing",
+          range: "Nominal NSDL fee, billed at cost",
+          includedInFee: "Yes, professional handling",
+        },
+        {
+          item: "ITR filing (firm, Form ITR-5)",
+          when: "Annual",
+          range: "₹3,000 – ₹8,000",
+          includedInFee: "No",
+        },
+        {
+          item: "Statutory audit, if turnover crosses the threshold",
+          when: "Before the ITR due date",
+          range: "₹8,000 – ₹20,000",
+          includedInFee: "No",
+        },
+        {
+          item: "Basic bookkeeping",
+          when: "Monthly/quarterly",
+          range: "₹2,000 – ₹6,000/month",
+          includedInFee: "No",
+        },
+      ],
+      note: "The {{FEE}} professional fee covers deed drafting, notarisation coordination, firm PAN application, and Registrar of Firms filing if you choose to register. Stamp duty and the Registrar's own fee are billed at actual cost since they vary by state.",
+    },
+    rejectionReasons: [
+      {
+        reason: "Capital or profit-share figures don't add up",
+        detail:
+          "The deed's stated capital contributions and profit-sharing ratios must be internally consistent and match what's declared to the Registrar of Firms. We reconcile these before filing.",
+      },
+      {
+        reason: "Insufficient stamp duty paid",
+        detail:
+          "Each state sets its own stamp duty schedule for partnership deeds, based on capital contribution. Under-stamping is a common reason deeds get challenged later. We calculate the correct duty before execution.",
+      },
+      {
+        reason: "Address proof older than 2 months",
+        detail:
+          "The single most common clerical rejection. We date-check every document before submission.",
+      },
+      {
+        reason: "Missing NOC for the firm's place of business",
+        detail:
+          "Rented or family-owned premises need a signed No Objection Certificate, collected before a query is raised.",
+      },
+      {
+        reason: "PAN-Aadhaar name mismatch",
+        detail:
+          "Even a missing middle initial triggers a flag, across any partner. We cross-verify every partner's documents before filing.",
+      },
+      {
+        reason: "Firm name conflicts with an existing trademark or registered business",
+        detail:
+          "Unlike a company name, a partnership firm's name isn't checked against the MCA register before you start using it, which makes an independent trademark check even more important. We run this check before you commit to a name.",
+      },
+    ],
+    complianceCalendar: [
+      {
+        milestone: "Partnership Deed execution and stamping",
+        dueBy: "At formation",
+        penalty:
+          "An insufficiently stamped deed can be impounded and isn't admissible as evidence in court until the deficient duty and penalty are paid",
+      },
+      {
+        milestone: "Firm PAN application",
+        dueBy: "Soon after formation",
+        penalty:
+          "Banks and GST registration require a firm PAN, so delays here cascade into other setup steps",
+      },
+      {
+        milestone: "Registrar of Firms registration, if chosen",
+        dueBy: "Any time after formation",
+        penalty:
+          "An unregistered firm cannot sue a third party or a partner to enforce a contractual right arising from its business, under Section 69 of the Indian Partnership Act, 1932",
+      },
+      {
+        milestone: "Statutory audit, if threshold crossed",
+        dueBy: "Before the ITR due date",
+        penalty: "Penalty under Section 271B for failing to get accounts audited when required",
+      },
+      {
+        milestone: "ITR filing (Form ITR-5)",
+        dueBy:
+          "31 July for non-audit cases, 31 October if tax audit applies (confirm the date for the applicable year)",
+        penalty: "Interest under Section 234A/B/C",
+      },
+    ],
+    localNote: {
+      heading: "Forming a partnership firm from Chennai or Tamil Nadu",
+      body: "Partnership Deed stamp duty and Registrar of Firms registration are both handled at the state level, so Tamil Nadu has its own stamp duty schedule and its own Registrar of Firms office and process, distinct from other states. We coordinate directly with the Chennai Registrar of Firms office for registered deeds. Founders who prefer to hand over physical documents rather than scan and upload them can do so at our Anna Nagar West office before we file.",
+    },
+    scopeTable: {
+      included: [
+        "Partnership Deed drafting, covering capital, profit-sharing, and responsibilities",
+        "Deed notarisation coordination",
+        "Firm PAN application",
+        "Registrar of Firms registration filing, if you choose to register",
+        "Document preparation and eligibility review",
+        "WhatsApp progress updates through the process",
+        "Dedicated case owner as single point of contact",
+      ],
+      excluded: [
+        "Stamp duty on the Partnership Deed (state-specific, based on capital contribution)",
+        "Registrar of Firms registration fee, if you choose to register (state-specific)",
+        "GST registration",
+        "Statutory audit, if your turnover crosses the threshold",
+        "ITR filing",
+        "Bookkeeping or trademark registration for your firm name",
+      ],
+    },
+    faqs: [
+      {
+        question:
+          "What is the real, total cost of forming a partnership firm, not just the professional fee?",
+        answer:
+          "Budget ₹10,000 to ₹25,000 for the full first year, not {{FEE}} alone. That figure covers the professional fee, stamp duty, the Registrar of Firms fee if you register, and your firm's first ITR filing.",
+      },
+      {
+        question: "Are there hidden charges on top of the {{FEE}} professional fee?",
+        answer:
+          "No. Stamp duty and the Registrar of Firms fee are billed at actual cost because both vary by state and by your capital contribution. Every cost is listed before you pay.",
+      },
+      {
+        question: "Do I legally have to register my partnership firm with the Registrar of Firms?",
+        answer:
+          "No. Registration under the Indian Partnership Act, 1932 is optional. An unregistered firm is legally valid and can operate, but it cannot sue a third party or a partner to enforce a contractual right arising from its business until it registers.",
+      },
+      {
+        question: "Does FirstMan offer a refund if the registration doesn't go through?",
+        answer:
+          "Talk to your case owner about our refund policy for the specific reason a filing didn't proceed. It differs depending on whether the cause was a departmental rejection or a change on your side.",
+      },
+      {
+        question: "Can I use a residential address as my firm's place of business?",
+        answer:
+          "Yes. There's no requirement for a commercial address. A residential address works with valid ownership or rental proof, and an NOC from the owner if it isn't in a partner's own name.",
+      },
+      {
+        question: "What happens if I don't stamp the Partnership Deed correctly?",
+        answer:
+          "An insufficiently stamped deed can be impounded, and it isn't admissible as evidence in court until the deficient duty, plus a penalty, is paid. We calculate the correct stamp duty for your state before execution.",
+      },
+      {
+        question: "Do I need GST registration for my partnership firm?",
+        answer:
+          "Not immediately, unless you cross the GST turnover threshold, sell across state lines, or sell on e-commerce platforms, all of which require registration regardless of turnover.",
+      },
+      {
+        question: "Is a partnership firm's income taxed differently from a company's?",
+        answer:
+          "The firm pays tax on its own profits, and each partner's share of that already-taxed profit is generally not taxed again in their individual hands, unlike how company profits and dividends can each attract tax.",
+      },
+      {
+        question: "Can I convert my partnership firm into an LLP or Private Limited Company later?",
+        answer:
+          "Yes. A partnership firm can convert into an LLP under the LLP Act, 2008, or register as a company under the Companies Act, 2013, once you're ready for limited liability or outside investment.",
+      },
+      {
+        question: "How long does partnership firm formation actually take?",
+        answer:
+          "Typically 7 business days for the deed, stamping, and firm PAN alone. If you choose to also register with the Registrar of Firms, add several more business days, since state timelines vary and can run past 15 business days during high-volume periods.",
+      },
+      {
+        question: "Do I need a minimum capital to form a partnership?",
+        answer:
+          "No. There is no statutory minimum capital contribution for a partnership firm. Partners decide the contribution and profit-sharing ratio between themselves in the deed.",
+      },
+      {
+        question: "Can partners be personally liable for each other's actions in the firm?",
+        answer:
+          "Yes. Every partner in a traditional partnership firm has unlimited, joint and several liability for the firm's debts and for actions other partners take in the ordinary course of the firm's business. This is the main reason growing partnerships often convert to an LLP.",
+      },
+      {
+        question: "Can a foreign national be a partner in an Indian partnership firm?",
+        answer:
+          "This is not straightforward. Foreign investment into an unincorporated Indian partnership firm is restricted under FEMA rules and generally needs Reserve Bank of India approval. An LLP or Private Limited Company is usually the workable route instead.",
+      },
+      {
+        question: "What is the maximum number of partners a firm can have?",
+        answer:
+          "Up to 50 partners, under the Companies Act, 2013 read with its rules. Beyond that, the association must register as a company.",
+      },
+      {
+        question: "Can I register a partnership firm entirely online without visiting Chennai?",
+        answer:
+          "Deed drafting and firm PAN application can be handled entirely online. Registrar of Firms registration, where the process allows it, can also often be filed online, though some state offices still expect physical submission. The Anna Nagar West office is available if you prefer in-person handover.",
+      },
+      {
+        question: "What happens if I don't file my firm's ITR on time?",
+        answer:
+          "Interest applies on any unpaid tax, and repeated non-filing can affect the firm's compliance standing and each partner's own tax position, since your share of firm profit flows into your individual return.",
+      },
+    ],
+    lastUpdated: "September 2026",
+    metaTitle: "Partnership Firm Registration India",
+    metaDescription:
+      "Partnership firm registration (deed, stamping, and optional Registrar of Firms filing) from {{FEE}} professional fee.",
+  },
 };
 
 export function getServiceContentOverride(slug: string): ServiceContentOverride | undefined {
