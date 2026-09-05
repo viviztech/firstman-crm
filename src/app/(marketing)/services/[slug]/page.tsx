@@ -370,23 +370,6 @@ export default async function ServiceDetailPage({ params }: { params: Promise<{ 
               ) : null}
             </section>
           ) : null}
-          <section>
-            <p className="marketing-kicker">Questions</p>
-            <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-950">
-              Before you proceed.
-            </h2>
-            <div className="mt-6 divide-y divide-slate-200 border-y border-slate-200">
-              {faqs.map((f) => (
-                <details key={f.question} className="group py-5">
-                  <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-bold text-slate-950 [&::-webkit-details-marker]:hidden">
-                    {f.question}
-                    <span className="text-pink-700">+</span>
-                  </summary>
-                  <p className="max-w-3xl pt-3 text-sm leading-7 text-slate-600">{f.answer}</p>
-                </details>
-              ))}
-            </div>
-          </section>
           {override?.localNote ? (
             <section className="rounded-2xl bg-slate-50 p-7">
               <h2 className="text-xl font-bold text-slate-950">{override.localNote.heading}</h2>
@@ -461,6 +444,23 @@ export default async function ServiceDetailPage({ params }: { params: Promise<{ 
               <p className="mt-3 text-xs text-slate-500">{override.costBreakdown.note}</p>
             </section>
           ) : null}
+          <section>
+            <p className="marketing-kicker">Questions</p>
+            <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-950">
+              Before you proceed.
+            </h2>
+            <div className="mt-6 divide-y divide-slate-200 border-y border-slate-200">
+              {faqs.map((f) => (
+                <details key={f.question} className="group py-5">
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-bold text-slate-950 [&::-webkit-details-marker]:hidden">
+                    {f.question}
+                    <span className="text-pink-700">+</span>
+                  </summary>
+                  <p className="max-w-3xl pt-3 text-sm leading-7 text-slate-600">{f.answer}</p>
+                </details>
+              ))}
+            </div>
+          </section>
           {relatedServices.length ? (
             <section>
               <p className="marketing-kicker">{service.categoryName}</p>
