@@ -1261,6 +1261,384 @@ export const SERVICE_CONTENT_OVERRIDES: Record<string, ServiceContentOverride> =
     metaDescription:
       "OPC registration from {{FEE}} professional fee, typically completed in 7 business days. Full scope and fee confirmed before you pay.",
   },
+  "proprietorship-registration": {
+    base: {
+      eyebrow: "Business registration",
+      summary:
+        "Sole proprietorship registration sets up your business's basic identity: Udyam (MSME) registration, GST registration where applicable, and a current bank account in the business name. There is no separate incorporation step, no minimum capital, and no government fee for Udyam or GST registration themselves. FirstMan's professional fee starts at {{FEE}}.",
+      idealFor: [
+        "Freelancers, consultants, and small traders starting out who want a simple, low-compliance structure",
+        "Businesses testing an idea before committing to a company or LLP",
+        "Single owners who don't need to raise funding or bring in partners",
+      ],
+      outcomes: [
+        "Udyam (MSME) registration, recognised under the MSME Development Act, 2006",
+        "GST registration where applicable, and a current bank account ready for business use",
+      ],
+      includes: [
+        "Udyam/MSME registration on the government portal",
+        "GST registration application and follow-up, where applicable",
+        "Guidance on opening a current bank account in the business name",
+        "Document preparation for the proprietor's PAN, Aadhaar, and address proof",
+        "WhatsApp progress updates through the process",
+      ],
+      process: [
+        {
+          title: "Eligibility and requirement review",
+          body: "We confirm which registrations your business actually needs. Udyam is near-universal; GST depends on your turnover and business type.",
+        },
+        {
+          title: "Udyam (MSME) registration",
+          body: "Registration is filed on the Udyam portal using the proprietor's Aadhaar, with no government fee.",
+        },
+        {
+          title: "GST registration, where applicable",
+          body: "If your turnover crosses the threshold, or you sell across state lines or on e-commerce platforms, we file your GST registration application.",
+        },
+        {
+          title: "Bank account and handover",
+          body: "With your registration certificates in hand, you can open a current bank account in the business name. We hand over all certificates and acknowledgements.",
+        },
+      ],
+    },
+    heroNote:
+      "The {{FEE}} professional fee covers professional services only. Udyam registration carries no government fee, and neither does GST registration. A Shop and Establishment licence, where applicable in Tamil Nadu, carries its own separate municipal fee.",
+    decisionFramework: {
+      heading: "Who should, and should not, register as a sole proprietorship.",
+      intro:
+        "Register as a sole proprietorship if you're a single owner who wants to start immediately with minimal compliance and don't need external funding. Choose a Private Limited Company, LLP, or OPC instead if you need limited liability, plan to raise funding, or want a separate legal entity.",
+      chooseInstead: [
+        {
+          structure: "Private Limited Company",
+          when: "you plan to raise equity funding, issue ESOPs, or need the credibility of a registered company.",
+          href: "/services/pvt-ltd-registration",
+        },
+        {
+          structure: "LLP",
+          when: "you want limited liability with one or more partners but don't need equity fundraising.",
+          href: "/services/llp-registration",
+        },
+        {
+          structure: "One Person Company",
+          when: "you want a company structure and limited liability while remaining the sole owner.",
+          href: "/services/opc-registration",
+        },
+      ],
+    },
+    structureComparison: {
+      columns: ["Proprietorship", "Private Limited", "LLP", "OPC"],
+      rows: [
+        {
+          factor: "Liability",
+          values: [
+            "Unlimited, personal",
+            "Limited to shares held",
+            "Limited to capital contribution",
+            "Limited to shares held",
+          ],
+        },
+        {
+          factor: "Legal identity",
+          values: [
+            "Same legal person as the owner",
+            "Separate legal entity",
+            "Separate legal entity",
+            "Separate legal entity",
+          ],
+        },
+        {
+          factor: "Equity fundraising",
+          values: [
+            "Not possible",
+            "Straightforward",
+            "Not designed for equity investors",
+            "Not possible while structured as OPC",
+          ],
+        },
+        {
+          factor: "Compliance load",
+          values: [
+            "Lowest: ITR and GST returns only",
+            "Highest: mandatory audit, AOC-4, MGT-7",
+            "Moderate: Form 8, Form 11, audit only above threshold",
+            "Similar to Pvt Ltd, but no AGM",
+          ],
+        },
+        {
+          factor: "Registration cost",
+          values: [
+            "No government fee for Udyam or GST",
+            "MCA fee plus stamp duty on MoA/AoA",
+            "MCA fee plus stamp duty on the LLP Agreement",
+            "MCA fee plus stamp duty on MoA/AoA",
+          ],
+        },
+        {
+          factor: "Investor/lender credibility",
+          values: ["Lowest", "Highest", "Moderate", "Moderate"],
+        },
+      ],
+    },
+    documentGroups: [
+      {
+        title: "The proprietor",
+        note: "Address proof must not be older than 2 months for GST registration purposes.",
+        items: [
+          "PAN card, with name matching Aadhaar exactly",
+          "Aadhaar card, used for Udyam e-KYC and GST registration",
+          "Recent passport-size photograph",
+          "Address proof: bank statement, electricity, or mobile bill (within 2 months)",
+          "Identity proof: voter ID, driving licence, or passport",
+        ],
+      },
+      {
+        title: "Business address",
+        note: "A residential address is acceptable for GST registration.",
+        items: [
+          "Utility bill: electricity, water, or gas (within 2 months), or a rent agreement",
+          "No Objection Certificate from the property owner, mandatory when rented or family-owned",
+        ],
+      },
+    ],
+    timeline: [
+      { day: "Day 1", milestone: "Documents collected; Udyam (MSME) registration filed" },
+      { day: "Day 1-2", milestone: "Udyam registration certificate issued" },
+      { day: "Day 2-4", milestone: "GST registration application filed, where applicable" },
+      { day: "Day 4-5", milestone: "GST officer verification completed; GSTIN issued" },
+      { day: "Day 5", milestone: "Current bank account opening initiated with your certificates" },
+    ],
+    costBreakdown: {
+      intro:
+        "A sole proprietorship has no incorporation cost the way a company or LLP does. Udyam and GST registration both carry no government fee. Your real year-one cost is the professional fee plus ongoing GST return filing and income tax filing. Expect a realistic all-in range of roughly ₹8,000 to ₹20,000 for the full first year, not the {{FEE}} headline figure alone.",
+      rows: [
+        {
+          item: "Professional fee (registration)",
+          when: "At filing",
+          range: "{{FEE}}",
+          includedInFee: "Yes",
+        },
+        {
+          item: "Udyam (MSME) registration",
+          when: "At filing",
+          range: "No government fee",
+          includedInFee: "Yes",
+        },
+        {
+          item: "GST registration, where applicable",
+          when: "At filing",
+          range: "No government fee",
+          includedInFee: "Yes",
+        },
+        {
+          item: "Shop and Establishment licence, if applicable",
+          when: "At filing",
+          range: "Municipal fee, varies by state",
+          includedInFee: "No, statutory",
+        },
+        {
+          item: "GST return filing (GSTR-1, GSTR-3B)",
+          when: "Monthly or quarterly",
+          range: "₹1,000 – ₹3,000/month",
+          includedInFee: "No",
+        },
+        {
+          item: "Annual GST return (GSTR-9), if applicable",
+          when: "Annual",
+          range: "₹2,000 – ₹5,000",
+          includedInFee: "No",
+        },
+        {
+          item: "ITR filing (individual)",
+          when: "Annual",
+          range: "₹2,000 – ₹6,000",
+          includedInFee: "No",
+        },
+        {
+          item: "Basic bookkeeping",
+          when: "Monthly/quarterly",
+          range: "₹2,000 – ₹5,000/month",
+          includedInFee: "No",
+        },
+      ],
+      note: "The {{FEE}} professional fee covers Udyam and GST registration, where applicable. Ongoing GST return filing, annual return, and ITR filing are separate, clearly quoted engagements.",
+    },
+    rejectionReasons: [
+      {
+        reason: "PAN-Aadhaar name or date-of-birth mismatch",
+        detail:
+          "Udyam registration is Aadhaar-based. A mismatch between your PAN and Aadhaar details blocks e-KYC verification. We cross-verify both before filing.",
+      },
+      {
+        reason: "Address proof older than 2 months",
+        detail:
+          "The single most common clerical rejection for GST registration. We date-check every document before submission.",
+      },
+      {
+        reason: "Missing NOC for a rented or family-owned address",
+        detail:
+          "GST officers commonly raise a query when the address proof doesn't match the applicant's name and no NOC is on file. We collect this upfront.",
+      },
+      {
+        reason: "Wrong HSN/SAC code selection",
+        detail:
+          "GST registration asks you to declare your business activity codes. An incorrect or mismatched code can trigger a departmental query. We map your actual activity to the correct codes before filing.",
+      },
+      {
+        reason: "Aadhaar OTP or e-KYC failure",
+        detail:
+          "Udyam and GST registration both rely on Aadhaar-linked OTP verification. An outdated mobile number linked to Aadhaar is a common, avoidable delay. We confirm this before starting the filing.",
+      },
+      {
+        reason: "GST site verification issues",
+        detail:
+          "Some GST applications are routed for physical or virtual site verification. An address that doesn't visibly match your business documentation can trigger a rejection. We prepare you for this before the officer visits.",
+      },
+    ],
+    complianceCalendar: [
+      {
+        milestone: "GSTR-1 (outward supplies)",
+        dueBy: "Monthly or quarterly, depending on your GST scheme",
+        penalty: "Late fee per day of delay, subject to the current cap",
+      },
+      {
+        milestone: "GSTR-3B (summary return and tax payment)",
+        dueBy: "Monthly or quarterly, depending on your GST scheme",
+        penalty: "Late fee plus interest on any tax paid late",
+      },
+      {
+        milestone: "GSTR-9 (annual return), if applicable",
+        dueBy: "By 31 December following the financial year",
+        penalty: "Late fee per day of delay",
+      },
+      {
+        milestone: "Tax audit threshold (Section 44AB)",
+        dueBy: "Applies once turnover exceeds ₹1 crore (₹10 crore with limited cash transactions)",
+        penalty: "Penalty under Section 271B for failing to get accounts audited when required",
+      },
+      {
+        milestone: "ITR filing",
+        dueBy:
+          "31 July for non-audit cases, 31 October if tax audit applies (confirm the date for the applicable year)",
+        penalty: "Interest under Section 234A/B/C",
+      },
+    ],
+    localNote: {
+      heading: "Registering a sole proprietorship from Chennai or Tamil Nadu",
+      body: "Udyam and GST registration follow the same process nationwide, but a Tamil Nadu Shop and Establishment licence, where your business needs one, is issued by the local municipal or Greater Chennai Corporation office and carries its own fee schedule. GST verification for Tamil Nadu addresses is handled by the local GST range office, and familiarity with how that office raises queries shortens turnaround. Founders who prefer to hand over physical documents rather than scan and upload them can do so at our Anna Nagar West office before we file.",
+    },
+    scopeTable: {
+      included: [
+        "Udyam (MSME) registration on the government portal",
+        "GST registration application, where applicable",
+        "Document preparation and eligibility review",
+        "Query coordination with the GST department",
+        "Guidance on opening a current bank account",
+        "Certificate and acknowledgement handover",
+        "WhatsApp progress updates through the process",
+        "Dedicated case owner as single point of contact",
+      ],
+      excluded: [
+        "Shop and Establishment licence, where applicable (separate municipal fee)",
+        "GST return filing (GSTR-1, GSTR-3B, GSTR-9)",
+        "Income tax return filing",
+        "Bookkeeping",
+        "Trademark registration for your business name",
+      ],
+    },
+    faqs: [
+      {
+        question:
+          "What is the real, total cost of registering a sole proprietorship, not just the professional fee?",
+        answer:
+          "Budget ₹8,000 to ₹20,000 for the full first year, not {{FEE}} alone. That figure covers the professional fee plus ongoing GST return filing and income tax filing. Udyam and GST registration themselves carry no government fee.",
+      },
+      {
+        question: "Are there hidden charges on top of the {{FEE}} professional fee?",
+        answer:
+          "No. Udyam and GST registration have no government fee. The only additional statutory cost is a Shop and Establishment licence fee, where your business needs one, which we quote separately.",
+      },
+      {
+        question: "Do I legally need to register my sole proprietorship at all?",
+        answer:
+          "There is no single central registration for a sole proprietorship the way there is for a company. What you actually need are the registrations that make your business operational, such as Udyam, GST if you cross the threshold, and a current bank account, which typically requires at least one of these certificates.",
+      },
+      {
+        question: "Does FirstMan offer a refund if the registration doesn't go through?",
+        answer:
+          "Talk to your case owner about our refund policy for the specific reason a filing didn't proceed. It differs depending on whether the cause was a departmental rejection or a change on your side.",
+      },
+      {
+        question: "Can I use my home address as my business address for GST registration?",
+        answer:
+          "Yes. GST registration does not require a commercial address. A residential address works with valid ownership or rental proof not older than 2 months, and an NOC from the owner if it isn't in your own name.",
+      },
+      {
+        question: "Do I need GST registration immediately?",
+        answer:
+          "Not immediately, unless you cross the GST turnover threshold, sell across state lines, or sell on e-commerce platforms, all of which require registration regardless of turnover. Many proprietors register anyway because clients and vendors ask for a GSTIN.",
+      },
+      {
+        question: "What if I don't register for GST when I'm actually required to?",
+        answer:
+          "Operating without GST registration when you're liable to register attracts a penalty of 10% of the tax due, or ₹10,000, whichever is higher, and can extend to 100% of the tax due in cases of deliberate evasion.",
+      },
+      {
+        question: "Can a sole proprietorship have employees?",
+        answer:
+          "Yes. A sole proprietorship can hire employees like any other business. Once you cross the applicable headcount thresholds, you may also need ESIC and EPF registration.",
+      },
+      {
+        question:
+          "Can I convert my sole proprietorship into a Private Limited Company or LLP later?",
+        answer:
+          "Yes, but there is no formal conversion process the way there is between a company and an LLP, since a proprietorship isn't a separate legal entity. In practice, you incorporate a new company or LLP and transfer the business, assets, and contracts into it.",
+      },
+      {
+        question: "How long does sole proprietorship registration actually take?",
+        answer:
+          "Typically 5 business days for Udyam and GST registration combined, though GST approval timelines depend on the department's verification queue and can extend if a query is raised.",
+      },
+      {
+        question: "Do I need a minimum investment or turnover to register?",
+        answer:
+          "No. There is no minimum investment or turnover requirement for Udyam or GST registration. Udyam registration is open to businesses of any size, from micro to medium.",
+      },
+      {
+        question: "Is my personal property at risk if the business runs into debt?",
+        answer:
+          "Yes. A sole proprietorship has no separate legal identity from its owner, so your personal assets are not protected from business liabilities. This is the main reason growing businesses move to an LLP or Private Limited Company.",
+      },
+      {
+        question: "Can a foreign national or NRI register a sole proprietorship in India?",
+        answer:
+          "This is not straightforward. Proprietorship registration generally expects a resident Indian owner, and FEMA rules restrict how NRIs and foreign nationals can directly own and operate an unincorporated business in India. A Private Limited Company or LLP is usually the workable route instead.",
+      },
+      {
+        question: "What is the difference between Udyam registration and GST registration?",
+        answer:
+          "Udyam is an MSME recognition that unlocks government schemes, priority lending, and delayed-payment protection under the MSME Development Act, 2006. GST registration is a tax registration required once you cross the turnover threshold or meet other trigger conditions. Most small businesses need both, but they serve different purposes.",
+      },
+      {
+        question: "Can I register a sole proprietorship entirely online without visiting Chennai?",
+        answer:
+          "Yes. Udyam and GST registration are both filed online. The Anna Nagar West office is available for founders who prefer in-person document handover, but it isn't required.",
+      },
+      {
+        question: "Do I need a separate bank account for my proprietorship business?",
+        answer:
+          "It isn't legally mandatory, but banks and GST authorities expect a current account in the business name for meaningful transaction volume, and it keeps your business and personal finances clearly separated for tax purposes.",
+      },
+      {
+        question: "What happens if I miss a GST return filing deadline?",
+        answer:
+          "A late fee applies for each day of delay, subject to the current cap, plus interest on any tax paid late. Repeated non-filing can also lead to GST registration cancellation by the department.",
+      },
+    ],
+    lastUpdated: "September 2026",
+    metaTitle: "Sole Proprietorship Registration India",
+    metaDescription:
+      "Sole proprietorship registration (Udyam and GST) from {{FEE}} professional fee, typically completed in 5 business days.",
+  },
 };
 
 export function getServiceContentOverride(slug: string): ServiceContentOverride | undefined {
