@@ -15,6 +15,7 @@ export type ServiceContentOverride = {
   >;
   heroNote?: string;
   decisionFramework?: {
+    heading: string;
     intro: string;
     chooseInstead: { structure: string; when: string; href: string }[];
   };
@@ -83,6 +84,7 @@ export const SERVICE_CONTENT_OVERRIDES: Record<string, ServiceContentOverride> =
     heroNote:
       "The {{FEE}} professional fee excludes government fees, DSC charges, and stamp duty on the MoA/AoA. Figures on this page use Tamil Nadu's stamp duty schedule; other states set their own rates and may vary.",
     decisionFramework: {
+      heading: "Who should, and should not, register a Private Limited Company.",
       intro:
         "Register a Private Limited Company if you plan to raise funding, issue ESOPs, or add shareholders. Consider LLP, OPC, or a proprietorship instead if you don't need equity fundraising or want a lighter compliance load.",
       chooseInstead: [
@@ -440,6 +442,415 @@ export const SERVICE_CONTENT_OVERRIDES: Record<string, ServiceContentOverride> =
     metaTitle: "Private Limited Company Registration India",
     metaDescription:
       "Private limited company registration from {{FEE}} professional fee, typically completed in 7 business days. Full scope and fee confirmed before you pay.",
+  },
+  "llp-registration": {
+    base: {
+      eyebrow: "LLP incorporation",
+      summary:
+        "LLP registration is the process of incorporating a Limited Liability Partnership under the LLP Act, 2008, through the MCA's FiLLiP form. It needs at least 2 partners, with at least one resident designated partner, and no minimum capital contribution. FirstMan's professional fee starts at {{FEE}}, with government fees, DSC, and stamp duty billed separately.",
+      idealFor: [
+        "Professional service firms and small businesses that want limited liability without company-level compliance",
+        "Partners who want a registered structure but have no plans to raise equity funding",
+        "Businesses that want to avoid a mandatory annual audit below a turnover or contribution threshold",
+      ],
+      outcomes: [
+        "A separate legal entity with limited liability for every partner, recognised under the LLP Act, 2008",
+        "Certificate of Incorporation, DPIN for designated partners, PAN, TAN, and your LLP Agreement filed in one coordinated engagement",
+      ],
+      includes: [
+        "Name availability check before filing",
+        "FiLLiP filing with DPIN allotment for designated partners",
+        "LLP Agreement drafting and Form 3 filing",
+        "PAN and TAN application",
+        "WhatsApp progress updates through the filing",
+      ],
+      process: [
+        {
+          title: "Digital Signature Certificate",
+          body: "Every designated partner applies for a Class III DSC to sign incorporation forms electronically.",
+        },
+        {
+          title: "Name reservation",
+          body: "The proposed LLP name is checked against the existing LLP and company register and live trademarks before filing.",
+        },
+        {
+          title: "FiLLiP filing",
+          body: "The incorporation form allots DPIN to designated partners and applies for PAN and TAN in one filing.",
+        },
+        {
+          title: "Certificate of Incorporation and LLP Agreement",
+          body: "Once MCA approves the filing, the Certificate of Incorporation is issued; the LLP Agreement is filed via Form 3 within 30 days.",
+        },
+      ],
+    },
+    heroNote:
+      "The {{FEE}} professional fee excludes government fees, DSC charges, and stamp duty on the LLP Agreement. Figures on this page use Tamil Nadu's stamp duty schedule; other states set their own rates and may vary.",
+    decisionFramework: {
+      heading: "Who should, and should not, register an LLP.",
+      intro:
+        "Register an LLP if you want limited liability with a lighter annual compliance load than a company, and you have no plans to raise equity funding. Consider a Private Limited Company, OPC, or proprietorship instead depending on your funding and ownership plans.",
+      chooseInstead: [
+        {
+          structure: "Private Limited Company",
+          when: "you plan to raise equity funding, issue ESOPs, or need the credibility of a registered company for institutional investors.",
+          href: "/services/pvt-ltd-registration",
+        },
+        {
+          structure: "One Person Company",
+          when: "you're a solo founder who wants a company structure without a second partner.",
+          href: "/services/opc-registration",
+        },
+        {
+          structure: "Sole proprietorship",
+          when: "you need to start invoicing immediately as a single owner with minimal compliance.",
+          href: "/services/proprietorship-registration",
+        },
+      ],
+    },
+    structureComparison: {
+      columns: ["LLP", "Private Limited", "OPC", "Proprietorship"],
+      rows: [
+        {
+          factor: "Liability",
+          values: [
+            "Limited to capital contribution",
+            "Limited to shares held",
+            "Limited to shares held",
+            "Unlimited, personal",
+          ],
+        },
+        {
+          factor: "Equity fundraising",
+          values: [
+            "Not designed for equity investors",
+            "Straightforward",
+            "Not possible while structured as OPC",
+            "Not possible",
+          ],
+        },
+        {
+          factor: "Compliance load",
+          values: [
+            "Moderate: Form 8, Form 11, audit only above threshold",
+            "Highest: mandatory audit, AOC-4, MGT-7, ADT-1",
+            "Similar to Pvt Ltd, fewer members",
+            "Lowest: ITR only",
+          ],
+        },
+        {
+          factor: "Minimum owners",
+          values: ["2 partners", "2 shareholders, 2 directors", "1 member, 1 nominee", "1"],
+        },
+        {
+          factor: "Statutory audit",
+          values: [
+            "Only if turnover exceeds ₹40 lakh or contribution exceeds ₹25 lakh",
+            "Mandatory every year regardless of size",
+            "Mandatory every year regardless of size",
+            "Not required by law",
+          ],
+        },
+        {
+          factor: "Investor/lender credibility",
+          values: ["Moderate", "Highest", "Moderate", "Lowest"],
+        },
+      ],
+    },
+    documentGroups: [
+      {
+        title: "Indian partners",
+        note: "Address proof must not be older than 2 months. This is the single most common rejection trigger.",
+        items: [
+          "PAN card, with name matching Aadhaar exactly",
+          "Aadhaar card, used for DPIN and DSC",
+          "Recent passport-size photograph",
+          "Address proof: bank statement, electricity, or mobile bill (within 2 months)",
+          "Identity proof: voter ID, driving licence, or passport",
+        ],
+      },
+      {
+        title: "Registered office",
+        items: [
+          "Utility bill: electricity, water, or gas (within 2 months)",
+          "Rent agreement or sale deed",
+          "No Objection Certificate from the property owner, mandatory when rented or family-owned",
+        ],
+      },
+      {
+        title: "Foreign nationals and NRIs",
+        note: "Apostille or notarisation requirements depend on the partner's country of residence under the Hague Convention. Foreign capital contribution also triggers FEMA/FDI reporting.",
+        items: [
+          "Passport, apostilled or notarised as applicable",
+          "Overseas address proof, apostilled/notarised and translated if not in English",
+        ],
+      },
+    ],
+    timeline: [
+      { day: "Day 1-2", milestone: "Documents collected; DSC applied and issued" },
+      { day: "Day 2-3", milestone: "Name reservation filed" },
+      {
+        day: "Day 3-6",
+        milestone: "FiLLiP filed with DPIN allotment; LLP Agreement drafted in parallel",
+      },
+      { day: "Day 6-7", milestone: "ROC processes the filing; any resubmission addressed" },
+      { day: "Day 7", milestone: "Certificate of Incorporation issued" },
+    ],
+    costBreakdown: {
+      intro:
+        "Incorporation is only the first cost. A realistic year-one budget includes the professional fee, DSC, stamp duty, and MCA fee at setup, then Form 3, Form 11, Form 8, and income tax filing. Expect a realistic all-in range of roughly ₹15,000 to ₹30,000 for the full first year, not the {{FEE}} headline figure alone.",
+      rows: [
+        {
+          item: "Professional fee (incorporation)",
+          when: "At filing",
+          range: "{{FEE}}",
+          includedInFee: "Yes",
+        },
+        {
+          item: "Digital Signature Certificates (2 designated partners)",
+          when: "At filing",
+          range: "₹1,500 – ₹3,000",
+          includedInFee: "No, at cost",
+        },
+        {
+          item: "Stamp duty on the LLP Agreement",
+          when: "At filing",
+          range: "Varies by state",
+          includedInFee: "No, statutory",
+        },
+        {
+          item: "MCA/ROC incorporation fee",
+          when: "At filing",
+          range: "Based on contribution amount",
+          includedInFee: "No, statutory",
+        },
+        {
+          item: "Form 11 (Annual Return)",
+          when: "By 30 May annually",
+          range: "₹2,000 – ₹5,000",
+          includedInFee: "No",
+        },
+        {
+          item: "Form 8 (Statement of Account & Solvency)",
+          when: "By 30 October annually",
+          range: "₹2,000 – ₹5,000",
+          includedInFee: "No",
+        },
+        {
+          item: "Statutory audit (only above threshold)",
+          when: "If turnover or contribution crosses the threshold",
+          range: "₹8,000 – ₹20,000",
+          includedInFee: "No",
+        },
+        {
+          item: "ITR filing (LLP)",
+          when: "Annual",
+          range: "₹3,000 – ₹8,000",
+          includedInFee: "No",
+        },
+        {
+          item: "Basic bookkeeping",
+          when: "Monthly/quarterly",
+          range: "₹3,000 – ₹8,000/month",
+          includedInFee: "No",
+        },
+      ],
+      note: "The {{FEE}} professional fee covers incorporation, including LLP Agreement drafting and Form 3 filing. Form 11, Form 8, statutory audit (if applicable), and ITR are separate, clearly quoted engagements.",
+    },
+    rejectionReasons: [
+      {
+        reason: "Name or trademark conflict",
+        detail:
+          "MCA checks the proposed name against the existing LLP and company register and the trademark database. We run this check before filing.",
+      },
+      {
+        reason: "Address proof older than 2 months",
+        detail:
+          "The single most common clerical rejection. We date-check every document before submission.",
+      },
+      {
+        reason: "PAN-Aadhaar name mismatch",
+        detail:
+          "Even a missing middle initial triggers a flag. We cross-verify both documents before filing.",
+      },
+      {
+        reason: "Capital contribution mismatch",
+        detail:
+          "The contribution amount in the LLP Agreement must match the figure filed in FiLLiP. We reconcile both before filing.",
+      },
+      {
+        reason: "Missing NOC",
+        detail:
+          "Rented or family-owned premises need a signed No Objection Certificate, collected before a query is raised.",
+      },
+      {
+        reason: "Expired DSC",
+        detail:
+          "A DSC that lapses mid-process stalls the filing. We track validity windows against your filing timeline.",
+      },
+      {
+        reason: "Designated partner residency shortfall",
+        detail:
+          "At least one designated partner must have stayed in India for 182 days or more in the previous financial year. We verify this before filing, not after a query.",
+      },
+    ],
+    complianceCalendar: [
+      {
+        milestone: "LLP Agreement (Form 3)",
+        dueBy: "Within 30 days of incorporation",
+        penalty:
+          "The agreement isn't legally binding on the LLP until filed; an additional fee applies the longer the delay runs",
+      },
+      {
+        milestone: "DIN/DPIN KYC (each designated partner)",
+        dueBy: "30 September every year",
+        penalty: "₹5,000 late fee per partner; DIN marked deactivated",
+      },
+      {
+        milestone: "Form 11 (Annual Return)",
+        dueBy: "30 May every year",
+        penalty: "Additional fee per day of delay under the current fee schedule",
+      },
+      {
+        milestone: "Form 8 (Statement of Account & Solvency)",
+        dueBy: "30 October every year",
+        penalty: "Additional fee per day of delay under the current fee schedule",
+      },
+      {
+        milestone: "Statutory audit, if threshold crossed",
+        dueBy: "Before the ITR due date",
+        penalty: "Return cannot be accurately certified without it",
+      },
+      {
+        milestone: "ITR filing",
+        dueBy:
+          "31 July for LLPs not requiring audit, 31 October for LLPs requiring audit (confirm the date for the applicable year)",
+        penalty: "Interest under Section 234A/B/C; loss of carry-forward benefits",
+      },
+    ],
+    localNote: {
+      heading: "Registering an LLP from Chennai or Tamil Nadu",
+      body: "The MCA process is identical nationwide, but every state sets its own stamp duty schedule for the LLP Agreement, so the amount you pay depends on where your registered office is. RoC Chennai processes filings for LLPs registered with a Tamil Nadu address, and familiarity with how that office raises and resolves queries shortens resubmission cycles. Founders who prefer to hand over physical documents rather than scan and upload them can do so at our Anna Nagar West office before we file.",
+    },
+    scopeTable: {
+      included: [
+        "Name availability check before filing",
+        "FiLLiP filing with DPIN allotment for designated partners",
+        "LLP Agreement drafting and Form 3 filing",
+        "PAN and TAN application",
+        "Certificate of Incorporation delivery",
+        "Resubmission handling for filing-stage queries",
+        "WhatsApp progress updates through the filing",
+        "Dedicated case owner as single point of contact",
+      ],
+      excluded: [
+        "Government/MCA incorporation fee (varies by contribution amount)",
+        "Stamp duty on the LLP Agreement (state-specific)",
+        "Digital Signature Certificates for designated partners",
+        "Notarisation/apostille for foreign partner documents",
+        "Annual Form 11 and Form 8 filings",
+        "Statutory audit, if your turnover or contribution crosses the threshold",
+        "ITR filing",
+        "Bookkeeping, GST registration, or trademark filing",
+      ],
+    },
+    faqs: [
+      {
+        question:
+          "What is the real, total cost of registering an LLP, not just the professional fee?",
+        answer:
+          "Budget ₹15,000 to ₹30,000 for the full first year, not {{FEE}} alone. That figure covers the professional fee, DSC, stamp duty, MCA fee, Form 11, Form 8, and ITR filing.",
+      },
+      {
+        question: "Are there hidden charges on top of the {{FEE}} professional fee?",
+        answer:
+          "No charges are hidden, but several are genuinely separate and statutory: DSC, stamp duty, and the MCA incorporation fee are billed at actual cost because they vary by contribution amount and state. Every cost is listed before you pay.",
+      },
+      {
+        question: "What happens if my proposed LLP name gets rejected?",
+        answer:
+          "MCA allows a second name attempt at no extra government fee. If both names are rejected, a fresh filing is required, adding a small government fee and 2 to 3 days.",
+      },
+      {
+        question: "Does FirstMan offer a refund if the registration doesn't go through?",
+        answer:
+          "Talk to your case owner about our refund policy for the specific reason a filing didn't proceed. It differs depending on whether the cause was an MCA rejection or a change on your side.",
+      },
+      {
+        question: "Can I use my home or a residential address as the registered office?",
+        answer:
+          "Yes. MCA does not require a commercial address. A residential address works with valid ownership or rental proof not older than 2 months, and an NOC from the owner if it isn't in a partner's own name.",
+      },
+      {
+        question: "What if I don't file the LLP Agreement within 30 days?",
+        answer:
+          "The LLP Agreement isn't legally binding on the LLP until it's filed via Form 3, and MCA charges an additional fee that increases the longer the delay runs. We file this within the 30-day window as part of your incorporation engagement.",
+      },
+      {
+        question: "Do I need GST registration immediately after incorporating?",
+        answer:
+          "Not immediately, unless you cross the GST turnover threshold, sell across state lines, or sell on e-commerce platforms, all of which require registration regardless of turnover.",
+      },
+      {
+        question: "Is a statutory audit mandatory for every LLP?",
+        answer:
+          "No. Audit is mandatory only once your annual turnover exceeds ₹40 lakh or your capital contribution exceeds ₹25 lakh. Below that, you still file Form 11 and Form 8, but without an audited statement.",
+      },
+      {
+        question: "Can I convert my LLP to a Private Limited Company later?",
+        answer:
+          "Yes, conversion from LLP to a Private Limited Company is a well-established process under the Companies Act, 2013, and is generally more common and more straightforward than converting a company into an LLP.",
+      },
+      {
+        question: "How long does LLP registration actually take?",
+        answer:
+          "Typically 7 business days from complete document submission to Certificate of Incorporation. Name conflicts or address-proof issues can extend this by 3 to 10 days.",
+      },
+      {
+        question: "Do I need a minimum capital contribution to start an LLP?",
+        answer:
+          "No. There is no statutory minimum capital contribution for an LLP. Your contribution amount still affects the MCA incorporation fee slab and the stamp duty on the LLP Agreement.",
+      },
+      {
+        question: "Can the same two people be both partners and designated partners?",
+        answer:
+          "Yes. The minimum requirement is 2 partners, and at least 2 of them must be designated partners. The same two people can hold both roles.",
+      },
+      {
+        question: "What is the difference between DPIN and DIN?",
+        answer:
+          "They are now the same number. DPIN, once issued separately for LLP designated partners, has been merged with DIN, the identifier used for company directors, and is applied for through FiLLiP itself.",
+      },
+      {
+        question: "Can a foreign national be a designated partner in an Indian LLP?",
+        answer:
+          "Yes, but at least one designated partner must be a resident Indian who stayed in India for 182+ days in the previous financial year. Foreign partners' documents need apostille or notarisation depending on their country's status under the Hague Convention.",
+      },
+      {
+        question: "What happens if I miss the Form 11 or Form 8 deadline?",
+        answer:
+          "Both attract an additional fee for each day of delay under the current fee schedule. Prolonged non-filing can also affect the LLP's compliance status with the Registrar.",
+      },
+      {
+        question: "Can I register an LLP entirely online without visiting Chennai?",
+        answer:
+          "Yes. The entire FiLLiP process is filed online, and DSC issuance is remote too. The Anna Nagar West office is available for founders who prefer in-person document handover, but it isn't required.",
+      },
+      {
+        question:
+          "Does FirstMan handle the annual Form 11 and Form 8 filings as part of incorporation?",
+        answer:
+          "No, these are separate engagements quoted after incorporation, since they depend on your LLP's financial activity during the year. See annual compliance for an LLP for details.",
+      },
+      {
+        question: "Do I need a company secretary for my LLP?",
+        answer:
+          "No, an LLP has no requirement for a company secretary at any size. This is one of the compliance-cost differences from a Private Limited Company, which requires a full-time CS above a paid-up capital threshold.",
+      },
+    ],
+    lastUpdated: "September 2026",
+    metaTitle: "LLP Registration India",
+    metaDescription:
+      "LLP registration from {{FEE}} professional fee, typically completed in 7 business days. Full scope and fee confirmed before you pay.",
   },
 };
 

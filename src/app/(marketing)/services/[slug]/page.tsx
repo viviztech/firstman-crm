@@ -314,7 +314,7 @@ export default async function ServiceDetailPage({ params }: { params: Promise<{ 
             <section>
               <p className="marketing-kicker">Is this the right structure?</p>
               <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-950">
-                Who should, and should not, register a Private Limited Company.
+                {override.decisionFramework.heading}
               </h2>
               <p className="mt-5 max-w-3xl text-sm leading-7 text-slate-600">
                 {override.decisionFramework.intro}
