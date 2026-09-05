@@ -123,386 +123,382 @@ export default async function ServiceDetailPage({ params }: { params: Promise<{ 
         </div>
       </section>
       <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 lg:py-24">
-        <div className="mx-auto max-w-3xl">
-          <main className="space-y-16">
-            <section>
-              <p className="marketing-kicker">What you receive</p>
-              <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-950">
-                A defined outcome, not just a submission.
-              </h2>
-              <div className="mt-7 grid gap-4 sm:grid-cols-2">
-                {content.outcomes.map((item) => (
-                  <div key={item} className="flex gap-3 rounded-xl border border-slate-200 p-5">
-                    <ShieldCheck className="mt-0.5 size-5 shrink-0 text-pink-700" />
-                    <p className="text-sm leading-6 text-slate-700">{item}</p>
-                  </div>
-                ))}
-              </div>
-            </section>
-            <section>
-              <p className="marketing-kicker">How it works</p>
-              <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-950">
-                A controlled four-stage process.
-              </h2>
-              <div className="mt-8 border-l border-slate-200">
-                {content.process.map((step, index) => (
-                  <div key={step.title} className="relative pb-8 pl-8 last:pb-0">
-                    <span className="absolute -left-4 top-0 flex size-8 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
-                      {index + 1}
-                    </span>
-                    <h3 className="font-bold text-slate-950">{step.title}</h3>
-                    <p className="mt-2 text-sm leading-6 text-slate-600">{step.body}</p>
-                  </div>
-                ))}
-              </div>
-            </section>
-            <div className="grid gap-10 sm:grid-cols-2">
-              <section>
-                <h2 className="text-xl font-bold text-slate-950">Included in the engagement</h2>
-                <ul className="mt-5 space-y-3">
-                  {content.includes.map((x) => (
-                    <li key={x} className="flex gap-2 text-sm leading-6 text-slate-600">
-                      <CheckCircle2 className="mt-1 size-4 shrink-0 text-emerald-600" />
-                      {x}
-                    </li>
-                  ))}
-                </ul>
-              </section>
-              <section>
-                <h2 className="text-xl font-bold text-slate-950">Best suited for</h2>
-                <ul className="mt-5 space-y-3">
-                  {content.idealFor.map((x) => (
-                    <li key={x} className="flex gap-2 text-sm leading-6 text-slate-600">
-                      <CheckCircle2 className="mt-1 size-4 shrink-0 text-emerald-600" />
-                      {x}
-                    </li>
-                  ))}
-                </ul>
-              </section>
+        <main className="space-y-16">
+          <section>
+            <p className="marketing-kicker">What you receive</p>
+            <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-950">
+              A defined outcome, not just a submission.
+            </h2>
+            <div className="mt-7 grid gap-4 sm:grid-cols-2">
+              {content.outcomes.map((item) => (
+                <div key={item} className="flex gap-3 rounded-xl border border-slate-200 p-5">
+                  <ShieldCheck className="mt-0.5 size-5 shrink-0 text-pink-700" />
+                  <p className="text-sm leading-6 text-slate-700">{item}</p>
+                </div>
+              ))}
             </div>
-            {!override?.documentGroups && service.requiredDocuments.length ? (
-              <section className="rounded-2xl bg-slate-50 p-7">
-                <div className="flex items-center gap-3">
-                  <FileText className="size-5 text-pink-700" />
-                  <h2 className="text-xl font-bold text-slate-950">Documents to prepare</h2>
+          </section>
+          <section>
+            <p className="marketing-kicker">How it works</p>
+            <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-950">
+              A controlled four-stage process.
+            </h2>
+            <div className="mt-8 border-l border-slate-200">
+              {content.process.map((step, index) => (
+                <div key={step.title} className="relative pb-8 pl-8 last:pb-0">
+                  <span className="absolute -left-4 top-0 flex size-8 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
+                    {index + 1}
+                  </span>
+                  <h3 className="font-bold text-slate-950">{step.title}</h3>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">{step.body}</p>
                 </div>
-                <p className="mt-2 text-sm text-slate-600">
-                  We confirm the final checklist for your case. The standard starting set is:
-                </p>
-                <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                  {service.requiredDocuments.map((doc) => (
-                    <p key={doc} className="flex gap-2 text-sm text-slate-700">
-                      <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-pink-700" />
-                      {doc}
+              ))}
+            </div>
+          </section>
+          <div className="grid gap-10 sm:grid-cols-2">
+            <section>
+              <h2 className="text-xl font-bold text-slate-950">Included in the engagement</h2>
+              <ul className="mt-5 space-y-3">
+                {content.includes.map((x) => (
+                  <li key={x} className="flex gap-2 text-sm leading-6 text-slate-600">
+                    <CheckCircle2 className="mt-1 size-4 shrink-0 text-emerald-600" />
+                    {x}
+                  </li>
+                ))}
+              </ul>
+            </section>
+            <section>
+              <h2 className="text-xl font-bold text-slate-950">Best suited for</h2>
+              <ul className="mt-5 space-y-3">
+                {content.idealFor.map((x) => (
+                  <li key={x} className="flex gap-2 text-sm leading-6 text-slate-600">
+                    <CheckCircle2 className="mt-1 size-4 shrink-0 text-emerald-600" />
+                    {x}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          </div>
+          {!override?.documentGroups && service.requiredDocuments.length ? (
+            <section className="rounded-2xl bg-slate-50 p-7">
+              <div className="flex items-center gap-3">
+                <FileText className="size-5 text-pink-700" />
+                <h2 className="text-xl font-bold text-slate-950">Documents to prepare</h2>
+              </div>
+              <p className="mt-2 text-sm text-slate-600">
+                We confirm the final checklist for your case. The standard starting set is:
+              </p>
+              <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                {service.requiredDocuments.map((doc) => (
+                  <p key={doc} className="flex gap-2 text-sm text-slate-700">
+                    <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-pink-700" />
+                    {doc}
+                  </p>
+                ))}
+              </div>
+            </section>
+          ) : null}
+          {override?.decisionFramework ? (
+            <section>
+              <p className="marketing-kicker">Is this the right structure?</p>
+              <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-950">
+                Who should, and should not, register a Private Limited Company.
+              </h2>
+              <p className="mt-5 max-w-3xl text-sm leading-7 text-slate-600">
+                {override.decisionFramework.intro}
+              </p>
+              <div className="mt-6 grid gap-3 sm:grid-cols-3">
+                {override.decisionFramework.chooseInstead.map((option) => (
+                  <Link
+                    key={option.structure}
+                    href={option.href}
+                    className="group rounded-xl border border-slate-200 p-5 hover:border-pink-300"
+                  >
+                    <p className="flex items-center justify-between font-bold text-slate-950 group-hover:text-pink-700">
+                      Choose {option.structure} instead
+                      <ArrowRight className="size-4 shrink-0 text-slate-400 group-hover:translate-x-1 group-hover:text-pink-700" />
                     </p>
-                  ))}
-                </div>
-              </section>
-            ) : null}
-            {override?.decisionFramework ? (
-              <section>
-                <p className="marketing-kicker">Is this the right structure?</p>
-                <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-950">
-                  Who should, and should not, register a Private Limited Company.
-                </h2>
-                <p className="mt-5 max-w-3xl text-sm leading-7 text-slate-600">
-                  {override.decisionFramework.intro}
-                </p>
-                <div className="mt-6 grid gap-3 sm:grid-cols-3">
-                  {override.decisionFramework.chooseInstead.map((option) => (
-                    <Link
-                      key={option.structure}
-                      href={option.href}
-                      className="group rounded-xl border border-slate-200 p-5 hover:border-pink-300"
-                    >
-                      <p className="flex items-center justify-between font-bold text-slate-950 group-hover:text-pink-700">
-                        Choose {option.structure} instead
-                        <ArrowRight className="size-4 shrink-0 text-slate-400 group-hover:translate-x-1 group-hover:text-pink-700" />
-                      </p>
-                      <p className="mt-2 text-sm leading-6 text-slate-600">if {option.when}</p>
-                    </Link>
-                  ))}
-                </div>
-                {override.structureComparison ? (
-                  <div className="mt-8 overflow-x-auto rounded-xl border border-slate-200">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="border-b border-slate-200 bg-slate-50 text-left text-xs font-medium tracking-wide text-slate-500 uppercase">
-                          <th className="px-4 py-3">Factor</th>
-                          {override.structureComparison.columns.map((col) => (
-                            <th key={col} className="px-4 py-3">
-                              {col}
-                            </th>
+                    <p className="mt-2 text-sm leading-6 text-slate-600">if {option.when}</p>
+                  </Link>
+                ))}
+              </div>
+              {override.structureComparison ? (
+                <div className="mt-8 overflow-x-auto rounded-xl border border-slate-200">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-slate-200 bg-slate-50 text-left text-xs font-medium tracking-wide text-slate-500 uppercase">
+                        <th className="px-4 py-3">Factor</th>
+                        {override.structureComparison.columns.map((col) => (
+                          <th key={col} className="px-4 py-3">
+                            {col}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {override.structureComparison.rows.map((row) => (
+                        <tr
+                          key={row.factor}
+                          className="border-b border-slate-200 align-top last:border-0"
+                        >
+                          <td className="px-4 py-3 font-medium text-slate-700">{row.factor}</td>
+                          {row.values.map((value, i) => (
+                            <td
+                              key={`${row.factor}-${override.structureComparison?.columns[i]}`}
+                              className="px-4 py-3 text-slate-600"
+                            >
+                              {value}
+                            </td>
                           ))}
                         </tr>
-                      </thead>
-                      <tbody>
-                        {override.structureComparison.rows.map((row) => (
-                          <tr
-                            key={row.factor}
-                            className="border-b border-slate-200 align-top last:border-0"
-                          >
-                            <td className="px-4 py-3 font-medium text-slate-700">{row.factor}</td>
-                            {row.values.map((value, i) => (
-                              <td
-                                key={`${row.factor}-${override.structureComparison?.columns[i]}`}
-                                className="px-4 py-3 text-slate-600"
-                              >
-                                {value}
-                              </td>
-                            ))}
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                ) : null}
-              </section>
-            ) : null}
-            {override?.documentGroups ? (
-              <section className="rounded-2xl bg-slate-50 p-7">
-                <div className="flex items-center gap-3">
-                  <FileText className="size-5 text-pink-700" />
-                  <h2 className="text-xl font-bold text-slate-950">Documents required</h2>
-                </div>
-                <p className="mt-2 text-sm text-slate-600">
-                  Requirements differ by who is involved in the filing.
-                </p>
-                <div className="mt-6 grid gap-6 sm:grid-cols-3">
-                  {override.documentGroups.map((group) => (
-                    <div key={group.title}>
-                      <h3 className="font-bold text-slate-950">{group.title}</h3>
-                      {group.note ? (
-                        <p className="mt-1 text-xs text-slate-500">{group.note}</p>
-                      ) : null}
-                      <ul className="mt-3 space-y-2">
-                        {group.items.map((item) => (
-                          <li key={item} className="flex gap-2 text-sm leading-6 text-slate-700">
-                            <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-pink-700" />
-                            {item}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  ))}
-                </div>
-              </section>
-            ) : null}
-            {override?.timeline ? (
-              <section>
-                <p className="marketing-kicker">Step by step</p>
-                <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-950">
-                  A realistic day-by-day timeline.
-                </h2>
-                <div className="mt-6 overflow-x-auto rounded-xl border border-slate-200">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-slate-200 bg-slate-50 text-left text-xs font-medium tracking-wide text-slate-500 uppercase">
-                        <th className="px-4 py-3">Day</th>
-                        <th className="px-4 py-3">Milestone</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {override.timeline.map((row) => (
-                        <tr key={row.day} className="border-b border-slate-200 last:border-0">
-                          <td className="px-4 py-3 font-medium text-slate-700">{row.day}</td>
-                          <td className="px-4 py-3 text-slate-600">{row.milestone}</td>
-                        </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
-                <p className="mt-3 text-xs text-slate-500">
-                  This timeline assumes complete, correctly formatted documents on Day 1. Name
-                  conflicts or incomplete address proof add 3 to 7 days for resubmission.
-                </p>
-              </section>
-            ) : null}
-            {override?.costBreakdown ? (
-              <section>
-                <p className="marketing-kicker">Total cost of ownership</p>
-                <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-950">
-                  What this actually costs in year one.
-                </h2>
-                <p className="mt-5 max-w-3xl text-sm leading-7 text-slate-600">
-                  {override.costBreakdown.intro}
-                </p>
-                <div className="mt-6 overflow-x-auto rounded-xl border border-slate-200">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-slate-200 bg-slate-50 text-left text-xs font-medium tracking-wide text-slate-500 uppercase">
-                        <th className="px-4 py-3">Cost head</th>
-                        <th className="px-4 py-3">When</th>
-                        <th className="px-4 py-3">Typical range</th>
-                        <th className="px-4 py-3">In ₹10,999 fee?</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {override.costBreakdown.rows.map((row) => (
-                        <tr key={row.item} className="border-b border-slate-200 last:border-0">
-                          <td className="px-4 py-3 font-medium text-slate-700">{row.item}</td>
-                          <td className="px-4 py-3 text-slate-600">{row.when}</td>
-                          <td className="px-4 py-3 text-slate-600">{row.range}</td>
-                          <td className="px-4 py-3 text-slate-600">{row.includedInFee}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-                <p className="mt-3 text-xs text-slate-500">{override.costBreakdown.note}</p>
-              </section>
-            ) : null}
-            {override?.rejectionReasons ? (
-              <section>
-                <p className="marketing-kicker">Avoid resubmission</p>
-                <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-950">
-                  Why SPICe+ filings get rejected, and how we prevent it.
-                </h2>
-                <div className="mt-7 grid gap-4 sm:grid-cols-2">
-                  {override.rejectionReasons.map((item) => (
-                    <div key={item.reason} className="rounded-xl border border-slate-200 p-5">
-                      <p className="font-bold text-slate-950">{item.reason}</p>
-                      <p className="mt-2 text-sm leading-6 text-slate-600">{item.detail}</p>
-                    </div>
-                  ))}
-                </div>
-              </section>
-            ) : null}
-            {override?.complianceCalendar ? (
-              <section>
-                <p className="marketing-kicker">After incorporation</p>
-                <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-950">
-                  Your first 12 months of compliance.
-                </h2>
-                <div className="mt-6 overflow-x-auto rounded-xl border border-slate-200">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-slate-200 bg-slate-50 text-left text-xs font-medium tracking-wide text-slate-500 uppercase">
-                        <th className="px-4 py-3">Milestone</th>
-                        <th className="px-4 py-3">Due by</th>
-                        <th className="px-4 py-3">Penalty for missing it</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {override.complianceCalendar.map((row) => (
-                        <tr key={row.milestone} className="border-b border-slate-200 last:border-0">
-                          <td className="px-4 py-3 font-medium text-slate-700">{row.milestone}</td>
-                          <td className="px-4 py-3 text-slate-600">{row.dueBy}</td>
-                          <td className="px-4 py-3 text-slate-600">{row.penalty}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </section>
-            ) : null}
-            {override?.localNote ? (
-              <section className="rounded-2xl bg-slate-50 p-7">
-                <h2 className="text-xl font-bold text-slate-950">{override.localNote.heading}</h2>
-                <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-600">
-                  {override.localNote.body}
-                </p>
-              </section>
-            ) : null}
-            {override?.scopeTable ? (
-              <section>
-                <p className="marketing-kicker">Scope</p>
-                <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-950">
-                  What the ₹10,999 fee includes and excludes.
-                </h2>
-                <div className="mt-7 grid gap-6 sm:grid-cols-2">
-                  <div>
-                    <h3 className="font-bold text-emerald-700">Included</h3>
+              ) : null}
+            </section>
+          ) : null}
+          {override?.documentGroups ? (
+            <section className="rounded-2xl bg-slate-50 p-7">
+              <div className="flex items-center gap-3">
+                <FileText className="size-5 text-pink-700" />
+                <h2 className="text-xl font-bold text-slate-950">Documents required</h2>
+              </div>
+              <p className="mt-2 text-sm text-slate-600">
+                Requirements differ by who is involved in the filing.
+              </p>
+              <div className="mt-6 grid gap-6 sm:grid-cols-3">
+                {override.documentGroups.map((group) => (
+                  <div key={group.title}>
+                    <h3 className="font-bold text-slate-950">{group.title}</h3>
+                    {group.note ? (
+                      <p className="mt-1 text-xs text-slate-500">{group.note}</p>
+                    ) : null}
                     <ul className="mt-3 space-y-2">
-                      {override.scopeTable.included.map((item) => (
+                      {group.items.map((item) => (
                         <li key={item} className="flex gap-2 text-sm leading-6 text-slate-700">
-                          <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-emerald-600" />
+                          <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-pink-700" />
                           {item}
                         </li>
                       ))}
                     </ul>
                   </div>
-                  <div>
-                    <h3 className="font-bold text-slate-500">Not included, billed separately</h3>
-                    <ul className="mt-3 space-y-2">
-                      {override.scopeTable.excluded.map((item) => (
-                        <li key={item} className="flex gap-2 text-sm leading-6 text-slate-600">
-                          <span className="mt-0.5 size-4 shrink-0 text-center text-slate-400">
-                            •
-                          </span>
-                          {item}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-              </section>
-            ) : null}
-            <section>
-              <p className="marketing-kicker">Questions</p>
-              <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-950">
-                Before you proceed.
-              </h2>
-              <div className="mt-6 divide-y divide-slate-200 border-y border-slate-200">
-                {faqs.map((f) => (
-                  <details key={f.question} className="group py-5">
-                    <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-bold text-slate-950 [&::-webkit-details-marker]:hidden">
-                      {f.question}
-                      <span className="text-pink-700">+</span>
-                    </summary>
-                    <p className="max-w-3xl pt-3 text-sm leading-7 text-slate-600">{f.answer}</p>
-                  </details>
                 ))}
               </div>
             </section>
-            {relatedServices.length ? (
-              <section>
-                <p className="marketing-kicker">{service.categoryName}</p>
-                <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-950">
-                  Related services in this category.
-                </h2>
-                <div className="mt-7 grid gap-3 sm:grid-cols-2">
-                  {relatedServices.map((related) => (
-                    <Link
-                      key={related.id}
-                      href={`/services/${related.slug}`}
-                      className="group flex items-center justify-between rounded-xl border border-slate-200 p-4 text-sm font-bold text-slate-800 hover:border-pink-300 hover:text-pink-700"
-                    >
-                      {related.name}
-                      <ArrowRight className="size-4 shrink-0 text-slate-400 group-hover:translate-x-1 group-hover:text-pink-700" />
-                    </Link>
-                  ))}
+          ) : null}
+          {override?.timeline ? (
+            <section>
+              <p className="marketing-kicker">Step by step</p>
+              <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-950">
+                A realistic day-by-day timeline.
+              </h2>
+              <div className="mt-6 overflow-x-auto rounded-xl border border-slate-200">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-slate-200 bg-slate-50 text-left text-xs font-medium tracking-wide text-slate-500 uppercase">
+                      <th className="px-4 py-3">Day</th>
+                      <th className="px-4 py-3">Milestone</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {override.timeline.map((row) => (
+                      <tr key={row.day} className="border-b border-slate-200 last:border-0">
+                        <td className="px-4 py-3 font-medium text-slate-700">{row.day}</td>
+                        <td className="px-4 py-3 text-slate-600">{row.milestone}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <p className="mt-3 text-xs text-slate-500">
+                This timeline assumes complete, correctly formatted documents on Day 1. Name
+                conflicts or incomplete address proof add 3 to 7 days for resubmission.
+              </p>
+            </section>
+          ) : null}
+          {override?.costBreakdown ? (
+            <section>
+              <p className="marketing-kicker">Total cost of ownership</p>
+              <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-950">
+                What this actually costs in year one.
+              </h2>
+              <p className="mt-5 max-w-3xl text-sm leading-7 text-slate-600">
+                {override.costBreakdown.intro}
+              </p>
+              <div className="mt-6 overflow-x-auto rounded-xl border border-slate-200">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-slate-200 bg-slate-50 text-left text-xs font-medium tracking-wide text-slate-500 uppercase">
+                      <th className="px-4 py-3">Cost head</th>
+                      <th className="px-4 py-3">When</th>
+                      <th className="px-4 py-3">Typical range</th>
+                      <th className="px-4 py-3">In ₹10,999 fee?</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {override.costBreakdown.rows.map((row) => (
+                      <tr key={row.item} className="border-b border-slate-200 last:border-0">
+                        <td className="px-4 py-3 font-medium text-slate-700">{row.item}</td>
+                        <td className="px-4 py-3 text-slate-600">{row.when}</td>
+                        <td className="px-4 py-3 text-slate-600">{row.range}</td>
+                        <td className="px-4 py-3 text-slate-600">{row.includedInFee}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <p className="mt-3 text-xs text-slate-500">{override.costBreakdown.note}</p>
+            </section>
+          ) : null}
+          {override?.rejectionReasons ? (
+            <section>
+              <p className="marketing-kicker">Avoid resubmission</p>
+              <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-950">
+                Why SPICe+ filings get rejected, and how we prevent it.
+              </h2>
+              <div className="mt-7 grid gap-4 sm:grid-cols-2">
+                {override.rejectionReasons.map((item) => (
+                  <div key={item.reason} className="rounded-xl border border-slate-200 p-5">
+                    <p className="font-bold text-slate-950">{item.reason}</p>
+                    <p className="mt-2 text-sm leading-6 text-slate-600">{item.detail}</p>
+                  </div>
+                ))}
+              </div>
+            </section>
+          ) : null}
+          {override?.complianceCalendar ? (
+            <section>
+              <p className="marketing-kicker">After incorporation</p>
+              <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-950">
+                Your first 12 months of compliance.
+              </h2>
+              <div className="mt-6 overflow-x-auto rounded-xl border border-slate-200">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-slate-200 bg-slate-50 text-left text-xs font-medium tracking-wide text-slate-500 uppercase">
+                      <th className="px-4 py-3">Milestone</th>
+                      <th className="px-4 py-3">Due by</th>
+                      <th className="px-4 py-3">Penalty for missing it</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {override.complianceCalendar.map((row) => (
+                      <tr key={row.milestone} className="border-b border-slate-200 last:border-0">
+                        <td className="px-4 py-3 font-medium text-slate-700">{row.milestone}</td>
+                        <td className="px-4 py-3 text-slate-600">{row.dueBy}</td>
+                        <td className="px-4 py-3 text-slate-600">{row.penalty}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          ) : null}
+          {override?.localNote ? (
+            <section className="rounded-2xl bg-slate-50 p-7">
+              <h2 className="text-xl font-bold text-slate-950">{override.localNote.heading}</h2>
+              <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-600">
+                {override.localNote.body}
+              </p>
+            </section>
+          ) : null}
+          {override?.scopeTable ? (
+            <section>
+              <p className="marketing-kicker">Scope</p>
+              <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-950">
+                What the ₹10,999 fee includes and excludes.
+              </h2>
+              <div className="mt-7 grid gap-6 sm:grid-cols-2">
+                <div>
+                  <h3 className="font-bold text-emerald-700">Included</h3>
+                  <ul className="mt-3 space-y-2">
+                    {override.scopeTable.included.map((item) => (
+                      <li key={item} className="flex gap-2 text-sm leading-6 text-slate-700">
+                        <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-emerald-600" />
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
                 </div>
-              </section>
-            ) : null}
-            {relatedGuides.length ? (
-              <section>
-                <p className="marketing-kicker">Read next</p>
-                <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-950">
-                  Guides that cover this in more depth.
-                </h2>
-                <div className="mt-7 grid gap-3 sm:grid-cols-2">
-                  {relatedGuides.map((guide) => (
-                    <Link
-                      key={guide.slug}
-                      href={`/resources/${guide.slug}`}
-                      className="group flex items-center justify-between rounded-xl border border-slate-200 p-4 text-sm font-bold text-slate-800 hover:border-pink-300 hover:text-pink-700"
-                    >
-                      {guide.title}
-                      <ArrowRight className="size-4 shrink-0 text-slate-400 group-hover:translate-x-1 group-hover:text-pink-700" />
-                    </Link>
-                  ))}
+                <div>
+                  <h3 className="font-bold text-slate-500">Not included, billed separately</h3>
+                  <ul className="mt-3 space-y-2">
+                    {override.scopeTable.excluded.map((item) => (
+                      <li key={item} className="flex gap-2 text-sm leading-6 text-slate-600">
+                        <span className="mt-0.5 size-4 shrink-0 text-center text-slate-400">•</span>
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
                 </div>
-              </section>
-            ) : null}
-            <Link
-              href="/pricing"
-              className="flex items-center justify-between rounded-xl border border-slate-200 p-4 text-sm font-bold text-slate-700 hover:border-pink-300 hover:text-pink-700"
-            >
-              Compare all service fees <ArrowRight className="size-4" />
-            </Link>
-          </main>
-        </div>
+              </div>
+            </section>
+          ) : null}
+          <section>
+            <p className="marketing-kicker">Questions</p>
+            <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-950">
+              Before you proceed.
+            </h2>
+            <div className="mt-6 divide-y divide-slate-200 border-y border-slate-200">
+              {faqs.map((f) => (
+                <details key={f.question} className="group py-5">
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-bold text-slate-950 [&::-webkit-details-marker]:hidden">
+                    {f.question}
+                    <span className="text-pink-700">+</span>
+                  </summary>
+                  <p className="max-w-3xl pt-3 text-sm leading-7 text-slate-600">{f.answer}</p>
+                </details>
+              ))}
+            </div>
+          </section>
+          {relatedServices.length ? (
+            <section>
+              <p className="marketing-kicker">{service.categoryName}</p>
+              <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-950">
+                Related services in this category.
+              </h2>
+              <div className="mt-7 grid gap-3 sm:grid-cols-2">
+                {relatedServices.map((related) => (
+                  <Link
+                    key={related.id}
+                    href={`/services/${related.slug}`}
+                    className="group flex items-center justify-between rounded-xl border border-slate-200 p-4 text-sm font-bold text-slate-800 hover:border-pink-300 hover:text-pink-700"
+                  >
+                    {related.name}
+                    <ArrowRight className="size-4 shrink-0 text-slate-400 group-hover:translate-x-1 group-hover:text-pink-700" />
+                  </Link>
+                ))}
+              </div>
+            </section>
+          ) : null}
+          {relatedGuides.length ? (
+            <section>
+              <p className="marketing-kicker">Read next</p>
+              <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-950">
+                Guides that cover this in more depth.
+              </h2>
+              <div className="mt-7 grid gap-3 sm:grid-cols-2">
+                {relatedGuides.map((guide) => (
+                  <Link
+                    key={guide.slug}
+                    href={`/resources/${guide.slug}`}
+                    className="group flex items-center justify-between rounded-xl border border-slate-200 p-4 text-sm font-bold text-slate-800 hover:border-pink-300 hover:text-pink-700"
+                  >
+                    {guide.title}
+                    <ArrowRight className="size-4 shrink-0 text-slate-400 group-hover:translate-x-1 group-hover:text-pink-700" />
+                  </Link>
+                ))}
+              </div>
+            </section>
+          ) : null}
+          <Link
+            href="/pricing"
+            className="flex items-center justify-between rounded-xl border border-slate-200 p-4 text-sm font-bold text-slate-700 hover:border-pink-300 hover:text-pink-700"
+          >
+            Compare all service fees <ArrowRight className="size-4" />
+          </Link>
+        </main>
       </section>
       <JsonLd
         data={{
