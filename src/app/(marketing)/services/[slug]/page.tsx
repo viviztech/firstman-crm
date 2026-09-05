@@ -7,7 +7,7 @@ import { JsonLd } from "@/components/marketing/json-ld";
 import { Badge } from "@/components/ui/badge";
 import { getArticlesForService } from "@/content/resources";
 import { getServicePageContent } from "@/content/service-content";
-import { getServiceContentOverride } from "@/content/service-content-overrides";
+import { getServiceContentOverride, resolveOverrideFee } from "@/content/service-content-overrides";
 import { getAppUrl } from "@/lib/app-url";
 import { buildMarketingMetadata } from "@/lib/marketing-metadata";
 import { formatMoney } from "@/lib/money";
@@ -28,7 +28,10 @@ export async function generateMetadata({
   const { slug } = await params;
   const s = await getPublicServiceBySlug(slug);
   if (!s) return {};
-  const override = getServiceContentOverride(slug);
+  const rawOverride = getServiceContentOverride(slug);
+  const override = rawOverride
+    ? resolveOverrideFee(rawOverride, formatMoney(s.basePricePaise))
+    : undefined;
   return buildMarketingMetadata({
     title: override?.metaTitle ?? `${s.name} — Fees, documents & process`,
     description:
@@ -43,7 +46,9 @@ export default async function ServiceDetailPage({ params }: { params: Promise<{ 
   const service = await getPublicServiceBySlug(slug);
   if (!service) notFound();
   const genericContent = getServicePageContent(service);
-  const override = getServiceContentOverride(service.slug);
+  const feeFormatted = formatMoney(service.basePricePaise);
+  const rawOverride = getServiceContentOverride(service.slug);
+  const override = rawOverride ? resolveOverrideFee(rawOverride, feeFormatted) : undefined;
   const content = { ...genericContent, ...override?.base };
   const relatedServices = await getRelatedServices(service.categoryId, service.slug);
   const relatedGuides = getArticlesForService(service.slug);
@@ -388,6 +393,72 @@ export default async function ServiceDetailPage({ params }: { params: Promise<{ 
               <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-600">
                 {override.localNote.body}
               </p>
+            </section>
+          ) : null}
+          {override?.scopeTable ? (
+            <section>
+              <p className="marketing-kicker">Scope</p>
+              <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-950">
+                What the {feeFormatted} fee includes and excludes.
+              </h2>
+              <div className="mt-7 grid gap-6 sm:grid-cols-2">
+                <div>
+                  <h3 className="font-bold text-emerald-700">Included</h3>
+                  <ul className="mt-3 space-y-2">
+                    {override.scopeTable.included.map((item) => (
+                      <li key={item} className="flex gap-2 text-sm leading-6 text-slate-700">
+                        <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-emerald-600" />
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-500">Not included, billed separately</h3>
+                  <ul className="mt-3 space-y-2">
+                    {override.scopeTable.excluded.map((item) => (
+                      <li key={item} className="flex gap-2 text-sm leading-6 text-slate-600">
+                        <span className="mt-0.5 size-4 shrink-0 text-center text-slate-400">•</span>
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </section>
+          ) : null}
+          {override?.costBreakdown ? (
+            <section>
+              <p className="marketing-kicker">Total cost of ownership</p>
+              <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-950">
+                What this actually costs in year one.
+              </h2>
+              <p className="mt-5 max-w-3xl text-sm leading-7 text-slate-600">
+                {override.costBreakdown.intro}
+              </p>
+              <div className="mt-6 overflow-x-auto rounded-xl border border-slate-200">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-slate-200 bg-slate-50 text-left text-xs font-medium tracking-wide text-slate-500 uppercase">
+                      <th className="px-4 py-3">Cost head</th>
+                      <th className="px-4 py-3">When</th>
+                      <th className="px-4 py-3">Typical range</th>
+                      <th className="px-4 py-3">In {feeFormatted} fee?</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {override.costBreakdown.rows.map((row) => (
+                      <tr key={row.item} className="border-b border-slate-200 last:border-0">
+                        <td className="px-4 py-3 font-medium text-slate-700">{row.item}</td>
+                        <td className="px-4 py-3 text-slate-600">{row.when}</td>
+                        <td className="px-4 py-3 text-slate-600">{row.range}</td>
+                        <td className="px-4 py-3 text-slate-600">{row.includedInFee}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <p className="mt-3 text-xs text-slate-500">{override.costBreakdown.note}</p>
             </section>
           ) : null}
           {relatedServices.length ? (

@@ -44,7 +44,7 @@ export const SERVICE_CONTENT_OVERRIDES: Record<string, ServiceContentOverride> =
     base: {
       eyebrow: "Company incorporation",
       summary:
-        "Private limited company registration is the process of incorporating a company under Section 2(68) of the Companies Act, 2013, through the MCA's SPICe+ form. It needs 2 directors, 2 shareholders, and one resident director, with no minimum paid-up capital. FirstMan's professional fee starts at ₹10,999, with government fees, DSC, and stamp duty billed separately.",
+        "Private limited company registration is the process of incorporating a company under Section 2(68) of the Companies Act, 2013, through the MCA's SPICe+ form. It needs 2 directors, 2 shareholders, and one resident director, with no minimum paid-up capital. FirstMan's professional fee starts at {{FEE}}, with government fees, DSC, and stamp duty billed separately.",
       idealFor: [
         "Founders raising equity funding, issuing ESOPs, or bringing in co-founders as shareholders",
         "Businesses bidding for enterprise or government contracts that expect a registered company",
@@ -81,7 +81,7 @@ export const SERVICE_CONTENT_OVERRIDES: Record<string, ServiceContentOverride> =
       ],
     },
     heroNote:
-      "The ₹10,999 professional fee excludes government fees, DSC charges, and stamp duty on the MoA/AoA. Figures on this page use Tamil Nadu's stamp duty schedule; other states set their own rates and may vary.",
+      "The {{FEE}} professional fee excludes government fees, DSC charges, and stamp duty on the MoA/AoA. Figures on this page use Tamil Nadu's stamp duty schedule; other states set their own rates and may vary.",
     decisionFramework: {
       intro:
         "Register a Private Limited Company if you plan to raise funding, issue ESOPs, or add shareholders. Consider LLP, OPC, or a proprietorship instead if you don't need equity fundraising or want a lighter compliance load.",
@@ -181,12 +181,12 @@ export const SERVICE_CONTENT_OVERRIDES: Record<string, ServiceContentOverride> =
     ],
     costBreakdown: {
       intro:
-        "Incorporation is only the first cost. A realistic year-one budget includes the professional fee, DSC, stamp duty, and MCA fee at setup, then a recurring layer of auditor fees, ROC filings, DIR-3 KYC, and income tax filing. Expect a realistic all-in range of roughly ₹25,000 to ₹45,000 for the full first year, not the ₹10,999 headline figure alone.",
+        "Incorporation is only the first cost. A realistic year-one budget includes the professional fee, DSC, stamp duty, and MCA fee at setup, then a recurring layer of auditor fees, ROC filings, DIR-3 KYC, and income tax filing. Expect a realistic all-in range of roughly ₹25,000 to ₹45,000 for the full first year, not the {{FEE}} headline figure alone.",
       rows: [
         {
           item: "Professional fee (incorporation)",
           when: "At filing",
-          range: "₹10,999",
+          range: "{{FEE}}",
           includedInFee: "Yes",
         },
         {
@@ -244,7 +244,7 @@ export const SERVICE_CONTENT_OVERRIDES: Record<string, ServiceContentOverride> =
           includedInFee: "No",
         },
       ],
-      note: "The ₹10,999 professional fee covers incorporation only. Everything from the first auditor appointment onward is a separate, clearly quoted engagement.",
+      note: "The {{FEE}} professional fee covers incorporation only. Everything from the first auditor appointment onward is a separate, clearly quoted engagement.",
     },
     rejectionReasons: [
       {
@@ -357,10 +357,10 @@ export const SERVICE_CONTENT_OVERRIDES: Record<string, ServiceContentOverride> =
         question:
           "What is the real, total cost of registering a Private Limited Company, not just the professional fee?",
         answer:
-          "Budget ₹25,000 to ₹45,000 for the full first year, not ₹10,999 alone. That figure covers the professional fee, DSC, stamp duty, MCA fee, first auditor appointment, INC-20A, annual ROC filings, DIR-3 KYC, and ITR filing.",
+          "Budget ₹25,000 to ₹45,000 for the full first year, not {{FEE}} alone. That figure covers the professional fee, DSC, stamp duty, MCA fee, first auditor appointment, INC-20A, annual ROC filings, DIR-3 KYC, and ITR filing.",
       },
       {
-        question: "Are there hidden charges on top of the ₹10,999 professional fee?",
+        question: "Are there hidden charges on top of the {{FEE}} professional fee?",
         answer:
           "No charges are hidden, but several are genuinely separate and statutory: DSC, stamp duty, and the MCA incorporation fee are billed at actual cost because they vary by authorised capital and state. Every cost is listed before you pay.",
       },
@@ -439,10 +439,26 @@ export const SERVICE_CONTENT_OVERRIDES: Record<string, ServiceContentOverride> =
     lastUpdated: "September 2026",
     metaTitle: "Private Limited Company Registration India",
     metaDescription:
-      "Private limited company registration from ₹10,999 professional fee, typically completed in 7 business days. Full scope and fee confirmed before you pay.",
+      "Private limited company registration from {{FEE}} professional fee, typically completed in 7 business days. Full scope and fee confirmed before you pay.",
   },
 };
 
 export function getServiceContentOverride(slug: string): ServiceContentOverride | undefined {
   return SERVICE_CONTENT_OVERRIDES[slug];
+}
+
+/**
+ * Override content writes the service's fee as the literal token "{{FEE}}" wherever the
+ * text should track the live price (e.g. a seed-data update) instead of going stale. This
+ * substitutes the current formatted price everywhere that token appears, including inside
+ * nested arrays/objects — every field on ServiceContentOverride is a plain JSON-safe string
+ * structure, so a stringify/replace/parse round-trip is sufficient and avoids hand-walking
+ * each field.
+ */
+export function resolveOverrideFee(
+  override: ServiceContentOverride,
+  feeFormatted: string,
+): ServiceContentOverride {
+  const json = JSON.stringify(override).replaceAll("{{FEE}}", feeFormatted);
+  return JSON.parse(json) as ServiceContentOverride;
 }
