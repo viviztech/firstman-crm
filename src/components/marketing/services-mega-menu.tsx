@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef } from "react";
+import { MEGA_MENU_CURATED_SLUGS } from "@/content/featured-services";
 import type { PublicServiceVertical } from "@/services/marketing-catalog";
 
 const iconByIndex = [Building2, FileCheck2, Landmark, Scale, ShieldCheck] as const;
@@ -66,49 +67,61 @@ export function ServicesMegaMenu({ catalog }: { catalog: PublicServiceVertical[]
               Browse all services <ArrowRight className="size-4" />
             </Link>
           </div>
-          <div className="grid grid-cols-2 gap-x-8 gap-y-7 xl:grid-cols-3">
-            {catalog.slice(0, 5).map((vertical, index) => {
-              const Icon = iconByIndex[index] ?? FileCheck2;
-              const services = vertical.categories
-                .flatMap((category) => category.services)
-                .slice(0, 5);
-              return (
-                <section key={vertical.id}>
-                  <div className="mb-3 flex items-center gap-2 text-sm font-bold text-slate-950">
-                    <span className="flex size-8 items-center justify-center rounded-lg bg-pink-50 text-pink-700">
-                      <Icon className="size-4" />
-                    </span>
-                    {vertical.name.replace(" Services", "")}
-                  </div>
-                  <ul className="space-y-2">
-                    {services.map((service) => (
-                      <li key={service.id}>
-                        <Link
-                          href={`/services/${service.slug}`}
-                          onClick={closePanel}
-                          className="text-sm text-slate-600 hover:text-pink-700"
-                        >
-                          {service.name}
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                </section>
-              );
-            })}
-            <section className="border-l border-slate-200 pl-7">
-              <p className="text-sm font-bold text-slate-950">Not sure where to start?</p>
-              <p className="mt-2 text-sm leading-6 text-slate-600">
-                Tell us your goal. We’ll map the filings, fees, and order of work.
-              </p>
-              <Link
-                href="/contact"
-                onClick={closePanel}
-                className="mt-4 inline-flex items-center gap-1 text-sm font-bold text-pink-700"
-              >
-                Get a recommendation <ArrowRight className="size-3.5" />
-              </Link>
-            </section>
+          <div className="flex flex-col">
+            <div className="grid grid-cols-2 gap-x-8 gap-y-7 xl:grid-cols-3">
+              {catalog.slice(0, 5).map((vertical, index) => {
+                const Icon = iconByIndex[index] ?? FileCheck2;
+                const allServices = vertical.categories.flatMap((category) => category.services);
+                const curatedSlugs = MEGA_MENU_CURATED_SLUGS[vertical.name] ?? [];
+                const curated = curatedSlugs
+                  .map((slug) => allServices.find((service) => service.slug === slug))
+                  .filter((service): service is (typeof allServices)[number] => Boolean(service));
+                const services = curated.length ? curated : allServices.slice(0, 5);
+                return (
+                  <section key={vertical.id}>
+                    <div className="mb-3 flex items-center gap-2 text-sm font-bold text-slate-950">
+                      <span className="flex size-8 items-center justify-center rounded-lg bg-pink-50 text-pink-700">
+                        <Icon className="size-4" />
+                      </span>
+                      {vertical.name.replace(" Services", "")}
+                    </div>
+                    <ul className="space-y-2">
+                      {services.map((service) => (
+                        <li key={service.id}>
+                          <Link
+                            href={`/services/${service.slug}`}
+                            onClick={closePanel}
+                            className="text-sm text-slate-600 hover:text-pink-700"
+                          >
+                            {service.name}
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  </section>
+                );
+              })}
+              <section className="border-l border-slate-200 pl-7">
+                <p className="text-sm font-bold text-slate-950">Not sure where to start?</p>
+                <p className="mt-2 text-sm leading-6 text-slate-600">
+                  Tell us your goal. We’ll map the filings, fees, and order of work.
+                </p>
+                <Link
+                  href="/contact"
+                  onClick={closePanel}
+                  className="mt-4 inline-flex items-center gap-1 text-sm font-bold text-pink-700"
+                >
+                  Get a recommendation <ArrowRight className="size-3.5" />
+                </Link>
+              </section>
+            </div>
+            <Link
+              href="/services"
+              onClick={closePanel}
+              className="mt-7 flex items-center justify-center gap-2 rounded-xl border border-slate-200 py-3 text-sm font-bold text-slate-950 hover:border-pink-300 hover:text-pink-700"
+            >
+              See all services <ArrowRight className="size-4" />
+            </Link>
           </div>
         </div>
       </div>
