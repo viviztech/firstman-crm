@@ -122,7 +122,7 @@ export const CATALOG_SEED: CatalogSeedVertical[] = [
             name: "Private Limited Company",
             slug: "pvt-ltd-registration",
             description: "End-to-end incorporation of a Private Limited Company via SPICe+.",
-            basePricePaise: 699900,
+            basePricePaise: 1099900,
             estimatedDays: 7,
             isRecurring: false,
             checklistTemplate: [

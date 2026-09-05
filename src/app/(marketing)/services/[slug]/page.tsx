@@ -7,6 +7,7 @@ import { JsonLd } from "@/components/marketing/json-ld";
 import { Badge } from "@/components/ui/badge";
 import { getArticlesForService } from "@/content/resources";
 import { getServicePageContent } from "@/content/service-content";
+import { getServiceContentOverride } from "@/content/service-content-overrides";
 import { getAppUrl } from "@/lib/app-url";
 import { buildMarketingMetadata } from "@/lib/marketing-metadata";
 import { formatMoney } from "@/lib/money";
@@ -27,9 +28,12 @@ export async function generateMetadata({
   const { slug } = await params;
   const s = await getPublicServiceBySlug(slug);
   if (!s) return {};
+  const override = getServiceContentOverride(slug);
   return buildMarketingMetadata({
-    title: `${s.name} — Fees, documents & process`,
-    description: `Get ${s.name} handled end to end across Tamil Nadu. Starting ${formatMoney(s.basePricePaise)}, typical turnaround ${s.estimatedDays} business days. See documents, process and deliverables.`,
+    title: override?.metaTitle ?? `${s.name} — Fees, documents & process`,
+    description:
+      override?.metaDescription ??
+      `Get ${s.name} handled end to end across Tamil Nadu. Starting ${formatMoney(s.basePricePaise)}, typical turnaround ${s.estimatedDays} business days. See documents, process and deliverables.`,
     path: `/services/${slug}`,
   });
 }
@@ -38,10 +42,12 @@ export default async function ServiceDetailPage({ params }: { params: Promise<{ 
   const { slug } = await params;
   const service = await getPublicServiceBySlug(slug);
   if (!service) notFound();
-  const content = getServicePageContent(service);
+  const genericContent = getServicePageContent(service);
+  const override = getServiceContentOverride(service.slug);
+  const content = { ...genericContent, ...override?.base };
   const relatedServices = await getRelatedServices(service.categoryId, service.slug);
   const relatedGuides = getArticlesForService(service.slug);
-  const faqs = [
+  const faqs = override?.faqs ?? [
     {
       question: `What is included in ${service.name}?`,
       answer: `The engagement covers requirement review, document verification, preparation, filing or execution support, query coordination, and final handover. The exact scope is confirmed before work starts.`,
@@ -80,6 +86,11 @@ export default async function ServiceDetailPage({ params }: { params: Promise<{ 
                 {service.name}
               </h1>
               <p className="mt-6 max-w-3xl text-lg leading-8 text-slate-600">{content.summary}</p>
+              {override?.lastUpdated ? (
+                <p className="mt-4 text-xs text-slate-500">
+                  Written by the FirstMan compliance desk. Last updated: {override.lastUpdated}.
+                </p>
+              ) : null}
               <div className="mt-7 flex flex-wrap gap-x-8 gap-y-3 text-sm text-slate-600">
                 <span className="flex items-center gap-2">
                   <IndianRupee className="size-4 text-pink-600" />
@@ -169,7 +180,7 @@ export default async function ServiceDetailPage({ params }: { params: Promise<{ 
                 </ul>
               </section>
             </div>
-            {service.requiredDocuments.length ? (
+            {!override?.documentGroups && service.requiredDocuments.length ? (
               <section className="rounded-2xl bg-slate-50 p-7">
                 <div className="flex items-center gap-3">
                   <FileText className="size-5 text-pink-700" />
@@ -185,6 +196,245 @@ export default async function ServiceDetailPage({ params }: { params: Promise<{ 
                       {doc}
                     </p>
                   ))}
+                </div>
+              </section>
+            ) : null}
+            {override?.decisionFramework ? (
+              <section>
+                <p className="marketing-kicker">Is this the right structure?</p>
+                <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-950">
+                  Who should, and should not, register a Private Limited Company.
+                </h2>
+                <p className="mt-5 max-w-3xl text-sm leading-7 text-slate-600">
+                  {override.decisionFramework.intro}
+                </p>
+                <div className="mt-6 grid gap-3 sm:grid-cols-3">
+                  {override.decisionFramework.chooseInstead.map((option) => (
+                    <Link
+                      key={option.structure}
+                      href={option.href}
+                      className="group rounded-xl border border-slate-200 p-5 hover:border-pink-300"
+                    >
+                      <p className="flex items-center justify-between font-bold text-slate-950 group-hover:text-pink-700">
+                        Choose {option.structure} instead
+                        <ArrowRight className="size-4 shrink-0 text-slate-400 group-hover:translate-x-1 group-hover:text-pink-700" />
+                      </p>
+                      <p className="mt-2 text-sm leading-6 text-slate-600">if {option.when}</p>
+                    </Link>
+                  ))}
+                </div>
+                {override.structureComparison ? (
+                  <div className="mt-8 overflow-x-auto rounded-xl border border-slate-200">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-slate-200 bg-slate-50 text-left text-xs font-medium tracking-wide text-slate-500 uppercase">
+                          <th className="px-4 py-3">Factor</th>
+                          {override.structureComparison.columns.map((col) => (
+                            <th key={col} className="px-4 py-3">
+                              {col}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {override.structureComparison.rows.map((row) => (
+                          <tr
+                            key={row.factor}
+                            className="border-b border-slate-200 align-top last:border-0"
+                          >
+                            <td className="px-4 py-3 font-medium text-slate-700">{row.factor}</td>
+                            {row.values.map((value, i) => (
+                              <td
+                                key={`${row.factor}-${override.structureComparison?.columns[i]}`}
+                                className="px-4 py-3 text-slate-600"
+                              >
+                                {value}
+                              </td>
+                            ))}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : null}
+              </section>
+            ) : null}
+            {override?.documentGroups ? (
+              <section className="rounded-2xl bg-slate-50 p-7">
+                <div className="flex items-center gap-3">
+                  <FileText className="size-5 text-pink-700" />
+                  <h2 className="text-xl font-bold text-slate-950">Documents required</h2>
+                </div>
+                <p className="mt-2 text-sm text-slate-600">
+                  Requirements differ by who is involved in the filing.
+                </p>
+                <div className="mt-6 grid gap-6 sm:grid-cols-3">
+                  {override.documentGroups.map((group) => (
+                    <div key={group.title}>
+                      <h3 className="font-bold text-slate-950">{group.title}</h3>
+                      {group.note ? (
+                        <p className="mt-1 text-xs text-slate-500">{group.note}</p>
+                      ) : null}
+                      <ul className="mt-3 space-y-2">
+                        {group.items.map((item) => (
+                          <li key={item} className="flex gap-2 text-sm leading-6 text-slate-700">
+                            <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-pink-700" />
+                            {item}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            ) : null}
+            {override?.timeline ? (
+              <section>
+                <p className="marketing-kicker">Step by step</p>
+                <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-950">
+                  A realistic day-by-day timeline.
+                </h2>
+                <div className="mt-6 overflow-x-auto rounded-xl border border-slate-200">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-slate-200 bg-slate-50 text-left text-xs font-medium tracking-wide text-slate-500 uppercase">
+                        <th className="px-4 py-3">Day</th>
+                        <th className="px-4 py-3">Milestone</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {override.timeline.map((row) => (
+                        <tr key={row.day} className="border-b border-slate-200 last:border-0">
+                          <td className="px-4 py-3 font-medium text-slate-700">{row.day}</td>
+                          <td className="px-4 py-3 text-slate-600">{row.milestone}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <p className="mt-3 text-xs text-slate-500">
+                  This timeline assumes complete, correctly formatted documents on Day 1. Name
+                  conflicts or incomplete address proof add 3 to 7 days for resubmission.
+                </p>
+              </section>
+            ) : null}
+            {override?.costBreakdown ? (
+              <section>
+                <p className="marketing-kicker">Total cost of ownership</p>
+                <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-950">
+                  What this actually costs in year one.
+                </h2>
+                <p className="mt-5 max-w-3xl text-sm leading-7 text-slate-600">
+                  {override.costBreakdown.intro}
+                </p>
+                <div className="mt-6 overflow-x-auto rounded-xl border border-slate-200">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-slate-200 bg-slate-50 text-left text-xs font-medium tracking-wide text-slate-500 uppercase">
+                        <th className="px-4 py-3">Cost head</th>
+                        <th className="px-4 py-3">When</th>
+                        <th className="px-4 py-3">Typical range</th>
+                        <th className="px-4 py-3">In ₹10,999 fee?</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {override.costBreakdown.rows.map((row) => (
+                        <tr key={row.item} className="border-b border-slate-200 last:border-0">
+                          <td className="px-4 py-3 font-medium text-slate-700">{row.item}</td>
+                          <td className="px-4 py-3 text-slate-600">{row.when}</td>
+                          <td className="px-4 py-3 text-slate-600">{row.range}</td>
+                          <td className="px-4 py-3 text-slate-600">{row.includedInFee}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <p className="mt-3 text-xs text-slate-500">{override.costBreakdown.note}</p>
+              </section>
+            ) : null}
+            {override?.rejectionReasons ? (
+              <section>
+                <p className="marketing-kicker">Avoid resubmission</p>
+                <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-950">
+                  Why SPICe+ filings get rejected, and how we prevent it.
+                </h2>
+                <div className="mt-7 grid gap-4 sm:grid-cols-2">
+                  {override.rejectionReasons.map((item) => (
+                    <div key={item.reason} className="rounded-xl border border-slate-200 p-5">
+                      <p className="font-bold text-slate-950">{item.reason}</p>
+                      <p className="mt-2 text-sm leading-6 text-slate-600">{item.detail}</p>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            ) : null}
+            {override?.complianceCalendar ? (
+              <section>
+                <p className="marketing-kicker">After incorporation</p>
+                <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-950">
+                  Your first 12 months of compliance.
+                </h2>
+                <div className="mt-6 overflow-x-auto rounded-xl border border-slate-200">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-slate-200 bg-slate-50 text-left text-xs font-medium tracking-wide text-slate-500 uppercase">
+                        <th className="px-4 py-3">Milestone</th>
+                        <th className="px-4 py-3">Due by</th>
+                        <th className="px-4 py-3">Penalty for missing it</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {override.complianceCalendar.map((row) => (
+                        <tr key={row.milestone} className="border-b border-slate-200 last:border-0">
+                          <td className="px-4 py-3 font-medium text-slate-700">{row.milestone}</td>
+                          <td className="px-4 py-3 text-slate-600">{row.dueBy}</td>
+                          <td className="px-4 py-3 text-slate-600">{row.penalty}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+            ) : null}
+            {override?.localNote ? (
+              <section className="rounded-2xl bg-slate-50 p-7">
+                <h2 className="text-xl font-bold text-slate-950">{override.localNote.heading}</h2>
+                <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-600">
+                  {override.localNote.body}
+                </p>
+              </section>
+            ) : null}
+            {override?.scopeTable ? (
+              <section>
+                <p className="marketing-kicker">Scope</p>
+                <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-950">
+                  What the ₹10,999 fee includes and excludes.
+                </h2>
+                <div className="mt-7 grid gap-6 sm:grid-cols-2">
+                  <div>
+                    <h3 className="font-bold text-emerald-700">Included</h3>
+                    <ul className="mt-3 space-y-2">
+                      {override.scopeTable.included.map((item) => (
+                        <li key={item} className="flex gap-2 text-sm leading-6 text-slate-700">
+                          <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-emerald-600" />
+                          {item}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-slate-500">Not included, billed separately</h3>
+                    <ul className="mt-3 space-y-2">
+                      {override.scopeTable.excluded.map((item) => (
+                        <li key={item} className="flex gap-2 text-sm leading-6 text-slate-600">
+                          <span className="mt-0.5 size-4 shrink-0 text-center text-slate-400">
+                            •
+                          </span>
+                          {item}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 </div>
               </section>
             ) : null}
@@ -302,6 +552,20 @@ export default async function ServiceDetailPage({ params }: { params: Promise<{ 
           })),
         }}
       />
+      {override ? (
+        <JsonLd
+          data={{
+            "@context": "https://schema.org",
+            "@type": "HowTo",
+            name: `How to complete ${service.name}`,
+            step: content.process.map((step) => ({
+              "@type": "HowToStep",
+              name: step.title,
+              text: step.body,
+            })),
+          }}
+        />
+      ) : null}
     </div>
   );
 }
