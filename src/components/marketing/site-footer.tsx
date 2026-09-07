@@ -1,22 +1,44 @@
 import { ArrowRight, Mail, MapPin, Phone } from "lucide-react";
 import Link from "next/link";
 import { Logo } from "@/components/marketing/logo";
+import { MEGA_MENU_CURATED_SLUGS } from "@/content/featured-services";
 import { telHref } from "@/lib/phone";
 import { getCompanyProfile } from "@/services/company-profile";
-import { getPublicCatalog } from "@/services/marketing-catalog";
+import { getPublicServices, type PublicService } from "@/services/marketing-catalog";
+
+/** Resolves a curated slug list to catalog services, in slug order, dropping any that don't (or no longer) exist. */
+function resolveServices(services: PublicService[], slugs: string[]): PublicService[] {
+  return slugs
+    .map((slug) => services.find((service) => service.slug === slug))
+    .filter((service): service is PublicService => Boolean(service));
+}
 
 export async function SiteFooter() {
-  const [profile, catalog] = await Promise.all([getCompanyProfile(), getPublicCatalog()]);
+  const [profile, services] = await Promise.all([getCompanyProfile(), getPublicServices()]);
   const year = new Date().getFullYear();
-  const popular = catalog.flatMap((v) => v.categories.flatMap((c) => c.services)).slice(0, 8);
-  const exploreLinks = [
-    ["/services", "All services"],
-    ["/pricing", "Transparent pricing"],
-    ["/compare", "Compare structures"],
-    ["/resources", "Business insights"],
-    ["/about", "About FirstMan"],
-    ["/contact", "Contact"],
-  ] as const;
+  const serviceColumns = [
+    {
+      title: "Company Registration",
+      services: resolveServices(
+        services,
+        MEGA_MENU_CURATED_SLUGS["Company Registration Services"] ?? [],
+      ),
+    },
+    {
+      title: "Registration & Licensing",
+      services: resolveServices(
+        services,
+        MEGA_MENU_CURATED_SLUGS["Registration & Licensing"] ?? [],
+      ),
+    },
+    {
+      title: "Accounting & Auditing",
+      services: resolveServices(
+        services,
+        MEGA_MENU_CURATED_SLUGS["Accounting & Auditing Services"] ?? [],
+      ),
+    },
+  ];
   return (
     <footer className="marketing-site border-t border-slate-200 bg-slate-100 text-slate-600">
       <div className="border-b border-slate-200">
@@ -65,55 +87,22 @@ export async function SiteFooter() {
             ) : null}
           </div>
         </div>
-        <nav>
-          <h3 className="text-xs font-bold tracking-[.15em] text-slate-950 uppercase">
-            Popular services
-          </h3>
-          <ul className="mt-5 space-y-3 text-sm">
-            {popular.map((s) => (
-              <li key={s.id}>
-                <Link href={`/services/${s.slug}`} className="hover:text-pink-700">
-                  {s.name}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </nav>
-        <nav>
-          <h3 className="text-xs font-bold tracking-[.15em] text-slate-950 uppercase">Explore</h3>
-          <ul className="mt-5 space-y-3 text-sm">
-            {exploreLinks.map(([href, label]) => (
-              <li key={href}>
-                <Link href={href} className="hover:text-pink-700">
-                  {label}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </nav>
-        <div>
-          <h3 className="text-xs font-bold tracking-[.15em] text-slate-950 uppercase">
-            Corporate details
-          </h3>
-          <dl className="mt-5 space-y-4 text-sm">
-            <div>
-              <dt className="text-slate-500">Service area</dt>
-              <dd className="mt-1 text-slate-600">{profile.areasServed}</dd>
-            </div>
-            {profile.gstin ? (
-              <div>
-                <dt className="text-slate-500">GSTIN</dt>
-                <dd className="mt-1 text-slate-600">{profile.gstin}</dd>
-              </div>
-            ) : null}
-            {profile.llpin ? (
-              <div>
-                <dt className="text-slate-500">LLPIN</dt>
-                <dd className="mt-1 text-slate-600">{profile.llpin}</dd>
-              </div>
-            ) : null}
-          </dl>
-        </div>
+        {serviceColumns.map((column) => (
+          <nav key={column.title}>
+            <h3 className="text-xs font-bold tracking-[.15em] text-slate-950 uppercase">
+              {column.title}
+            </h3>
+            <ul className="mt-5 space-y-3 text-sm">
+              {column.services.map((s) => (
+                <li key={s.id}>
+                  <Link href={`/services/${s.slug}`} className="hover:text-pink-700">
+                    {s.name}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        ))}
       </div>
       <div className="border-t border-slate-200">
         <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-5 text-xs text-slate-500 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
