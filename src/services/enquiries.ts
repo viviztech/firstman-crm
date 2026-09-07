@@ -478,6 +478,43 @@ export async function findEnquiryIdByPhone(phone: string): Promise<string | null
   return row?.id ?? null;
 }
 
+/**
+ * Recovery path for a DuplicateEnquiryPhoneError on the *public* form: someone who already has
+ * an enquiry on file resubmitted — often because they came back to fill in details (email,
+ * state, directors, capital) they skipped the first time, expecting an accurate quote out of it.
+ * Silently ignoring the resubmission (the original behavior) left the enquiry stale and never
+ * sent anything, which read as "the form doesn't work." Instead, this merges in whichever fields
+ * the new submission actually provided — never blanking out something already on file — and
+ * returns the updated row (or the untouched one, if the resubmission added nothing new) so the
+ * caller can decide whether a fresh quote is worth issuing.
+ */
+export async function mergeDuplicateEnquirySubmission(
+  existingId: string,
+  input: Partial<PublicEnquiryInput>,
+) {
+  const patch: Partial<typeof enquiries.$inferInsert> = {};
+  if (input.email) patch.email = input.email;
+  if (input.address) patch.address = input.address;
+  if (input.city) patch.city = input.city;
+  if (input.state) patch.state = input.state;
+  if (input.pincode) patch.pincode = input.pincode;
+  if (input.numberOfDirectors) patch.numberOfDirectors = input.numberOfDirectors;
+  if (input.capitalAmountPaise) patch.capitalAmountPaise = input.capitalAmountPaise;
+  if (input.serviceInterestedId) patch.serviceInterestedId = input.serviceInterestedId;
+  if (input.notes) patch.notes = input.notes;
+
+  if (Object.keys(patch).length === 0) {
+    return db.query.enquiries.findFirst({ where: eq(enquiries.id, existingId) }) ?? null;
+  }
+
+  const [updated] = await db
+    .update(enquiries)
+    .set(patch)
+    .where(eq(enquiries.id, existingId))
+    .returning();
+  return updated ?? null;
+}
+
 export async function updateEnquiry(id: string, input: EnquiryInput, actor: ActorScope) {
   const assignedTo = enforceAssignment(input.assignedTo, actor);
 

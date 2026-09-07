@@ -8,6 +8,7 @@ import {
   createEnquiry,
   DuplicateEnquiryPhoneError,
   findEnquiryIdByPhone,
+  mergeDuplicateEnquirySubmission,
   publicEnquiryInputSchema,
 } from "@/services/enquiries";
 
@@ -37,10 +38,18 @@ export async function submitMarketingEnquiryAction(
     created = await createEnquiry({ ...parsed.data, source: "website" }, null);
   } catch (error) {
     // Someone already on file re-submitting (spec 4.1's phone is unique) isn't a failure from
-    // their point of view — show the same thank-you as a fresh submission rather than an error,
-    // and skip re-enqueuing notifications/quotes for a row that wasn't actually just created.
+    // their point of view — show the same thank-you as a fresh submission. Rather than silently
+    // dropping the resubmission, merge in whatever new details it carries (they may be back to
+    // fill in the email/state/directors/capital they skipped the first time, expecting an
+    // accurate quote out of it) and re-issue the quote if there's now a service to quote.
     if (error instanceof DuplicateEnquiryPhoneError) {
       const existingId = await findEnquiryIdByPhone(error.phone);
+      if (existingId) {
+        const merged = await mergeDuplicateEnquirySubmission(existingId, parsed.data);
+        if (merged?.serviceInterestedId) {
+          await enqueueEnquiryQuoteIssuedNotification({ enquiryId: merged.id });
+        }
+      }
       return { ok: true, data: { id: existingId ?? "" } };
     }
     throw error;

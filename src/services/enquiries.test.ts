@@ -37,6 +37,7 @@ import {
   listMyLostEnquiriesForExecutive,
   listMyWonEnquiries,
   listOpenEnquiries,
+  mergeDuplicateEnquirySubmission,
   nextInRoundRobin,
   updateEnquiry,
   updateEnquiryStatus,
@@ -204,6 +205,25 @@ describe("enquiries service (integration)", () => {
       .from(enquiries)
       .where(eq(enquiries.phone, enquiryInput.phone));
     expect(rows).toHaveLength(1);
+  });
+
+  it("merges a resubmission's new details into the existing enquiry without blanking out what's already on file", async () => {
+    const phone = "9876600071";
+    const created = await createEnquiry(input(phone), managerScope);
+    expect(created.email).toBeNull();
+
+    const merged = await mergeDuplicateEnquirySubmission(created.id, {
+      email: "resubmit@example.com",
+      numberOfDirectors: 2,
+    });
+    expect(merged?.email).toBe("resubmit@example.com");
+    expect(merged?.numberOfDirectors).toBe(2);
+    expect(merged?.name).toBe("Scoping Test Enquiry"); // untouched field stays as it was
+
+    // A follow-up resubmission that adds nothing new must not blank out what's already there.
+    const untouched = await mergeDuplicateEnquirySubmission(created.id, {});
+    expect(untouched?.email).toBe("resubmit@example.com");
+    expect(untouched?.numberOfDirectors).toBe(2);
   });
 
   it("auto-assigns to a real executive when auto-assignment is on and no assignee was given", async () => {
