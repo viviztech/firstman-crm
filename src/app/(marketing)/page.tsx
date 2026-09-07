@@ -13,6 +13,7 @@ import { MarketingEnquiryForm } from "@/components/marketing/enquiry-form";
 import { buildMarketingMetadata } from "@/lib/marketing-metadata";
 import { formatMoney } from "@/lib/money";
 import { getCompanyProfile } from "@/services/company-profile";
+import { listStates } from "@/services/geography";
 import { getPublicCatalog, getPublicServices } from "@/services/marketing-catalog";
 
 export const metadata: Metadata = buildMarketingMetadata({
@@ -46,10 +47,11 @@ const lifecycle = [
 ];
 
 export default async function MarketingHomePage() {
-  const [profile, catalog, services] = await Promise.all([
+  const [profile, catalog, services, states] = await Promise.all([
     getCompanyProfile(),
     getPublicCatalog(),
     getPublicServices(),
+    listStates(),
   ]);
   const featuredSlugs = [
     "pvt-ltd-registration",
@@ -257,7 +259,10 @@ export default async function MarketingHomePage() {
             </div>
           </div>
           <div className="bg-white p-4 sm:p-8">
-            <MarketingEnquiryForm services={services.map((s) => ({ id: s.id, name: s.name }))} />
+            <MarketingEnquiryForm
+              services={services.map((s) => ({ id: s.id, name: s.name }))}
+              states={states.map((s) => ({ id: s.id, name: s.name }))}
+            />
           </div>
         </div>
       </section>

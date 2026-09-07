@@ -60,3 +60,31 @@ export function verifyInvoicePdfToken(invoiceId: string, token: string): boolean
   if (expected.length !== actual.length) return false;
   return timingSafeEqual(expected, actual);
 }
+
+// Quote PDF links go out over email/WhatsApp the same way invoice PDFs do (spec 4.8 extension,
+// ADR 0010) — same long-lived window and the same "distinct prefix" reasoning as above.
+const QUOTE_PDF_EXPIRY_MS = 30 * 24 * 60 * 60 * 1000;
+
+export function createQuotePdfToken(quoteId: string): string {
+  const expiresAt = Date.now() + QUOTE_PDF_EXPIRY_MS;
+  const signature = sign(`quote:${quoteId}.${expiresAt}`);
+  return `${expiresAt}.${signature}`;
+}
+
+/** Relative URL for the quote PDF route handler, ready to drop into an <a href> or send externally. */
+export function getQuotePdfUrl(quoteId: string): string {
+  return `/api/quotes/${quoteId}/pdf?token=${createQuotePdfToken(quoteId)}`;
+}
+
+export function verifyQuotePdfToken(quoteId: string, token: string): boolean {
+  const [expiresAtRaw, signature] = token.split(".");
+  if (!expiresAtRaw || !signature) return false;
+
+  const expiresAt = Number(expiresAtRaw);
+  if (!Number.isFinite(expiresAt) || Date.now() > expiresAt) return false;
+
+  const expected = Buffer.from(sign(`quote:${quoteId}.${expiresAt}`));
+  const actual = Buffer.from(signature);
+  if (expected.length !== actual.length) return false;
+  return timingSafeEqual(expected, actual);
+}

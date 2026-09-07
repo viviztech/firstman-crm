@@ -6,15 +6,17 @@ import { Card, CardContent } from "@/components/ui/card";
 import { requireRole } from "@/lib/session";
 import { cn } from "@/lib/utils";
 import { listServiceOptions } from "@/services/catalog";
+import { listStates } from "@/services/geography";
 import { listReferralPartnerOptions } from "@/services/referral-partners";
 import { listAssignableStaff } from "@/services/users";
 
 export default async function NewEnquiryPage() {
   const user = await requireRole("super_admin", "manager", "executive");
-  const [staff, services, referralPartners] = await Promise.all([
+  const [staff, services, referralPartners, states] = await Promise.all([
     listAssignableStaff(),
     listServiceOptions(),
     listReferralPartnerOptions(),
+    listStates(),
   ]);
 
   return (
@@ -43,6 +45,7 @@ export default async function NewEnquiryPage() {
         staff={staff}
         services={services}
         referralPartners={referralPartners}
+        states={states}
         submitLabel="Create enquiry"
         redirectTo={{ mode: "create" }}
       />

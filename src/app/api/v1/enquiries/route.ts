@@ -1,11 +1,17 @@
 import { timingSafeEqual } from "node:crypto";
 import { type NextRequest, NextResponse } from "next/server";
 import { enqueueEnquiryAssignedNotification } from "@/jobs/enquiry-notifications";
+import { enqueueEnquiryQuoteIssuedNotification } from "@/jobs/enquiry-quote-notifications";
 import { enqueueMarketingEnquiryReceivedNotification } from "@/jobs/marketing-enquiry-notifications";
 import { env } from "@/lib/env";
 import { logger } from "@/lib/logger";
 import { rateLimit } from "@/lib/rate-limit";
-import { createEnquiry, publicEnquiryInputSchema } from "@/services/enquiries";
+import {
+  createEnquiry,
+  DuplicateEnquiryPhoneError,
+  findEnquiryIdByPhone,
+  publicEnquiryInputSchema,
+} from "@/services/enquiries";
 
 const RATE_LIMIT = { limit: 30, windowMs: 60_000 };
 
@@ -46,7 +52,23 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     );
   }
 
-  const created = await createEnquiry(parsed.data, null);
+  let created: Awaited<ReturnType<typeof createEnquiry>>;
+  try {
+    created = await createEnquiry(parsed.data, null);
+  } catch (error) {
+    if (error instanceof DuplicateEnquiryPhoneError) {
+      const existingId = await findEnquiryIdByPhone(error.phone);
+      logger.info(
+        { existingId },
+        "enquiries API: phone already on file, returning existing enquiry",
+      );
+      return NextResponse.json(
+        { id: existingId, error: "An enquiry with this phone number already exists" },
+        { status: 409 },
+      );
+    }
+    throw error;
+  }
 
   if (created.assignedTo) {
     await enqueueEnquiryAssignedNotification({
@@ -59,6 +81,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     name: created.name,
     phone: created.phone,
   });
+  if (created.serviceInterestedId) {
+    await enqueueEnquiryQuoteIssuedNotification({ enquiryId: created.id });
+  }
 
   logger.info({ enquiryId: created.id }, "enquiries API: enquiry created");
   return NextResponse.json({ id: created.id }, { status: 201 });

@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { MoneyInput } from "@/components/ui/money-input";
 import { SectionIcon } from "@/components/ui/section-icon";
 import {
   Select,
@@ -29,7 +30,10 @@ export type EnquiryFormDefaults = {
   email?: string | null;
   address?: string | null;
   city?: string | null;
+  state?: string | null;
   pincode?: string | null;
+  numberOfDirectors?: number | null;
+  capitalAmountPaise?: number | null;
   source?: string;
   serviceInterestedId?: string | null;
   referralPartnerId?: string | null;
@@ -41,6 +45,7 @@ export type EnquiryFormDefaults = {
 type StaffOption = { id: string; name: string };
 type ServiceOption = { id: string; name: string };
 type ReferralPartnerOption = { id: string; name: string };
+type StateOption = { id: string; name: string };
 
 export type EnquiryFormRedirect = { mode: "create" } | { mode: "edit"; enquiryId: string };
 
@@ -57,6 +62,7 @@ export function EnquiryForm<T extends { id: string } | undefined>({
   staff,
   services,
   referralPartners,
+  states,
   defaultValues,
   submitLabel,
   redirectTo,
@@ -66,6 +72,7 @@ export function EnquiryForm<T extends { id: string } | undefined>({
   staff: StaffOption[];
   services: ServiceOption[];
   referralPartners: ReferralPartnerOption[];
+  states: StateOption[];
   defaultValues?: EnquiryFormDefaults;
   submitLabel: string;
   redirectTo: EnquiryFormRedirect;
@@ -73,12 +80,16 @@ export function EnquiryForm<T extends { id: string } | undefined>({
   const router = useRouter();
   const [state, formAction, isPending] = useActionState(action, undefined);
   const [city, setCity] = useState(defaultValues?.city ?? "");
+  const [stateName, setStateName] = useState(defaultValues?.state ?? "");
 
   async function handlePincodeBlur(event: FocusEvent<HTMLInputElement>) {
     const pincode = event.target.value.trim();
     if (!/^\d{6}$/.test(pincode)) return;
     const match = await lookupPincodeAction(pincode);
-    if (match) setCity(match.city);
+    if (match) {
+      setCity(match.city);
+      setStateName(match.state);
+    }
   }
 
   useEffect(() => {
@@ -161,6 +172,26 @@ export function EnquiryForm<T extends { id: string } | undefined>({
                 onBlur={handlePincodeBlur}
               />
             </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="state">State</Label>
+              <Select
+                name="state"
+                value={stateName}
+                onValueChange={(value) => setStateName(value ?? "")}
+                items={states.map((s) => ({ value: s.name, label: s.name }))}
+              >
+                <SelectTrigger id="state" className="w-full">
+                  <SelectValue placeholder="Select a state" />
+                </SelectTrigger>
+                <SelectContent>
+                  {states.map((s) => (
+                    <SelectItem key={s.id} value={s.name}>
+                      {s.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -216,6 +247,30 @@ export function EnquiryForm<T extends { id: string } | undefined>({
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="numberOfDirectors">Number of directors/partners</Label>
+              <Input
+                id="numberOfDirectors"
+                name="numberOfDirectors"
+                type="number"
+                min={1}
+                max={50}
+                placeholder="e.g. 2"
+                defaultValue={defaultValues?.numberOfDirectors ?? ""}
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="capitalAmountPaise">Authorized capital</Label>
+              <MoneyInput
+                id="capitalAmountPaise"
+                name="capitalAmountPaise"
+                placeholder="1,00,000"
+                defaultValuePaise={defaultValues?.capitalAmountPaise}
+              />
             </div>
           </div>
 

@@ -17,6 +17,7 @@ import {
 import { getAppUrl } from "@/lib/app-url";
 import { buildMarketingMetadata } from "@/lib/marketing-metadata";
 import { formatMoney } from "@/lib/money";
+import { listStates } from "@/services/geography";
 import {
   getPublicServiceBySlug,
   getPublicServices,
@@ -51,6 +52,10 @@ export default async function ServiceDetailPage({ params }: { params: Promise<{ 
   const { slug } = await params;
   const service = await getPublicServiceBySlug(slug);
   if (!service) notFound();
+  // Only this page's hero form is framed around an instant quote — every other service page
+  // keeps the generic "request a callback" copy (explicit ask: scope this to Pvt Ltd only).
+  const isPvtLtdRegistration = service.slug === "pvt-ltd-registration";
+  const states = isPvtLtdRegistration ? await listStates() : [];
   const genericContent = getServicePageContent(service);
   const feeFormatted = formatMoney(service.basePricePaise);
   const rawOverride = getServiceContentOverride(service.slug);
@@ -306,14 +311,29 @@ export default async function ServiceDetailPage({ params }: { params: Promise<{ 
             </div>
             <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xl shadow-slate-950/5">
               <p className="text-xs font-bold tracking-[.14em] text-pink-700 uppercase">
-                Discuss this service
+                {isPvtLtdRegistration ? "Get your fee quote" : "Discuss this service"}
               </p>
-              <h2 className="mt-2 text-lg font-bold text-slate-950">Get a callback today.</h2>
+              <h2 className="mt-2 text-lg font-bold text-slate-950">
+                {isPvtLtdRegistration ? "Get your instant quote." : "Get a callback today."}
+              </h2>
               <p className="mt-1 text-sm leading-6 text-slate-600">
-                Share your name and number — a specialist will call you back.
+                {isPvtLtdRegistration
+                  ? "A few quick details get you an accurate, state-wise fee quote by WhatsApp and email right away."
+                  : "Share your name and number — a specialist will call you back."}
               </p>
               <div className="mt-4">
-                <QuickEnquiryForm defaultServiceId={service.id} />
+                <QuickEnquiryForm
+                  defaultServiceId={service.id}
+                  defaultServiceName={isPvtLtdRegistration ? service.name : undefined}
+                  states={isPvtLtdRegistration ? states : undefined}
+                  ctaLabel={isPvtLtdRegistration ? "Send my quote" : undefined}
+                  successHeading={isPvtLtdRegistration ? "Your quote is on its way" : undefined}
+                  successBody={
+                    isPvtLtdRegistration
+                      ? "Check WhatsApp and your email in a moment for the fee breakdown. A specialist will follow up shortly too."
+                      : undefined
+                  }
+                />
               </div>
             </div>
           </div>

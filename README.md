@@ -483,6 +483,28 @@ prescribe an exact answer:
     the page/route level instead. This is an explicit, ADR-recorded deviation
     from CLAUDE.md §6's "No client-facing portal in v1," scoped read-only for
     now (no uploads/payments/messaging).
+20. **State-wise service pricing + auto-sent enquiry quotes (ADR 0010,
+    `docs/adr/0010-state-wise-service-pricing-and-auto-quotes.md`)**: government
+    fee components (Name Approval, DSC, DIN, SPICe, MOA, AOA) genuinely differ by
+    state, so `services.basePricePaise`/`govtFeePaise` alone couldn't represent
+    them. Added a `service_state_prices` table (one jsonb `feeComponents` row per
+    service+state, editable from the service edit screen) that a new
+    `quotes` table/PDF/notification job reads to auto-generate and send a fee
+    quote — WhatsApp document + emailed link — the moment any enquiry-creation
+    path (public API, marketing form, or staff-entered) names an interested
+    service. Falls back to a flat professional+govt fee line when no state
+    pricing is configured, so this is additive over the existing catalog.
+    Fee components like DSC/DIN are also charged once per director/partner,
+    and components like MOA/AOA stamp duty are typically charged per lakh of
+    authorized capital — each `feeComponents` row carries `perDirector`/
+    `perLakhCapital` flags, and new `enquiries.numberOfDirectors`/
+    `capitalAmountPaise` fields (collected on the marketing form, the internal
+    enquiry form, and — state/directors/capital only — the Pvt Ltd
+    registration page's own quick quote form) multiply flagged rows
+    independently at quote time, producing `{qty, ratePaise, amountPaise}`
+    line items (mirroring `InvoiceLineItem`) instead of a single flat amount
+    per row. Capital defaults to ₹1,00,000 (rounded up to the next whole lakh)
+    when not provided.
 
 ## Phase checklists (per `CLAUDE.md` §5)
 

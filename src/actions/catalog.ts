@@ -20,6 +20,11 @@ import {
   updateServiceCategory,
   updateServiceVertical,
 } from "@/services/catalog";
+import {
+  deleteServiceStatePrice,
+  serviceStatePriceInputSchema,
+  setServiceStatePriceComponents,
+} from "@/services/service-pricing";
 
 const CAN_MANAGE_CATALOG: Role[] = ["super_admin", "manager"];
 
@@ -211,5 +216,61 @@ export async function deleteServiceAction(id: string): Promise<ActionResult> {
   }
 
   revalidatePath("/catalog");
+  return { ok: true, data: undefined };
+}
+
+export async function setServiceStatePriceAction(
+  serviceId: string,
+  _prev: ActionResult | undefined,
+  formData: FormData,
+): Promise<ActionResult> {
+  const currentUser = await requireUser();
+  if (!CAN_MANAGE_CATALOG.includes(currentUser.role)) {
+    return { ok: false, error: "You do not have permission to manage the catalog." };
+  }
+
+  let feeComponents: unknown = [];
+  try {
+    feeComponents = JSON.parse(String(formData.get("feeComponents") ?? "[]"));
+  } catch {
+    return { ok: false, error: "Invalid fee components." };
+  }
+
+  const parsed = serviceStatePriceInputSchema.safeParse({
+    stateId: formData.get("stateId"),
+    feeComponents,
+  });
+  if (!parsed.success) {
+    return { ok: false, error: firstIssueMessage(parsed.error) };
+  }
+
+  const result = await setServiceStatePriceComponents(
+    serviceId,
+    parsed.data,
+    await toScope(currentUser),
+  );
+  if (!result.ok) {
+    return { ok: false, error: result.error };
+  }
+
+  revalidatePath(`/catalog/services/${serviceId}/edit`);
+  return { ok: true, data: undefined };
+}
+
+export async function deleteServiceStatePriceAction(
+  serviceId: string,
+  stateId: string,
+): Promise<ActionResult> {
+  const currentUser = await requireUser();
+  if (!CAN_MANAGE_CATALOG.includes(currentUser.role)) {
+    return { ok: false, error: "You do not have permission to manage the catalog." };
+  }
+
+  const result = await deleteServiceStatePrice(serviceId, stateId, await toScope(currentUser));
+  if (!result.ok) {
+    return { ok: false, error: result.error };
+  }
+
+  revalidatePath(`/catalog/services/${serviceId}/edit`);
   return { ok: true, data: undefined };
 }

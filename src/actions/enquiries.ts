@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { type ActionResult, firstIssueMessage, toScope } from "@/actions/shared";
 import { enqueueEnquiryAssignedNotification } from "@/jobs/enquiry-notifications";
+import { enqueueEnquiryQuoteIssuedNotification } from "@/jobs/enquiry-quote-notifications";
 import { enqueueMarketingEnquiryReceivedNotification } from "@/jobs/marketing-enquiry-notifications";
 import { enqueueSaleProformaIssuedNotification } from "@/jobs/sale-proforma-notifications";
 import type { Role } from "@/lib/auth";
@@ -13,6 +14,7 @@ import {
   closeEnquiryAsSale,
   closeEnquiryAsSaleInputSchema,
   createEnquiry,
+  DuplicateEnquiryPhoneError,
   deleteEnquiry,
   enquiryFollowupInputSchema,
   enquiryInputSchema,
@@ -52,7 +54,16 @@ export async function createEnquiryAction(
     return { ok: false, error: firstIssueMessage(parsed.error) };
   }
 
-  const created = await createEnquiry(parsed.data, await toScope(currentUser));
+  let created: Awaited<ReturnType<typeof createEnquiry>>;
+  try {
+    created = await createEnquiry(parsed.data, await toScope(currentUser));
+  } catch (error) {
+    if (error instanceof DuplicateEnquiryPhoneError) {
+      return { ok: false, error: "An enquiry with this phone number already exists." };
+    }
+    throw error;
+  }
+
   if (created.assignedTo) {
     await enqueueEnquiryAssignedNotification({
       enquiryId: created.id,
@@ -64,6 +75,9 @@ export async function createEnquiryAction(
     name: created.name,
     phone: created.phone,
   });
+  if (created.serviceInterestedId) {
+    await enqueueEnquiryQuoteIssuedNotification({ enquiryId: created.id });
+  }
 
   revalidatePath("/enquiries");
   return { ok: true, data: { id: created.id } };

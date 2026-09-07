@@ -4,6 +4,7 @@ import { MarketingEnquiryForm } from "@/components/marketing/enquiry-form";
 import { buildMarketingMetadata } from "@/lib/marketing-metadata";
 import { telHref } from "@/lib/phone";
 import { getCompanyProfile } from "@/services/company-profile";
+import { listStates } from "@/services/geography";
 import { getPublicServices } from "@/services/marketing-catalog";
 
 export const metadata: Metadata = buildMarketingMetadata({
@@ -13,7 +14,11 @@ export const metadata: Metadata = buildMarketingMetadata({
   path: "/contact",
 });
 export default async function ContactPage() {
-  const [profile, services] = await Promise.all([getCompanyProfile(), getPublicServices()]);
+  const [profile, services, states] = await Promise.all([
+    getCompanyProfile(),
+    getPublicServices(),
+    listStates(),
+  ]);
   return (
     <div className="marketing-site bg-slate-50">
       <div className="mx-auto grid max-w-7xl gap-10 px-4 py-16 sm:px-6 md:grid-cols-[.8fr_1.2fr] lg:px-8 lg:py-24">
@@ -69,7 +74,10 @@ export default async function ContactPage() {
             Complete the form and our team will respond during business hours. No payment is
             required to discuss your requirement.
           </p>
-          <MarketingEnquiryForm services={services.map((s) => ({ id: s.id, name: s.name }))} />
+          <MarketingEnquiryForm
+            services={services.map((s) => ({ id: s.id, name: s.name }))}
+            states={states.map((s) => ({ id: s.id, name: s.name }))}
+          />
         </div>
       </div>
     </div>

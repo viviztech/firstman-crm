@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { updateServiceAction } from "@/actions/catalog";
 import { DeleteServiceButton } from "@/components/catalog/delete-service-button";
 import { ServiceForm } from "@/components/catalog/service-form";
+import { ServiceStatePricingEditor } from "@/components/catalog/service-state-pricing-editor";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { env } from "@/lib/env";
 import { formatMoney } from "@/lib/money";
@@ -14,18 +15,23 @@ import {
   listServicePriceHistory,
   listServiceRelations,
 } from "@/services/catalog";
+import { listStates } from "@/services/geography";
+import { listServiceStatePrices } from "@/services/service-pricing";
 
 export default async function EditServicePage({ params }: { params: Promise<{ id: string }> }) {
   await requireRole("super_admin", "manager");
   const { id } = await params;
 
-  const [service, categories, allServices, priceHistory, relations] = await Promise.all([
-    getServiceById(id),
-    listServiceCategoryOptions(),
-    listServiceOptions(),
-    listServicePriceHistory(id),
-    listServiceRelations(id),
-  ]);
+  const [service, categories, allServices, priceHistory, relations, statePrices, states] =
+    await Promise.all([
+      getServiceById(id),
+      listServiceCategoryOptions(),
+      listServiceOptions(),
+      listServicePriceHistory(id),
+      listServiceRelations(id),
+      listServiceStatePrices(id),
+      listStates(),
+    ]);
 
   if (!service) {
     notFound();
@@ -89,6 +95,12 @@ export default async function EditServicePage({ params }: { params: Promise<{ id
           )}
         </CardContent>
       </Card>
+
+      <ServiceStatePricingEditor
+        serviceId={id}
+        statePrices={statePrices}
+        states={states.map((s) => ({ id: s.id, name: s.name }))}
+      />
     </div>
   );
 }

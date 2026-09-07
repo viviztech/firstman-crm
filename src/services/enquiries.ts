@@ -29,6 +29,7 @@ import {
 } from "@/db/schema/enquiries";
 import { orders } from "@/db/schema/orders";
 import { staffPincodeAllocations, staffProfiles, staffServiceAssignments } from "@/db/schema/staff";
+import { isUniqueViolation } from "@/lib/db-errors";
 import { type ActorScope, teamCondition, visibilityConditions } from "@/lib/scope";
 import {
   optionalDateTime,
@@ -53,7 +54,16 @@ export const enquiryInputSchema = z.object({
   email: optionalEmailSchema,
   address: optionalTrimmed(500),
   city: optionalTrimmed(100),
+  state: optionalTrimmed(100),
   pincode: pincodeSchema,
+  numberOfDirectors: z.preprocess(
+    (value) => (value === "" || value === undefined ? undefined : value),
+    z.coerce.number().int().positive().max(50).optional(),
+  ),
+  capitalAmountPaise: z.preprocess(
+    (value) => (value === "" || value === undefined ? undefined : value),
+    z.coerce.number().int().nonnegative().optional(),
+  ),
   source: z.enum(enquirySourceEnum.enumValues),
   serviceInterestedId: optionalUuid,
   assignedTo: optionalTrimmed(),
@@ -403,45 +413,69 @@ export async function listLostEnquiries() {
   });
 }
 
+/** Thrown by createEnquiry when `phone` collides with an existing enquiry (spec 4.1's "phone unique, indexed") — callers turn this into a friendly, non-crashing response rather than letting the raw Postgres error reach a user. */
+export class DuplicateEnquiryPhoneError extends Error {
+  constructor(public readonly phone: string) {
+    super(`An enquiry with phone ${phone} already exists`);
+    this.name = "DuplicateEnquiryPhoneError";
+  }
+}
+
 /** actor is null for the public API — those enquiries have no staff creator, only an optional auto-assignee. */
 export async function createEnquiry(input: EnquiryInput, actor: ActorScope | null) {
-  return db.transaction(async (tx) => {
-    let assignedTo = enforceAssignment(input.assignedTo, actor);
+  try {
+    return await db.transaction(async (tx) => {
+      let assignedTo = enforceAssignment(input.assignedTo, actor);
 
-    if (!assignedTo) {
-      const autoAssignEnabled = await getSetting<boolean>(ENQUIRY_AUTO_ASSIGNMENT_KEY, false, tx);
-      if (autoAssignEnabled) {
-        assignedTo = await pickRoundRobinAssignee(tx, actor, {
-          pincode: input.pincode,
-          serviceInterestedId: input.serviceInterestedId,
-        });
+      if (!assignedTo) {
+        const autoAssignEnabled = await getSetting<boolean>(ENQUIRY_AUTO_ASSIGNMENT_KEY, false, tx);
+        if (autoAssignEnabled) {
+          assignedTo = await pickRoundRobinAssignee(tx, actor, {
+            pincode: input.pincode,
+            serviceInterestedId: input.serviceInterestedId,
+          });
+        }
       }
+
+      const [created] = await tx
+        .insert(enquiries)
+        .values({
+          ...input,
+          assignedTo,
+          createdBy: actor?.userId ?? null,
+          updatedBy: actor?.userId ?? null,
+        })
+        .returning();
+      if (!created) throw new Error("Failed to create enquiry");
+
+      await recordActivity(
+        {
+          actorId: actor?.userId ?? null,
+          entityType: "enquiry",
+          entityId: created.id,
+          action: "created",
+          diff: { ...input, assignedTo },
+        },
+        tx,
+      );
+
+      return created;
+    });
+  } catch (error) {
+    if (isUniqueViolation(error, "enquiries_phone_idx")) {
+      throw new DuplicateEnquiryPhoneError(input.phone);
     }
+    throw error;
+  }
+}
 
-    const [created] = await tx
-      .insert(enquiries)
-      .values({
-        ...input,
-        assignedTo,
-        createdBy: actor?.userId ?? null,
-        updatedBy: actor?.userId ?? null,
-      })
-      .returning();
-    if (!created) throw new Error("Failed to create enquiry");
-
-    await recordActivity(
-      {
-        actorId: actor?.userId ?? null,
-        entityType: "enquiry",
-        entityId: created.id,
-        action: "created",
-        diff: { ...input, assignedTo },
-      },
-      tx,
-    );
-
-    return created;
+/** Recovery path for a DuplicateEnquiryPhoneError — lets a caller point back at the existing row instead of erroring the visitor. */
+export async function findEnquiryIdByPhone(phone: string): Promise<string | null> {
+  const row = await db.query.enquiries.findFirst({
+    where: eq(enquiries.phone, phone),
+    columns: { id: true },
   });
+  return row?.id ?? null;
 }
 
 export async function updateEnquiry(id: string, input: EnquiryInput, actor: ActorScope) {

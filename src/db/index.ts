@@ -15,6 +15,7 @@ import * as messageLogsSchema from "@/db/schema/message-logs";
 import * as notificationsSchema from "@/db/schema/notifications";
 import * as ordersSchema from "@/db/schema/orders";
 import * as portalSchema from "@/db/schema/portal";
+import * as quotesSchema from "@/db/schema/quotes";
 import * as referralPartnersSchema from "@/db/schema/referral-partners";
 import * as settingsSchema from "@/db/schema/settings";
 import * as staffSchema from "@/db/schema/staff";
@@ -39,6 +40,7 @@ const schema = {
   ...referralPartnersSchema,
   ...geographySchema,
   ...portalSchema,
+  ...quotesSchema,
 };
 
 declare global {

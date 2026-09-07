@@ -1,0 +1,134 @@
+import { randomUUID } from "node:crypto";
+import { and, eq, ilike } from "drizzle-orm";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { db } from "@/db";
+import { user } from "@/db/schema/auth-schema";
+import { serviceStatePrices, services } from "@/db/schema/catalog";
+import { enquiries } from "@/db/schema/enquiries";
+import { states } from "@/db/schema/geography";
+import { messageLogs } from "@/db/schema/message-logs";
+import { quotes } from "@/db/schema/quotes";
+import { processEnquiryQuoteIssuedJob } from "@/jobs/enquiry-quote-notifications";
+import { makeScope } from "@/lib/test-scope";
+import { setServiceStatePriceComponents } from "@/services/service-pricing";
+
+// WHATSAPP_TOKEN is empty in the test .env, so WhatsApp sends here exercise the log driver
+// deterministically (see notify.test.ts). Email always attempts a real SMTP send.
+
+describe("enquiry-quote-notifications (integration)", () => {
+  const enquiryIds: string[] = [];
+  const managerId = randomUUID();
+  let serviceId: string;
+  let stateId: string;
+
+  beforeAll(async () => {
+    const service = await db.query.services.findFirst({
+      where: eq(services.slug, "pvt-ltd-registration"),
+    });
+    if (!service) throw new Error("Seed catalog first — pvt-ltd-registration service not found");
+    serviceId = service.id;
+
+    const state = await db.query.states.findFirst({ where: eq(states.name, "Tamil Nadu") });
+    if (!state) throw new Error("Seed geography first — Tamil Nadu not found");
+    stateId = state.id;
+
+    await db.insert(user).values({
+      id: managerId,
+      name: "Quote Notification Test Manager",
+      email: `quote-notif-manager-${managerId}@test.local`,
+      emailVerified: true,
+      role: "manager",
+    });
+
+    await setServiceStatePriceComponents(
+      serviceId,
+      {
+        stateId,
+        feeComponents: [
+          {
+            label: "Name Approval",
+            amountPaise: 100000,
+            perDirector: false,
+            perLakhCapital: false,
+          },
+          { label: "DSC", amountPaise: 150000, perDirector: true, perLakhCapital: false },
+          { label: "DIN", amountPaise: 50000, perDirector: true, perLakhCapital: false },
+          { label: "SPICe Form", amountPaise: 15000, perDirector: false, perLakhCapital: false },
+          { label: "MOA", amountPaise: 500000, perDirector: false, perLakhCapital: true },
+          { label: "AOA", amountPaise: 500000, perDirector: false, perLakhCapital: true },
+        ],
+      },
+      makeScope(managerId, "manager"),
+    );
+  });
+
+  afterAll(async () => {
+    for (const id of enquiryIds) {
+      const enquiryQuotes = await db.query.quotes.findMany({ where: eq(quotes.enquiryId, id) });
+      for (const quote of enquiryQuotes) {
+        await db.delete(messageLogs).where(eq(messageLogs.entityId, quote.id));
+      }
+      await db.delete(quotes).where(eq(quotes.enquiryId, id));
+    }
+    await db.delete(enquiries).where(ilike(enquiries.phone, "+919876650%"));
+    await db
+      .delete(serviceStatePrices)
+      .where(
+        and(eq(serviceStatePrices.serviceId, serviceId), eq(serviceStatePrices.stateId, stateId)),
+      );
+    await db.delete(user).where(eq(user.id, managerId));
+  });
+
+  it("generates a quote, logs a whatsapp document send and an email, and marks the quote sent", async () => {
+    const phone = `+919876650${randomUUID().slice(0, 6)}`;
+    const email = `quote-notif-${randomUUID()}@example.com`;
+    const [enquiry] = await db
+      .insert(enquiries)
+      .values({
+        name: "Quote Notification Fixture",
+        phone,
+        email,
+        state: "Tamil Nadu",
+        serviceInterestedId: serviceId,
+        numberOfDirectors: 2,
+        source: "website",
+      })
+      .returning();
+    if (!enquiry) throw new Error("failed to insert fixture enquiry");
+    enquiryIds.push(enquiry.id);
+
+    await processEnquiryQuoteIssuedJob({ enquiryId: enquiry.id });
+
+    const [quote] = await db.query.quotes.findMany({ where: eq(quotes.enquiryId, enquiry.id) });
+    expect(quote).toBeDefined();
+    expect(quote?.numberOfDirectors).toBe(2);
+    expect(quote?.totalPaise).toBe(1515000); // TN base 1,315,000 + one extra DSC+DIN for director 2
+    expect(quote?.sentAt).not.toBeNull();
+
+    const rows = await db.query.messageLogs.findMany({
+      where: eq(messageLogs.entityId, quote?.id ?? ""),
+    });
+    const whatsappRow = rows.find((r) => r.channel === "whatsapp");
+    const emailRow = rows.find((r) => r.channel === "email");
+    expect(whatsappRow?.status).toBe("sent");
+    expect(emailRow?.to).toBe(email);
+    expect(["sent", "failed"]).toContain(emailRow?.status);
+  });
+
+  it("does nothing when the enquiry has no interested service", async () => {
+    const phone = `+919876650${randomUUID().slice(0, 6)}`;
+    const [enquiry] = await db
+      .insert(enquiries)
+      .values({ name: "No Service Fixture", phone, source: "website" })
+      .returning();
+    if (!enquiry) throw new Error("failed to insert fixture enquiry");
+    enquiryIds.push(enquiry.id);
+
+    await processEnquiryQuoteIssuedJob({ enquiryId: enquiry.id });
+
+    const enquiryQuotes = await db.query.quotes.findMany({
+      where: eq(quotes.enquiryId, enquiry.id),
+    });
+    expect(enquiryQuotes).toHaveLength(0);
+  });
+});

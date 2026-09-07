@@ -155,6 +155,27 @@
       "when": 1787905754614,
       "tag": "0021_strong_power_pack",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1788760149433,
+      "tag": "0022_absurd_sir_ram",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1788762182693,
+      "tag": "0023_daily_the_twelve",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1788767050192,
+      "tag": "0024_dazzling_boomer",
+      "breakpoints": true
     }
   ]
 }

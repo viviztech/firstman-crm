@@ -9,6 +9,7 @@ import { requireRole } from "@/lib/session";
 import { cn } from "@/lib/utils";
 import { listServiceOptions } from "@/services/catalog";
 import { getEnquiry } from "@/services/enquiries";
+import { listStates } from "@/services/geography";
 import { listReferralPartnerOptions } from "@/services/referral-partners";
 import { listAssignableStaff } from "@/services/users";
 
@@ -16,11 +17,12 @@ export default async function EditEnquiryPage({ params }: { params: Promise<{ id
   const user = await requireRole("super_admin", "manager", "executive");
   const { id } = await params;
 
-  const [enquiry, staff, services, referralPartners] = await Promise.all([
+  const [enquiry, staff, services, referralPartners, states] = await Promise.all([
     getEnquiry(id, await toScope(user)),
     listAssignableStaff(),
     listServiceOptions(),
     listReferralPartnerOptions(),
+    listStates(),
   ]);
 
   if (!enquiry) {
@@ -51,6 +53,7 @@ export default async function EditEnquiryPage({ params }: { params: Promise<{ id
         staff={staff}
         services={services}
         referralPartners={referralPartners}
+        states={states}
         submitLabel="Save changes"
         redirectTo={{ mode: "edit", enquiryId: id }}
         defaultValues={{
@@ -59,7 +62,10 @@ export default async function EditEnquiryPage({ params }: { params: Promise<{ id
           email: enquiry.email,
           address: enquiry.address,
           city: enquiry.city,
+          state: enquiry.state,
           pincode: enquiry.pincode,
+          numberOfDirectors: enquiry.numberOfDirectors,
+          capitalAmountPaise: enquiry.capitalAmountPaise,
           source: enquiry.source,
           serviceInterestedId: enquiry.serviceInterestedId,
           referralPartnerId: enquiry.referralPartnerId,

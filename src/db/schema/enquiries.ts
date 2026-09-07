@@ -1,5 +1,14 @@
 import { relations } from "drizzle-orm";
-import { index, pgEnum, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
+import {
+  index,
+  integer,
+  pgEnum,
+  pgTable,
+  text,
+  timestamp,
+  uniqueIndex,
+  uuid,
+} from "drizzle-orm/pg-core";
 import { actorColumns, baseColumns } from "@/db/schema/_shared";
 import { user } from "@/db/schema/auth-schema";
 import { services } from "@/db/schema/catalog";
@@ -51,9 +60,19 @@ export const enquiries = pgTable(
     email: text("email"),
     address: text("address"),
     city: text("city"),
+    // Free-text state name (mirrors clients.state) rather than a stateId FK — matched by name
+    // against the `states` master table when a state-wise quote needs it (ADR 0010).
+    state: text("state"),
     // Franchise territory routing (spec extension, ADR 0001) keys off this — enquiries previously
     // only carried free-text city, with no structured field to match against pincode allocations.
     pincode: text("pincode"),
+    // Drives per-director fee components (DSC/DIN) on the auto-sent quote (ADR 0010) — null when
+    // not provided/not applicable, treated as 1 by computeServiceQuote.
+    numberOfDirectors: integer("number_of_directors"),
+    // Authorized capital, in paise (spec §2) — drives perLakhCapital fee components (MOA/AOA
+    // stamp duty) the same way numberOfDirectors drives perDirector ones. Null when not
+    // provided, treated as ₹1,00,000 by computeServiceQuote.
+    capitalAmountPaise: integer("capital_amount_paise"),
     source: enquirySourceEnum("source").notNull(),
     serviceInterestedId: uuid("service_interested_id").references(() => services.id, {
       onDelete: "set null",

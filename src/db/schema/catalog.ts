@@ -11,6 +11,7 @@ import {
   uuid,
 } from "drizzle-orm/pg-core";
 import { actorColumns, baseColumns } from "@/db/schema/_shared";
+import { states } from "@/db/schema/geography";
 
 export const recurrenceEnum = pgEnum("recurrence", ["monthly", "quarterly", "yearly"]);
 
@@ -112,6 +113,50 @@ export const serviceRelations = pgTable(
   ],
 );
 
+export type ServiceStateFeeComponent = {
+  label: string;
+  /** Rate for one unit — the total per line is this × quantity at quote time (qty combines
+   *  whichever of perDirector/perLakhCapital below apply), mirroring InvoiceLineItem's rate/qty
+   *  split. */
+  amountPaise: number;
+  /** DSC/DIN-style components that scale with headcount rather than being a flat one-time fee. */
+  perDirector: boolean;
+  /** MOA/AOA-style stamp duty that scales with authorized capital — rate is per ₹1,00,000
+   *  (1 lakh) of capital, rounded up to the next whole lakh. */
+  perLakhCapital: boolean;
+};
+
+/**
+ * State-specific fee breakdown for a service (e.g. Pvt Ltd registration's Name Approval/DSC/
+ * DIN/SPICe/MOA/AOA components, which differ by state — stamp duty on MOA/AOA in particular).
+ * One row per (serviceId, stateId); a service with no row for a given state falls back to its
+ * flat basePricePaise/govtFeePaise (computeServiceQuote in service-pricing.ts). feeComponents
+ * is jsonb rather than exploded into rows, matching checklistTemplate/requiredDocuments above.
+ */
+export const serviceStatePrices = pgTable(
+  "service_state_prices",
+  {
+    ...baseColumns(),
+    ...actorColumns(),
+    serviceId: uuid("service_id")
+      .notNull()
+      .references(() => services.id, { onDelete: "cascade" }),
+    stateId: uuid("state_id")
+      .notNull()
+      .references(() => states.id, { onDelete: "cascade" }),
+    feeComponents: jsonb("fee_components").$type<ServiceStateFeeComponent[]>().notNull(),
+  },
+  (table) => [
+    uniqueIndex("service_state_prices_service_state_idx").on(table.serviceId, table.stateId),
+    index("service_state_prices_service_id_idx").on(table.serviceId),
+  ],
+);
+
+export const serviceStatePricesRelations = relations(serviceStatePrices, ({ one }) => ({
+  service: one(services, { fields: [serviceStatePrices.serviceId], references: [services.id] }),
+  state: one(states, { fields: [serviceStatePrices.stateId], references: [states.id] }),
+}));
+
 export const serviceVerticalsRelations = relations(serviceVerticals, ({ many }) => ({
   categories: many(serviceCategories),
 }));
@@ -130,6 +175,7 @@ export const servicesRelations = relations(services, ({ one, many }) => ({
     references: [serviceCategories.id],
   }),
   priceHistory: many(servicePriceHistory),
+  statePrices: many(serviceStatePrices),
 }));
 
 export const servicePriceHistoryRelations = relations(servicePriceHistory, ({ one }) => ({

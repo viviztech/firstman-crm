@@ -17,11 +17,13 @@ import {
   claimEnquiry,
   closeEnquiryAsSale,
   createEnquiry,
+  DuplicateEnquiryPhoneError,
   deleteEnquiry,
   ENQUIRY_AUTO_ASSIGNMENT_KEY,
   type EnquiryInput,
   enquiryInputSchema,
   enquiryStatusUpdateSchema,
+  findEnquiryIdByPhone,
   getEnquiry,
   getEnquiryForNotification,
   getMySalesDashboardStats,
@@ -184,6 +186,24 @@ describe("enquiries service (integration)", () => {
     await setSetting(ENQUIRY_AUTO_ASSIGNMENT_KEY, false, null);
     const created = await createEnquiry(input("9876600004"), managerScope);
     expect(created.assignedTo).toBeNull();
+  });
+
+  it("throws DuplicateEnquiryPhoneError on a second enquiry for the same phone, without leaving a partial row", async () => {
+    const enquiryInput = input("9876600070");
+    await createEnquiry(enquiryInput, managerScope);
+
+    await expect(createEnquiry(enquiryInput, managerScope)).rejects.toThrow(
+      DuplicateEnquiryPhoneError,
+    );
+
+    const existingId = await findEnquiryIdByPhone(enquiryInput.phone);
+    expect(existingId).toBeTruthy();
+
+    const rows = await db
+      .select({ id: enquiries.id })
+      .from(enquiries)
+      .where(eq(enquiries.phone, enquiryInput.phone));
+    expect(rows).toHaveLength(1);
   });
 
   it("auto-assigns to a real executive when auto-assignment is on and no assignee was given", async () => {
