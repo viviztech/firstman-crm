@@ -161,22 +161,24 @@ export function MarketingEnquiryForm({
  * normally gathered on follow-up. Copy is overridable per page: submitting always sends the
  * auto-quote job (see enqueueEnquiryQuoteIssuedNotification) once a defaultServiceId is set, so
  * a page that wants to foreground that (e.g. the Pvt Ltd registration page) can say so
- * explicitly — and, by passing `states`, also collect the state/directors/capital that a
- * state-and-capital-aware quote needs, without turning this into the full MarketingEnquiryForm.
+ * explicitly — and, by passing `states`, also collect the email/state/directors/capital that a
+ * state-and-capital-aware quote needs (and that the auto-quote job needs to email the PDF —
+ * notifyEmail no-ops without one), without turning this into the full MarketingEnquiryForm. The
+ * service itself never shows here — it's implied by the page and travels only as a hidden field.
  */
 export function QuickEnquiryForm({
   defaultServiceId,
-  defaultServiceName,
   states,
+  defaultState = "Tamil Nadu",
   ctaLabel = "Request a callback",
   successHeading = "Thanks — we've got your details",
   successBody = "Our team will reach out shortly.",
 }: {
   defaultServiceId?: string;
-  /** Shown as a locked, pre-selected field when `states` is also set — otherwise the service travels only as a hidden field. */
-  defaultServiceName?: string;
-  /** Presence (non-empty) turns on the fuller quote-detail fields: locked service, state, directors, capital. */
+  /** Presence (non-empty) turns on the fuller quote-detail fields: email, state, directors, capital. */
   states?: StateOption[];
+  /** Pre-selected state name — must match one of `states`' names. Defaults to the firm's home state so most visitors get an accurate quote without picking anything. */
+  defaultState?: string;
   ctaLabel?: string;
   successHeading?: string;
   successBody?: string;
@@ -214,20 +216,24 @@ export function QuickEnquiryForm({
 
       {showQuoteDetails ? (
         <>
-          {defaultServiceName ? (
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="quick-enquiry-service" className="text-xs text-muted-foreground">
-                Service (auto-selected)
-              </Label>
-              <Input id="quick-enquiry-service" value={defaultServiceName} disabled />
-            </div>
-          ) : null}
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="quick-enquiry-email" className="text-xs text-muted-foreground">
+              Email
+            </Label>
+            <Input
+              id="quick-enquiry-email"
+              name="email"
+              type="email"
+              placeholder="you@example.com"
+            />
+          </div>
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="quick-enquiry-state" className="text-xs text-muted-foreground">
               State
             </Label>
             <Select
               name="state"
+              defaultValue={defaultState}
               items={(states ?? []).map((s) => ({ value: s.name, label: s.name }))}
             >
               <SelectTrigger id="quick-enquiry-state" className="w-full">

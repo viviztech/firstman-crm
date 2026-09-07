@@ -324,7 +324,6 @@ export default async function ServiceDetailPage({ params }: { params: Promise<{ 
               <div className="mt-4">
                 <QuickEnquiryForm
                   defaultServiceId={service.id}
-                  defaultServiceName={isPvtLtdRegistration ? service.name : undefined}
                   states={isPvtLtdRegistration ? states : undefined}
                   ctaLabel={isPvtLtdRegistration ? "Send my quote" : undefined}
                   successHeading={isPvtLtdRegistration ? "Your quote is on its way" : undefined}
