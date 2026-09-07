@@ -26,6 +26,15 @@ the public marketing site, the partner API, or a staff member logging a walk-in.
    from the flat `basePricePaise`/`govtFeePaise`, so this is additive — no existing pricing data
    or behavior changes until an admin explicitly configures a state.
 
+   **A state's `feeComponents` are the government-side breakdown only — the Professional fee
+   always leads the quote regardless.** The first version of this ADR had a gap here: once a state
+   row existed, its components were the *entire* quote, silently dropping FirstMan's own service
+   charge unless an admin manually duplicated it as one of the rows. Fixed by always prepending a
+   `Professional fee` line (from `service.basePricePaise`) before the state-specific components,
+   mirroring the flat-fallback path — so a configured state breakdown is additive on top of the
+   professional fee, never a replacement for it. Reflected in the state-pricing editor's copy so
+   admins don't duplicate it themselves.
+
    `perDirector` and `perLakhCapital` (added as same-ADR follow-ups) each mark a component whose
    real-world cost scales with something other than a flat one-time fee: DSC/DIN are issued one
    per director/partner, while MOA/AOA stamp duty is typically quoted per ₹1,00,000 (1 lakh) of

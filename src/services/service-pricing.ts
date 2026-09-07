@@ -148,17 +148,29 @@ function resolveCapitalLakhs(capitalAmountPaise: number | null | undefined): num
   return Math.max(1, Math.ceil(paise / PAISE_PER_LAKH));
 }
 
+/** FirstMan's own service charge — always the first quote line, state-specific breakdown or not. */
+function professionalFeeComponent(basePricePaise: number): ServiceQuoteComponent {
+  return {
+    label: "Professional fee",
+    qty: 1,
+    ratePaise: basePricePaise,
+    amountPaise: basePricePaise,
+  };
+}
+
 /**
  * The fee breakdown to quote for a service, optionally narrowed to a state (matched by name —
  * enquiries/clients store state as free text, not a stateId FK; see enquiries.ts schema), to a
  * director/partner count for components marked `perDirector` (e.g. DSC/DIN, one per director),
  * and to an authorized capital amount for components marked `perLakhCapital` (e.g. MOA/AOA stamp
  * duty, typically quoted per lakh of capital — ADR 0010 follow-up). A component can combine both
- * factors; each multiplies its own qty. Falls back to a single flat "Professional fee" +
- * "Government fee" line from the service's basePricePaise/govtFeePaise — never scaled by
- * director count or capital, since that split doesn't exist outside a configured state
- * breakdown — when no state-specific breakdown is configured, so every service is always
- * quotable even before an admin sets one up.
+ * factors; each multiplies its own qty. The service's flat "Professional fee"
+ * (basePricePaise) always leads the quote — a configured state breakdown is the *government-side*
+ * fee schedule (Name Approval/DSC/DIN/SPICe/MOA/AOA and similar) layered on top of it, not a
+ * replacement for it. Falls back to "Professional fee" + a flat "Government fee" line from
+ * govtFeePaise — never scaled by director count or capital, since that split doesn't exist
+ * outside a configured state breakdown — when no state-specific breakdown is configured, so every
+ * service is always quotable even before an admin sets one up.
  */
 export async function computeServiceQuote(
   serviceId: string,
@@ -184,7 +196,7 @@ export async function computeServiceQuote(
         ),
       });
       if (row) {
-        const components: ServiceQuoteComponent[] = row.feeComponents.map((item) => {
+        const stateComponents: ServiceQuoteComponent[] = row.feeComponents.map((item) => {
           const qty =
             (item.perDirector ? directorCount : 1) * (item.perLakhCapital ? capitalLakhs : 1);
           return {
@@ -194,20 +206,14 @@ export async function computeServiceQuote(
             amountPaise: item.amountPaise * qty,
           };
         });
+        const components = [professionalFeeComponent(service.basePricePaise), ...stateComponents];
         const totalPaise = components.reduce((sum, item) => sum + item.amountPaise, 0);
         return { components, totalPaise, stateSpecific: true };
       }
     }
   }
 
-  const components: ServiceQuoteComponent[] = [
-    {
-      label: "Professional fee",
-      qty: 1,
-      ratePaise: service.basePricePaise,
-      amountPaise: service.basePricePaise,
-    },
-  ];
+  const components: ServiceQuoteComponent[] = [professionalFeeComponent(service.basePricePaise)];
   if (service.govtFeePaise) {
     components.push({
       label: "Government fee",

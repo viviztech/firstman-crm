@@ -20,6 +20,8 @@ describe("enquiry-quote-notifications (integration)", () => {
   const managerId = randomUUID();
   let serviceId: string;
   let stateId: string;
+  /** Professional fee now always leads the quote — the fixture total below is relative to it. */
+  let basePricePaise: number;
 
   beforeAll(async () => {
     const service = await db.query.services.findFirst({
@@ -27,6 +29,7 @@ describe("enquiry-quote-notifications (integration)", () => {
     });
     if (!service) throw new Error("Seed catalog first — pvt-ltd-registration service not found");
     serviceId = service.id;
+    basePricePaise = service.basePricePaise;
 
     const state = await db.query.states.findFirst({ where: eq(states.name, "Tamil Nadu") });
     if (!state) throw new Error("Seed geography first — Tamil Nadu not found");
@@ -102,7 +105,8 @@ describe("enquiry-quote-notifications (integration)", () => {
     const [quote] = await db.query.quotes.findMany({ where: eq(quotes.enquiryId, enquiry.id) });
     expect(quote).toBeDefined();
     expect(quote?.numberOfDirectors).toBe(2);
-    expect(quote?.totalPaise).toBe(1515000); // TN base 1,315,000 + one extra DSC+DIN for director 2
+    // Professional fee + TN base 1,315,000 + one extra DSC+DIN for director 2.
+    expect(quote?.totalPaise).toBe(basePricePaise + 1515000);
     expect(quote?.sentAt).not.toBeNull();
 
     const rows = await db.query.messageLogs.findMany({

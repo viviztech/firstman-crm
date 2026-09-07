@@ -21,6 +21,9 @@ describe("service-pricing (integration)", () => {
   const managerScope = makeScope(managerId, "manager");
   let serviceId: string;
   let stateId: string;
+  /** The service's flat professional fee — now always the quote's leading line, state-specific
+   *  breakdown or not, so the fixture totals below are expressed relative to it. */
+  let basePricePaise: number;
 
   beforeAll(async () => {
     const service = await db.query.services.findFirst({
@@ -28,6 +31,7 @@ describe("service-pricing (integration)", () => {
     });
     if (!service) throw new Error("Seed catalog first — pvt-ltd-registration service not found");
     serviceId = service.id;
+    basePricePaise = service.basePricePaise;
 
     const state = await db.query.states.findFirst({
       where: eq(states.name, "Tamil Nadu"),
@@ -93,8 +97,15 @@ describe("service-pricing (integration)", () => {
     // Case-insensitive match; no director/capital given, so both default to 1 (1 director, ₹1L capital).
     const quote = await computeServiceQuote(serviceId, "tamil nadu");
     expect(quote?.stateSpecific).toBe(true);
-    expect(quote?.totalPaise).toBe(1315000);
-    expect(quote?.components).toHaveLength(6);
+    expect(quote?.totalPaise).toBe(basePricePaise + 1315000);
+    expect(quote?.components).toHaveLength(7); // Professional fee + the 6 state components
+    const professionalFee = quote?.components[0];
+    expect(professionalFee).toEqual({
+      label: "Professional fee",
+      qty: 1,
+      ratePaise: basePricePaise,
+      amountPaise: basePricePaise,
+    });
     const dsc = quote?.components.find((c) => c.label === "DSC");
     expect(dsc).toEqual({ label: "DSC", qty: 1, ratePaise: 150000, amountPaise: 150000 });
     const moa = quote?.components.find((c) => c.label === "MOA");
@@ -107,7 +118,7 @@ describe("service-pricing (integration)", () => {
 
   it("multiplies perDirector components by the enquiry's director count, leaving flat/perLakhCapital ones alone", async () => {
     const quote = await computeServiceQuote(serviceId, "Tamil Nadu", 2);
-    expect(quote?.totalPaise).toBe(1515000); // +150000 DSC +50000 DIN for the 2nd director
+    expect(quote?.totalPaise).toBe(basePricePaise + 1515000); // +150000 DSC +50000 DIN for the 2nd director
 
     const dsc = quote?.components.find((c) => c.label === "DSC");
     const nameApproval = quote?.components.find((c) => c.label === "Name Approval");
@@ -123,7 +134,7 @@ describe("service-pricing (integration)", () => {
   it("multiplies perLakhCapital components by whole lakhs of authorized capital, leaving flat/perDirector ones alone", async () => {
     // ₹3,00,000 authorized capital = 3 lakh.
     const quote = await computeServiceQuote(serviceId, "Tamil Nadu", null, 30000000);
-    expect(quote?.totalPaise).toBe(3315000); // MOA+AOA each ×3 instead of ×1: +1,000,000 each side... net +2,000,000
+    expect(quote?.totalPaise).toBe(basePricePaise + 3315000); // MOA+AOA each ×3 instead of ×1: net +2,000,000
 
     const moa = quote?.components.find((c) => c.label === "MOA");
     const dsc = quote?.components.find((c) => c.label === "DSC");
@@ -140,16 +151,16 @@ describe("service-pricing (integration)", () => {
 
   it("combines director count and capital amount independently on the same quote", async () => {
     const quote = await computeServiceQuote(serviceId, "Tamil Nadu", 2, 30000000);
-    expect(quote?.totalPaise).toBe(3515000);
+    expect(quote?.totalPaise).toBe(basePricePaise + 3515000);
   });
 
   it("treats a missing, zero, or fractional director count as 1, and a missing/zero capital as ₹1L", async () => {
     const withNull = await computeServiceQuote(serviceId, "Tamil Nadu", null);
     const withZero = await computeServiceQuote(serviceId, "Tamil Nadu", 0, 0);
     const withFraction = await computeServiceQuote(serviceId, "Tamil Nadu", 1.9);
-    expect(withNull?.totalPaise).toBe(1315000);
-    expect(withZero?.totalPaise).toBe(1315000);
-    expect(withFraction?.totalPaise).toBe(1315000);
+    expect(withNull?.totalPaise).toBe(basePricePaise + 1315000);
+    expect(withZero?.totalPaise).toBe(basePricePaise + 1315000);
+    expect(withFraction?.totalPaise).toBe(basePricePaise + 1315000);
   });
 
   it("replaces the whole breakdown rather than appending on a second save", async () => {

@@ -227,11 +227,12 @@ function StatePriceFormDialog({
         <DialogHeader>
           <DialogTitle>{row ? `Edit pricing — ${row.stateName}` : "Add state pricing"}</DialogTitle>
           <DialogDescription>
-            Each row is one fee line item shown on the quote sent to the enquirer (e.g. Name
-            Approval, DSC, DIN, SPICe Form, MOA, AOA). Mark "Per director" for fees like DSC/DIN
-            charged once per director/partner, or "Per lakh capital" for fees like MOA/AOA stamp
-            duty charged per ₹1,00,000 of authorized capital — the amount below is the rate for one
-            unit either way.
+            The quote always leads with the service's own Professional fee (set above) — these rows
+            are the government-side fees layered on top of it (e.g. Name Approval, DSC, DIN, SPICe
+            Form, MOA, AOA), so don't add a row for the professional fee itself. Mark "Per director"
+            for fees like DSC/DIN charged once per director/partner, or "Per lakh capital" for fees
+            like MOA/AOA stamp duty charged per ₹1,00,000 of authorized capital — the amount below
+            is the rate for one unit either way.
           </DialogDescription>
         </DialogHeader>
 

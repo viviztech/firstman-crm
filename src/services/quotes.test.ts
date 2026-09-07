@@ -28,6 +28,8 @@ describe("createQuoteForEnquiry (integration)", () => {
   const managerId = randomUUID();
   let serviceId: string;
   let stateId: string;
+  /** Professional fee now always leads the quote — fixture totals are relative to it. */
+  let basePricePaise: number;
 
   beforeAll(async () => {
     const service = await db.query.services.findFirst({
@@ -35,6 +37,7 @@ describe("createQuoteForEnquiry (integration)", () => {
     });
     if (!service) throw new Error("Seed catalog first — pvt-ltd-registration service not found");
     serviceId = service.id;
+    basePricePaise = service.basePricePaise;
 
     const state = await db.query.states.findFirst({ where: eq(states.name, "Tamil Nadu") });
     if (!state) throw new Error("Seed geography first — Tamil Nadu not found");
@@ -140,8 +143,14 @@ describe("createQuoteForEnquiry (integration)", () => {
     expect(quote?.serviceId).toBe(serviceId);
     expect(quote?.stateName).toBe("Tamil Nadu");
     expect(quote?.numberOfDirectors).toBeNull();
-    expect(quote?.totalPaise).toBe(1315000);
-    expect(quote?.lineItems).toHaveLength(6);
+    expect(quote?.totalPaise).toBe(basePricePaise + 1315000);
+    expect(quote?.lineItems).toHaveLength(7); // Professional fee + the 6 state components
+    expect(quote?.lineItems[0]).toEqual({
+      label: "Professional fee",
+      qty: 1,
+      ratePaise: basePricePaise,
+      amountPaise: basePricePaise,
+    });
     expect(quote?.sentAt).toBeNull();
   });
 
@@ -156,8 +165,8 @@ describe("createQuoteForEnquiry (integration)", () => {
 
     const quote = await createQuoteForEnquiry(created.id, null);
     expect(quote?.numberOfDirectors).toBe(3);
-    // Flat lines (100000+15000+500000+500000=1115000) + 3x DSC (450000) + 3x DIN (150000)
-    expect(quote?.totalPaise).toBe(1715000);
+    // Professional fee + flat lines (100000+15000+500000+500000=1115000) + 3x DSC (450000) + 3x DIN (150000)
+    expect(quote?.totalPaise).toBe(basePricePaise + 1715000);
     const lineItems = quote?.lineItems ?? [];
     const dsc = lineItems.find((item) => item.label === "DSC");
     expect(dsc).toMatchObject({ qty: 3, amountPaise: 450000 });
@@ -175,7 +184,7 @@ describe("createQuoteForEnquiry (integration)", () => {
     const quote = await createQuoteForEnquiry(created.id, null);
     expect(quote?.capitalAmountPaise).toBe(30000000);
     // Base 1,315,000 with MOA/AOA at 1x each; at 3x each that's +1,000,000 per side = +2,000,000.
-    expect(quote?.totalPaise).toBe(3315000);
+    expect(quote?.totalPaise).toBe(basePricePaise + 3315000);
     const lineItems = quote?.lineItems ?? [];
     const moa = lineItems.find((item) => item.label === "MOA");
     expect(moa).toMatchObject({ qty: 3, amountPaise: 1500000 });
