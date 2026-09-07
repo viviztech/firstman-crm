@@ -1,6 +1,15 @@
 import { formatInTimeZone } from "date-fns-tz";
 import { and, desc, eq } from "drizzle-orm";
-import { CalendarClock, Clock, History, Megaphone, Phone, User, UserRound } from "lucide-react";
+import {
+  CalendarClock,
+  Clock,
+  FileText,
+  History,
+  Megaphone,
+  Phone,
+  User,
+  UserRound,
+} from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { toScope } from "@/actions/shared";
@@ -18,9 +27,12 @@ import { db } from "@/db";
 import { activityLogs } from "@/db/schema/activity-logs";
 import { ENQUIRY_SOURCE_LABEL, ENQUIRY_STATUS_STAT_COLOR } from "@/lib/badges";
 import { env } from "@/lib/env";
+import { formatMoney } from "@/lib/money";
 import { requireRole } from "@/lib/session";
+import { getQuotePdfUrl } from "@/lib/signed-url";
 import { cn } from "@/lib/utils";
 import { getEnquiry } from "@/services/enquiries";
+import { listQuotesForEnquiry } from "@/services/quotes";
 import { listAssignableStaff } from "@/services/users";
 
 function isOverdue(nextFollowUpAt: Date | string | null): boolean {
@@ -50,11 +62,14 @@ export default async function EnquiryDetailPage({ params }: { params: Promise<{ 
     notFound();
   }
 
-  const activity = await db.query.activityLogs.findMany({
-    where: and(eq(activityLogs.entityType, "enquiry"), eq(activityLogs.entityId, id)),
-    orderBy: [desc(activityLogs.createdAt)],
-    limit: 20,
-  });
+  const [activity, quotes] = await Promise.all([
+    db.query.activityLogs.findMany({
+      where: and(eq(activityLogs.entityType, "enquiry"), eq(activityLogs.entityId, id)),
+      orderBy: [desc(activityLogs.createdAt)],
+      limit: 20,
+    }),
+    listQuotesForEnquiry(id),
+  ]);
 
   const canDelete = user.role === "super_admin" || user.role === "manager";
   const canAct = enquiry.status !== "won";
@@ -246,6 +261,10 @@ export default async function EnquiryDetailPage({ params }: { params: Promise<{ 
             Follow-ups
             <TabMeta count={enquiry.followups.length} dot="bg-blue-500" />
           </TabsTrigger>
+          <TabsTrigger value="quotes">
+            Quotes
+            <TabMeta count={quotes.length} dot="bg-emerald-500" />
+          </TabsTrigger>
           <TabsTrigger value="activity">
             Activity
             <TabMeta count={activity.length} dot="bg-slate-400" />
@@ -279,6 +298,57 @@ export default async function EnquiryDetailPage({ params }: { params: Promise<{ 
                       to {followup.handoffToUser?.name ?? "—"}
                     </p>
                   ) : null}
+                </div>
+              ))
+            )}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="quotes">
+          <div className="flex flex-col gap-2">
+            {quotes.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                No quote sent yet — one is generated automatically once this enquiry has a service
+                interested and a channel (WhatsApp/email) to send it through.
+              </p>
+            ) : (
+              quotes.map((quote) => (
+                <div
+                  key={quote.id}
+                  className="flex flex-col gap-2 rounded-lg border border-l-4 border-l-emerald-500 p-3 text-sm sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="font-medium">{quote.quoteNo}</span>
+                      <span className="text-muted-foreground">{quote.serviceName}</span>
+                      <span
+                        className={cn(
+                          "rounded-full px-2 py-0.5 text-xs",
+                          quote.sentAt
+                            ? "bg-emerald-100 text-emerald-800"
+                            : "bg-amber-100 text-amber-800",
+                        )}
+                      >
+                        {quote.sentAt ? "Sent" : "Not sent yet"}
+                      </span>
+                    </div>
+                    <p className="mt-1 text-muted-foreground">
+                      {formatMoney(quote.totalPaise)}
+                      {quote.stateName ? ` · ${quote.stateName}` : ""}
+                      {quote.numberOfDirectors ? ` · ${quote.numberOfDirectors} directors` : ""}
+                      {" · "}
+                      {formatInTimeZone(quote.createdAt, env.TZ_DISPLAY, "d MMM yyyy, h:mm a")}
+                    </p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    nativeButton={false}
+                    render={<a href={getQuotePdfUrl(quote.id)} target="_blank" rel="noreferrer" />}
+                  >
+                    <FileText className="size-4" />
+                    View PDF
+                  </Button>
                 </div>
               ))
             )}
