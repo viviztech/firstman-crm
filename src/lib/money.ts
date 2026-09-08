@@ -9,6 +9,21 @@ export function formatMoney(amountPaise: number): string {
   return INR_FORMATTER.format(amountPaise / 100);
 }
 
+const INR_GROUPING_FORMATTER = new Intl.NumberFormat("en-IN", {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
+
+/**
+ * Same lakh/crore grouping and rounding as formatMoney, but "Rs." instead of the ₹ (U+20B9)
+ * glyph — the base14 Helvetica fonts @react-pdf/renderer ships (WinAnsi encoding) don't include
+ * the Rupee sign, so it prints as a stray "¹"/tofu character in PDFs. Use this instead of
+ * formatMoney anywhere money is rendered inside a react-pdf document.
+ */
+export function formatMoneyPdfSafe(amountPaise: number): string {
+  return `Rs. ${INR_GROUPING_FORMATTER.format(amountPaise / 100)}`;
+}
+
 export function sumPaise(amounts: number[]): number {
   return amounts.reduce((total, amount) => total + amount, 0);
 }

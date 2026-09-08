@@ -3,7 +3,7 @@ import { addDays } from "date-fns";
 import { formatInTimeZone } from "date-fns-tz";
 import type { QuoteLineItem } from "@/db/schema/quotes";
 import { env } from "@/lib/env";
-import { amountInWordsInr, formatMoney } from "@/lib/money";
+import { amountInWordsInr, formatMoneyPdfSafe } from "@/lib/money";
 import type { CompanyProfile } from "@/services/company-profile";
 
 export type QuotePdfData = {
@@ -30,6 +30,26 @@ const VALIDITY_DAYS = 15;
  *  only FirstMan's own service charge is. Mirrors the filter in services/quotes.ts. */
 const TAXABLE_LINE_LABEL = "Professional fee";
 
+/** The brand mark shown next to the company name — drawn as a vector badge (View + Text) rather
+ *  than the PNG favicon: @react-pdf/renderer's raster image decoder (tested against the installed
+ *  4.5.1 under Node 24, both locally and in the Dockerfile's node:24-alpine) corrupts every PNG/JPEG
+ *  source it's given — even a trivial solid-color PNG comes out solid black — so embedding the real
+ *  favicon file would ship a broken image into a client-facing document. Revisit once that's fixed
+ *  upstream (github.com/diegomura/react-pdf) or the dependency is pinned to a working version. */
+const BRAND_INITIAL = "F";
+
+const TERMS_AND_CONDITIONS = [
+  "This quotation is valid for the period mentioned in the quotation.",
+  "The quoted amount covers only the services mentioned in the quotation.",
+  "Government fees, statutory charges and GST will be extra, unless specifically mentioned.",
+  "The client must provide the required documents and information on time.",
+  "The mentioned timeline is approximate and may vary depending on government departments or third-party approvals.",
+  "Any additional services or requirements not mentioned in the quotation will be charged separately.",
+  "Fees paid for services already started or completed are non-refundable.",
+  "The client is responsible for providing correct and valid documents and information.",
+  "By accepting the quotation or making payment, the client agrees to these terms and conditions.",
+];
+
 const BRAND = "#ba2a66";
 const BRAND_DEEP = "#29292d";
 const BRAND_INK = "#58585b";
@@ -48,11 +68,23 @@ const styles = StyleSheet.create({
   topBar: { height: 6, backgroundColor: BRAND, marginBottom: 22 },
 
   header: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" },
+  brandRow: { flexDirection: "row", alignItems: "flex-start", gap: 10 },
+  brandBadge: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    backgroundColor: BRAND,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 1,
+  },
+  brandBadgeText: { fontSize: 16, fontFamily: "Helvetica-Bold", color: "#ffffff" },
   brandWordmark: {
-    fontSize: 20,
+    fontSize: 16,
     fontFamily: "Helvetica-Bold",
     color: BRAND_DEEP,
     letterSpacing: 0.3,
+    maxWidth: 260,
   },
   brandTagline: { fontSize: 8, color: BRAND, marginTop: 2, letterSpacing: 1.2 },
   companyMeta: { fontSize: 8, color: BRAND_INK, marginTop: 6, lineHeight: 1.5, maxWidth: 240 },
@@ -175,9 +207,11 @@ const styles = StyleSheet.create({
     letterSpacing: 0.8,
     marginBottom: 6,
   },
-  termRow: { flexDirection: "row", marginBottom: 3 },
-  termBullet: { fontSize: 8, color: BRAND, width: 10 },
-  termText: { fontSize: 8, color: BRAND_INK, flex: 1, lineHeight: 1.4 },
+  termsColumns: { flexDirection: "row", gap: 16 },
+  termsColumn: { flex: 1 },
+  termRow: { flexDirection: "row", marginBottom: 4 },
+  termBullet: { fontSize: 7.5, color: BRAND, width: 12 },
+  termText: { fontSize: 7.5, color: BRAND_INK, flex: 1, lineHeight: 1.35 },
 
   footer: {
     marginTop: 26,
@@ -229,6 +263,10 @@ export function QuoteDocument({
     quote.stateName !== null &&
     quote.stateName.trim().toLowerCase() === company.addressRegion.toLowerCase();
   const [cgstPaise, sgstPaise] = splitEqualHalves(quote.gstAmountPaise);
+  // Two columns side by side, rather than one long list, so 9 terms still fit on a single page.
+  const termsMidpoint = Math.ceil(TERMS_AND_CONDITIONS.length / 2);
+  const termsColumnOne = TERMS_AND_CONDITIONS.slice(0, termsMidpoint);
+  const termsColumnTwo = TERMS_AND_CONDITIONS.slice(termsMidpoint);
 
   return (
     <Document>
@@ -236,16 +274,21 @@ export function QuoteDocument({
         <View style={styles.topBar} fixed />
 
         <View style={styles.header}>
-          <View>
-            <Text style={styles.brandWordmark}>{company.name}</Text>
-            <Text style={styles.brandTagline}>CORPORATE &amp; COMPLIANCE SERVICES</Text>
-            <Text style={styles.companyMeta}>
-              {company.address}
-              {"\n"}GSTIN {company.gstin} · LLPIN {company.llpin}
-              {"\n"}
-              {company.phone}
-              {company.email ? ` · ${company.email}` : ""}
-            </Text>
+          <View style={styles.brandRow}>
+            <View style={styles.brandBadge}>
+              <Text style={styles.brandBadgeText}>{BRAND_INITIAL}</Text>
+            </View>
+            <View>
+              <Text style={styles.brandWordmark}>{company.legalName}</Text>
+              <Text style={styles.brandTagline}>CORPORATE &amp; COMPLIANCE SERVICES</Text>
+              <Text style={styles.companyMeta}>
+                {company.address}
+                {"\n"}GSTIN {company.gstin} · LLPIN {company.llpin}
+                {"\n"}
+                {company.phone}
+                {company.email ? ` · ${company.email}` : ""}
+              </Text>
+            </View>
           </View>
           <View style={styles.docBadge}>
             <Text style={styles.docTitle}>QUOTATION</Text>
@@ -286,7 +329,7 @@ export function QuoteDocument({
             ) : null}
             {quote.capitalAmountPaise ? (
               <Text style={styles.infoLine}>
-                Authorized capital: {formatMoney(quote.capitalAmountPaise)}
+                Authorized capital: {formatMoneyPdfSafe(quote.capitalAmountPaise)}
               </Text>
             ) : null}
           </View>
@@ -310,7 +353,9 @@ export function QuoteDocument({
               <Text style={[styles.colIndex, styles.cellMuted]}>{index + 1}</Text>
               <Text style={[styles.colDescription, styles.cell]}>{item.label}</Text>
               <Text style={[styles.colQty, styles.cellMuted]}>{item.qty}</Text>
-              <Text style={[styles.colRate, styles.cellMuted]}>{formatMoney(item.ratePaise)}</Text>
+              <Text style={[styles.colRate, styles.cellMuted]}>
+                {formatMoneyPdfSafe(item.ratePaise)}
+              </Text>
               <Text
                 style={[
                   styles.colGst,
@@ -319,7 +364,9 @@ export function QuoteDocument({
               >
                 {item.label === TAXABLE_LINE_LABEL ? `${quote.gstRate}%` : "Nil"}
               </Text>
-              <Text style={[styles.colAmount, styles.cell]}>{formatMoney(item.amountPaise)}</Text>
+              <Text style={[styles.colAmount, styles.cell]}>
+                {formatMoneyPdfSafe(item.amountPaise)}
+              </Text>
             </View>
           ))}
         </View>
@@ -332,18 +379,18 @@ export function QuoteDocument({
           <View style={styles.totalsBox}>
             <View style={styles.totalsRow}>
               <Text style={styles.totalsLabel}>Subtotal</Text>
-              <Text style={styles.totalsValue}>{formatMoney(quote.subtotalPaise)}</Text>
+              <Text style={styles.totalsValue}>{formatMoneyPdfSafe(quote.subtotalPaise)}</Text>
             </View>
             {quote.gstAmountPaise > 0 ? (
               isIntraState ? (
                 <>
                   <View style={styles.totalsRow}>
                     <Text style={styles.totalsLabel}>CGST ({(quote.gstRate / 2).toFixed(1)}%)</Text>
-                    <Text style={styles.totalsValue}>{formatMoney(cgstPaise)}</Text>
+                    <Text style={styles.totalsValue}>{formatMoneyPdfSafe(cgstPaise)}</Text>
                   </View>
                   <View style={styles.totalsRow}>
                     <Text style={styles.totalsLabel}>SGST ({(quote.gstRate / 2).toFixed(1)}%)</Text>
-                    <Text style={styles.totalsValue}>{formatMoney(sgstPaise)}</Text>
+                    <Text style={styles.totalsValue}>{formatMoneyPdfSafe(sgstPaise)}</Text>
                   </View>
                 </>
               ) : (
@@ -351,39 +398,38 @@ export function QuoteDocument({
                   <Text style={styles.totalsLabel}>
                     {quote.stateName ? `IGST (${quote.gstRate}%)` : `GST (${quote.gstRate}%)`}
                   </Text>
-                  <Text style={styles.totalsValue}>{formatMoney(quote.gstAmountPaise)}</Text>
+                  <Text style={styles.totalsValue}>{formatMoneyPdfSafe(quote.gstAmountPaise)}</Text>
                 </View>
               )
             ) : null}
             <View style={styles.grandTotalRow}>
               <Text style={styles.grandTotalLabel}>Total Estimate</Text>
-              <Text style={styles.grandTotalValue}>{formatMoney(quote.totalPaise)}</Text>
+              <Text style={styles.grandTotalValue}>{formatMoneyPdfSafe(quote.totalPaise)}</Text>
             </View>
           </View>
         </View>
 
         <View style={styles.termsSection}>
-          <Text style={styles.termsTitle}>TERMS &amp; NOTES</Text>
-          <View style={styles.termRow}>
-            <Text style={styles.termBullet}>•</Text>
-            <Text style={styles.termText}>
-              GST is levied only on our Professional fee — government/statutory fees, stamp duty,
-              and similar pass-through components carry no GST.
-            </Text>
-          </View>
-          <View style={styles.termRow}>
-            <Text style={styles.termBullet}>•</Text>
-            <Text style={styles.termText}>
-              This quotation is valid for {VALIDITY_DAYS} days from the date of issue; fees may be
-              revised thereafter.
-            </Text>
-          </View>
-          <View style={styles.termRow}>
-            <Text style={styles.termBullet}>•</Text>
-            <Text style={styles.termText}>
-              Work commences on written confirmation and receipt of the documents/details listed in
-              our engagement checklist.
-            </Text>
+          <Text style={styles.termsTitle}>TERMS &amp; CONDITIONS</Text>
+          <View style={styles.termsColumns}>
+            <View style={styles.termsColumn}>
+              {termsColumnOne.map((term, index) => (
+                // biome-ignore lint/suspicious/noArrayIndexKey: a fixed, hardcoded list rendered once per document — never reordered or edited client-side
+                <View style={styles.termRow} key={`term-${index}`}>
+                  <Text style={styles.termBullet}>{index + 1}.</Text>
+                  <Text style={styles.termText}>{term}</Text>
+                </View>
+              ))}
+            </View>
+            <View style={styles.termsColumn}>
+              {termsColumnTwo.map((term, index) => (
+                // biome-ignore lint/suspicious/noArrayIndexKey: a fixed, hardcoded list rendered once per document — never reordered or edited client-side
+                <View style={styles.termRow} key={`term-${index}`}>
+                  <Text style={styles.termBullet}>{termsColumnOne.length + index + 1}.</Text>
+                  <Text style={styles.termText}>{term}</Text>
+                </View>
+              ))}
+            </View>
           </View>
         </View>
 
@@ -403,7 +449,7 @@ export function QuoteDocument({
 
         <View style={styles.pageFooterRule} fixed />
         <Text style={styles.pageFooterText} fixed>
-          {company.name} · {company.address}
+          {company.legalName} · {company.address}
         </Text>
       </Page>
     </Document>

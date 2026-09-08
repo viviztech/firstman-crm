@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { amountInWordsInr, formatMoney, paiseToRupees, rupeesToPaise, sumPaise } from "@/lib/money";
+import {
+  amountInWordsInr,
+  formatMoney,
+  formatMoneyPdfSafe,
+  paiseToRupees,
+  rupeesToPaise,
+  sumPaise,
+} from "@/lib/money";
 
 describe("formatMoney", () => {
   it("renders integer paise as a rupee amount", () => {
@@ -8,6 +15,24 @@ describe("formatMoney", () => {
 
   it("renders zero", () => {
     expect(formatMoney(0)).toBe("₹0.00");
+  });
+});
+
+describe("formatMoneyPdfSafe", () => {
+  it("renders integer paise with an ASCII 'Rs.' prefix instead of the ₹ glyph", () => {
+    expect(formatMoneyPdfSafe(150000)).toBe("Rs. 1,500.00");
+  });
+
+  it("renders zero", () => {
+    expect(formatMoneyPdfSafe(0)).toBe("Rs. 0.00");
+  });
+
+  it("groups lakhs the Indian way, matching formatMoney's grouping", () => {
+    expect(formatMoneyPdfSafe(1315000_00)).toBe("Rs. 13,15,000.00");
+  });
+
+  it("never contains the ₹ Unicode character", () => {
+    expect(formatMoneyPdfSafe(99999900)).not.toContain("₹");
   });
 });
 
