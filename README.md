@@ -505,6 +505,21 @@ prescribe an exact answer:
     line items (mirroring `InvoiceLineItem`) instead of a single flat amount
     per row. Capital defaults to ₹1,00,000 (rounded up to the next whole lakh)
     when not provided.
+21. **Outbound email provider temporarily switched to Gmail SMTP**: `.env`'s
+    `SMTP_HOST`/`SMTP_USER`/`MAIL_FROM` now point at `smtp.gmail.com` /
+    `firstmanllp@gmail.com` instead of the Brevo transactional relay used
+    previously. No code change was needed — `src/services/mailer.tsx` was
+    already provider-agnostic generic SMTP via `nodemailer`. `SMTP_PASS` must
+    be a Google **App Password** (Google Account → Security → 2-Step
+    Verification → App passwords), not the account's login password — Gmail
+    rejects SMTP auth with a regular password once 2FA is on, and blocks it
+    outright for less-secure-app access otherwise. Gmail also silently
+    rewrites the `From` header's address to the authenticated account if it
+    doesn't match, so `MAIL_FROM`'s address stays `firstmanllp@gmail.com`
+    (only the display name is customizable). This is a stated temporary
+    measure — Gmail's ~500 messages/day sending cap and shared-IP
+    deliverability make it unsuitable long-term; revisit with a dedicated
+    transactional provider (Brevo, SES, etc.) before scaling outbound volume.
 
 ## Phase checklists (per `CLAUDE.md` §5)
 
