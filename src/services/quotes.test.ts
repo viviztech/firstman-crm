@@ -143,7 +143,13 @@ describe("createQuoteForEnquiry (integration)", () => {
     expect(quote?.serviceId).toBe(serviceId);
     expect(quote?.stateName).toBe("Tamil Nadu");
     expect(quote?.numberOfDirectors).toBeNull();
-    expect(quote?.totalPaise).toBe(basePricePaise + 1315000);
+    expect(quote?.subtotalPaise).toBe(basePricePaise + 1315000);
+    // Default 18% GST rate, charged only on the Professional fee — never on the state's
+    // government-fee components (Name Approval/DSC/DIN/SPICe/MOA/AOA).
+    expect(quote?.gstRate).toBe(18);
+    const gstAmountPaise = Math.round((basePricePaise * 18) / 100);
+    expect(quote?.gstAmountPaise).toBe(gstAmountPaise);
+    expect(quote?.totalPaise).toBe(basePricePaise + 1315000 + gstAmountPaise);
     expect(quote?.lineItems).toHaveLength(7); // Professional fee + the 6 state components
     expect(quote?.lineItems[0]).toEqual({
       label: "Professional fee",
@@ -166,7 +172,9 @@ describe("createQuoteForEnquiry (integration)", () => {
     const quote = await createQuoteForEnquiry(created.id, null);
     expect(quote?.numberOfDirectors).toBe(3);
     // Professional fee + flat lines (100000+15000+500000+500000=1115000) + 3x DSC (450000) + 3x DIN (150000)
-    expect(quote?.totalPaise).toBe(basePricePaise + 1715000);
+    expect(quote?.subtotalPaise).toBe(basePricePaise + 1715000);
+    const gstAmountPaise = Math.round((basePricePaise * 18) / 100);
+    expect(quote?.totalPaise).toBe(basePricePaise + 1715000 + gstAmountPaise);
     const lineItems = quote?.lineItems ?? [];
     const dsc = lineItems.find((item) => item.label === "DSC");
     expect(dsc).toMatchObject({ qty: 3, amountPaise: 450000 });
@@ -184,7 +192,9 @@ describe("createQuoteForEnquiry (integration)", () => {
     const quote = await createQuoteForEnquiry(created.id, null);
     expect(quote?.capitalAmountPaise).toBe(30000000);
     // Base 1,315,000 with MOA/AOA at 1x each; at 3x each that's +1,000,000 per side = +2,000,000.
-    expect(quote?.totalPaise).toBe(basePricePaise + 3315000);
+    expect(quote?.subtotalPaise).toBe(basePricePaise + 3315000);
+    const gstAmountPaise = Math.round((basePricePaise * 18) / 100);
+    expect(quote?.totalPaise).toBe(basePricePaise + 3315000 + gstAmountPaise);
     const lineItems = quote?.lineItems ?? [];
     const moa = lineItems.find((item) => item.label === "MOA");
     expect(moa).toMatchObject({ qty: 3, amountPaise: 1500000 });
@@ -198,6 +208,11 @@ describe("createQuoteForEnquiry (integration)", () => {
     const quote = await createQuoteForEnquiry(created.id, null);
 
     expect(quote?.stateName).toBeNull();
-    expect(quote?.totalPaise).toBe((service?.basePricePaise ?? 0) + (service?.govtFeePaise ?? 0));
+    const subtotalPaise = (service?.basePricePaise ?? 0) + (service?.govtFeePaise ?? 0);
+    expect(quote?.subtotalPaise).toBe(subtotalPaise);
+    // GST applies only to the Professional fee (basePricePaise), never the flat Government fee line.
+    const gstAmountPaise = Math.round(((service?.basePricePaise ?? 0) * 18) / 100);
+    expect(quote?.gstAmountPaise).toBe(gstAmountPaise);
+    expect(quote?.totalPaise).toBe(subtotalPaise + gstAmountPaise);
   });
 });

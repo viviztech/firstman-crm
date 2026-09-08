@@ -35,3 +35,70 @@ export function rupeesToPaise(rupees: string): string {
   if (!Number.isFinite(numeric)) return "";
   return String(Math.round(numeric * 100));
 }
+
+const ONES = [
+  "",
+  "One",
+  "Two",
+  "Three",
+  "Four",
+  "Five",
+  "Six",
+  "Seven",
+  "Eight",
+  "Nine",
+  "Ten",
+  "Eleven",
+  "Twelve",
+  "Thirteen",
+  "Fourteen",
+  "Fifteen",
+  "Sixteen",
+  "Seventeen",
+  "Eighteen",
+  "Nineteen",
+];
+const TENS = ["", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"];
+
+function twoDigitsToWords(n: number): string {
+  if (n < 20) return ONES[n] ?? "";
+  const tens = TENS[Math.floor(n / 10)] ?? "";
+  const ones = ONES[n % 10];
+  return ones ? `${tens}-${ones}` : tens;
+}
+
+function threeDigitsToWords(n: number): string {
+  const hundreds = Math.floor(n / 100);
+  const rest = n % 100;
+  const parts: string[] = [];
+  if (hundreds) parts.push(`${ONES[hundreds]} Hundred`);
+  if (rest) parts.push(twoDigitsToWords(rest));
+  return parts.join(" ");
+}
+
+/** Indian numbering system (crore/lakh/thousand), not the Western one — a bare integer, no currency word. */
+function integerToIndianWords(value: number): string {
+  if (value === 0) return "Zero";
+  const crore = Math.floor(value / 10000000);
+  const lakh = Math.floor((value % 10000000) / 100000);
+  const thousand = Math.floor((value % 100000) / 1000);
+  const rest = value % 1000;
+
+  const parts: string[] = [];
+  if (crore) parts.push(`${threeDigitsToWords(crore)} Crore`);
+  if (lakh) parts.push(`${threeDigitsToWords(lakh)} Lakh`);
+  if (thousand) parts.push(`${threeDigitsToWords(thousand)} Thousand`);
+  if (rest) parts.push(threeDigitsToWords(rest));
+  return parts.join(" ");
+}
+
+/** Integer paise -> "Rupees ... Paise Only", Indian numbering — for the amount-in-words line on printed documents. */
+export function amountInWordsInr(amountPaise: number): string {
+  const rupees = Math.floor(Math.abs(amountPaise) / 100);
+  const paise = Math.abs(amountPaise) % 100;
+  const sign = amountPaise < 0 ? "Minus " : "";
+
+  const rupeeWords = `Rupees ${integerToIndianWords(rupees)}`;
+  const paiseWords = paise ? ` and ${integerToIndianWords(paise)} Paise` : "";
+  return `${sign}${rupeeWords}${paiseWords} Only`;
+}

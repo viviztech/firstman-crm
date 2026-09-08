@@ -20,8 +20,12 @@ export async function renderQuotePdf(quoteId: string): Promise<Buffer | null> {
         numberOfDirectors: quote.numberOfDirectors,
         capitalAmountPaise: quote.capitalAmountPaise,
         lineItems: quote.lineItems,
+        subtotalPaise: quote.subtotalPaise,
+        gstRate: quote.gstRate,
+        gstAmountPaise: quote.gstAmountPaise,
         totalPaise: quote.totalPaise,
         clientName: quote.clientName,
+        clientEmail: quote.clientEmail,
         clientPhone: quote.clientPhone,
       }}
       company={company}

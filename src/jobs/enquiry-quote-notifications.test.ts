@@ -106,7 +106,12 @@ describe("enquiry-quote-notifications (integration)", () => {
     expect(quote).toBeDefined();
     expect(quote?.numberOfDirectors).toBe(2);
     // Professional fee + TN base 1,315,000 + one extra DSC+DIN for director 2.
-    expect(quote?.totalPaise).toBe(basePricePaise + 1515000);
+    const subtotalPaise = basePricePaise + 1515000;
+    expect(quote?.subtotalPaise).toBe(subtotalPaise);
+    // Default 18% GST rate, charged only on the Professional fee component.
+    const gstAmountPaise = Math.round((basePricePaise * 18) / 100);
+    expect(quote?.gstAmountPaise).toBe(gstAmountPaise);
+    expect(quote?.totalPaise).toBe(subtotalPaise + gstAmountPaise);
     expect(quote?.sentAt).not.toBeNull();
 
     const rows = await db.query.messageLogs.findMany({

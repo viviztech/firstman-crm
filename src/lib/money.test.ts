@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatMoney, paiseToRupees, rupeesToPaise, sumPaise } from "@/lib/money";
+import { amountInWordsInr, formatMoney, paiseToRupees, rupeesToPaise, sumPaise } from "@/lib/money";
 
 describe("formatMoney", () => {
   it("renders integer paise as a rupee amount", () => {
@@ -68,5 +68,36 @@ describe("rupeesToPaise", () => {
     for (const paise of [0, 1, 99, 100, 14999900, 176882]) {
       expect(rupeesToPaise(paiseToRupees(paise))).toBe(String(paise));
     }
+  });
+});
+
+describe("amountInWordsInr", () => {
+  it("renders zero", () => {
+    expect(amountInWordsInr(0)).toBe("Rupees Zero Only");
+  });
+
+  it("renders a whole-rupee amount with no paise clause", () => {
+    expect(amountInWordsInr(150000)).toBe("Rupees One Thousand Five Hundred Only");
+  });
+
+  it("renders paise as a separate clause", () => {
+    expect(amountInWordsInr(150050)).toBe("Rupees One Thousand Five Hundred and Fifty Paise Only");
+  });
+
+  it("uses Indian numbering — lakh and crore, not million/billion", () => {
+    expect(amountInWordsInr(100000_00)).toBe("Rupees One Lakh Only");
+    expect(amountInWordsInr(12345678_00)).toBe(
+      "Rupees One Crore Twenty-Three Lakh Forty-Five Thousand Six Hundred Seventy-Eight Only",
+    );
+  });
+
+  it("handles teens and compound tens correctly", () => {
+    expect(amountInWordsInr(19_00)).toBe("Rupees Nineteen Only");
+    expect(amountInWordsInr(21_00)).toBe("Rupees Twenty-One Only");
+    expect(amountInWordsInr(1315000_00)).toBe("Rupees Thirteen Lakh Fifteen Thousand Only");
+  });
+
+  it("prefixes a negative amount with Minus", () => {
+    expect(amountInWordsInr(-150000)).toBe("Minus Rupees One Thousand Five Hundred Only");
   });
 });

@@ -49,6 +49,11 @@ export const quotes = pgTable(
     // Snapshotted from enquiries.capitalAmountPaise — drives the qty on perLakhCapital line items.
     capitalAmountPaise: integer("capital_amount_paise"),
     lineItems: jsonb("line_items").$type<QuoteLineItem[]>().notNull(),
+    // Sum of all line items before GST (fee components only — GST is never charged on statutory
+    // government fees/stamp duty, only on FirstMan's own Professional fee, see quotes.ts).
+    subtotalPaise: integer("subtotal_paise").notNull(),
+    gstRate: integer("gst_rate").notNull().default(0),
+    gstAmountPaise: integer("gst_amount_paise").notNull().default(0),
     totalPaise: integer("total_paise").notNull(),
     sentAt: timestamp("sent_at", { withTimezone: true }),
   },

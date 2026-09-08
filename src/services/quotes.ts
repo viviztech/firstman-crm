@@ -4,9 +4,27 @@ import { enquiries } from "@/db/schema/enquiries";
 import { quotes } from "@/db/schema/quotes";
 import type { ActorScope } from "@/lib/scope";
 import { computeServiceQuote } from "@/services/service-pricing";
-import { getSettingForUpdate, setSetting } from "@/services/settings";
+import { getSetting, getSettingForUpdate, setSetting } from "@/services/settings";
 
 export type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+/** Shared with the Sales-conversion proforma invoice default (services/enquiries.ts) — one
+ *  business-wide "default GST rate" setting, editable from Settings. */
+const DEFAULT_GST_RATE_KEY = "defaultGstRate";
+
+/**
+ * GST applies only to FirstMan's own Professional fee line — government fees, stamp duty, and
+ * other statutory pass-through components (Name Approval/DSC/DIN/SPICe/MOA/AOA and similar) are
+ * never taxed by the firm, so they're excluded from the GST base.
+ */
+async function computeQuoteGst(components: { label: string; amountPaise: number }[]) {
+  const gstRate = await getSetting<number>(DEFAULT_GST_RATE_KEY, 18);
+  const professionalFeePaise = components
+    .filter((item) => item.label === "Professional fee")
+    .reduce((sum, item) => sum + item.amountPaise, 0);
+  const gstAmountPaise = Math.round((professionalFeePaise * gstRate) / 100);
+  return { gstRate, gstAmountPaise };
+}
 
 /**
  * Year+month component shared by the quote sequence's settings key and its display format
@@ -55,6 +73,8 @@ export async function createQuoteForEnquiry(enquiryId: string, actor: ActorScope
   );
   if (!quote) return null;
 
+  const { gstRate, gstAmountPaise } = await computeQuoteGst(quote.components);
+
   return db.transaction(async (tx) => {
     const quoteNo = await generateQuoteNo(tx, actor);
 
@@ -72,7 +92,10 @@ export async function createQuoteForEnquiry(enquiryId: string, actor: ActorScope
         numberOfDirectors: enquiry.numberOfDirectors,
         capitalAmountPaise: enquiry.capitalAmountPaise,
         lineItems: quote.components,
-        totalPaise: quote.totalPaise,
+        subtotalPaise: quote.totalPaise,
+        gstRate,
+        gstAmountPaise,
+        totalPaise: quote.totalPaise + gstAmountPaise,
         createdBy: actor?.userId ?? null,
         updatedBy: actor?.userId ?? null,
       })
