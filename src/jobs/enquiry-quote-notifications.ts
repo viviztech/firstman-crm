@@ -9,8 +9,12 @@ import { createQuoteForEnquiry, getQuoteForNotification, markQuoteSent } from "@
 import { sendWhatsAppDocument } from "@/services/whatsapp";
 
 export const ENQUIRY_QUOTE_ISSUED_JOB = "enquiry-quote-issued";
+export const QUOTE_REVISED_JOB = "quote-revised";
 
 type EnquiryQuoteIssuedPayload = { enquiryId: string };
+type QuoteRevisedPayload = { quoteId: string };
+
+type NotifiableQuote = NonNullable<Awaited<ReturnType<typeof getQuoteForNotification>>>;
 
 /**
  * Generates and sends a fee quote as soon as an enquiry names an interested service — from the
@@ -24,19 +28,16 @@ export async function enqueueEnquiryQuoteIssuedNotification(
   await boss.send(ENQUIRY_QUOTE_ISSUED_JOB, payload);
 }
 
-/** The actual per-event work — factored out so tests can call it directly, without round-tripping through pg-boss's async worker dispatch. */
-export async function processEnquiryQuoteIssuedJob(
-  payload: EnquiryQuoteIssuedPayload,
-): Promise<void> {
-  const created = await createQuoteForEnquiry(payload.enquiryId, null);
-  if (!created) {
-    logger.warn(payload, "enquiry-quote-issued: enquiry or its service no longer exists, skipping");
-    return;
-  }
+/** Sends a staff-edited revision (services/quotes.ts's reviseQuote) to the client — the quote
+ * already exists, so unlike the issued-notification job above this never generates one. */
+export async function enqueueQuoteRevisedNotification(payload: QuoteRevisedPayload): Promise<void> {
+  const boss = await getBoss();
+  await boss.send(QUOTE_REVISED_JOB, payload);
+}
 
-  const quote = await getQuoteForNotification(created.id);
-  if (!quote) return;
-
+/** WhatsApp document + email send, shared by the initial issue and every later revision, so a
+ *  client always gets the same notification shape regardless of which triggered it. */
+async function sendQuoteNotification(quote: NotifiableQuote): Promise<void> {
   const pdfUrl = getAppUrl(getQuotePdfUrl(quote.id));
 
   const result = await sendWhatsAppDocument({
@@ -74,13 +75,47 @@ export async function processEnquiryQuoteIssuedJob(
   await markQuoteSent(quote.id);
 }
 
+/** The actual per-event work — factored out so tests can call it directly, without round-tripping through pg-boss's async worker dispatch. */
+export async function processEnquiryQuoteIssuedJob(
+  payload: EnquiryQuoteIssuedPayload,
+): Promise<void> {
+  const created = await createQuoteForEnquiry(payload.enquiryId, null);
+  if (!created) {
+    logger.warn(payload, "enquiry-quote-issued: enquiry or its service no longer exists, skipping");
+    return;
+  }
+
+  const quote = await getQuoteForNotification(created.id);
+  if (!quote) return;
+
+  await sendQuoteNotification(quote);
+}
+
+/** The actual per-event work for a revision — factored out for the same direct-call-in-tests reason. */
+export async function processQuoteRevisedJob(payload: QuoteRevisedPayload): Promise<void> {
+  const quote = await getQuoteForNotification(payload.quoteId);
+  if (!quote) {
+    logger.warn(payload, "quote-revised: quote no longer exists, skipping");
+    return;
+  }
+
+  await sendQuoteNotification(quote);
+}
+
 export async function registerEnquiryQuoteNotificationJobs(): Promise<void> {
   const boss = await getBoss();
   await boss.createQueue(ENQUIRY_QUOTE_ISSUED_JOB);
+  await boss.createQueue(QUOTE_REVISED_JOB);
 
   await boss.work<EnquiryQuoteIssuedPayload>(ENQUIRY_QUOTE_ISSUED_JOB, async (jobs) => {
     for (const job of jobs) {
       await processEnquiryQuoteIssuedJob(job.data);
+    }
+  });
+
+  await boss.work<QuoteRevisedPayload>(QUOTE_REVISED_JOB, async (jobs) => {
+    for (const job of jobs) {
+      await processQuoteRevisedJob(job.data);
     }
   });
 }

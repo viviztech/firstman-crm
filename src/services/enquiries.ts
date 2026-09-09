@@ -161,6 +161,12 @@ function scopeCondition(scope: ActorScope) {
   return team ?? visibility;
 }
 
+/** Exposed for other services (e.g. quotes.ts) that need to authorize an action against an
+ *  enquiry's own visibility rules — quotes have no assignedTo/pincode of their own to scope by. */
+export function enquiryScopeCondition(scope: ActorScope) {
+  return scopeCondition(scope);
+}
+
 /** Executives can't assign enquiries to someone else. This also gives franchise-created leads a
  * stable direct-sales owner for commission attribution, while their territory view remains shared. */
 function enforceAssignment(assignedTo: string | undefined, actor: ActorScope | null) {

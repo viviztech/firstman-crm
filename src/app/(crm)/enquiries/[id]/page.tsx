@@ -19,6 +19,7 @@ import { DeleteEnquiryButton } from "@/components/enquiries/delete-enquiry-butto
 import { EnquiryStatusBadge } from "@/components/enquiries/enquiry-status-badge";
 import { FollowupDialog } from "@/components/enquiries/followup-dialog";
 import { LostButton } from "@/components/enquiries/lost-dialog";
+import { QuoteReviseDialog } from "@/components/quotes/quote-revise-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SectionIcon } from "@/components/ui/section-icon";
@@ -312,7 +313,7 @@ export default async function EnquiryDetailPage({ params }: { params: Promise<{ 
                 interested and a channel (WhatsApp/email) to send it through.
               </p>
             ) : (
-              quotes.map((quote) => (
+              quotes.map((quote, index) => (
                 <div
                   key={quote.id}
                   className="flex flex-col gap-2 rounded-lg border border-l-4 border-l-emerald-500 p-3 text-sm sm:flex-row sm:items-center sm:justify-between"
@@ -321,6 +322,11 @@ export default async function EnquiryDetailPage({ params }: { params: Promise<{ 
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="font-medium">{quote.quoteNo}</span>
                       <span className="text-muted-foreground">{quote.serviceName}</span>
+                      {index === 0 && quotes.length > 1 ? (
+                        <span className="rounded-full bg-sky-100 px-2 py-0.5 text-xs text-sky-800">
+                          Latest revision
+                        </span>
+                      ) : null}
                       <span
                         className={cn(
                           "rounded-full px-2 py-0.5 text-xs",
@@ -340,15 +346,28 @@ export default async function EnquiryDetailPage({ params }: { params: Promise<{ 
                       {formatInTimeZone(quote.createdAt, env.TZ_DISPLAY, "d MMM yyyy, h:mm a")}
                     </p>
                   </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    nativeButton={false}
-                    render={<a href={getQuotePdfUrl(quote.id)} target="_blank" rel="noreferrer" />}
-                  >
-                    <FileText className="size-4" />
-                    View PDF
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      nativeButton={false}
+                      render={
+                        <a href={getQuotePdfUrl(quote.id)} target="_blank" rel="noreferrer" />
+                      }
+                    >
+                      <FileText className="size-4" />
+                      View PDF
+                    </Button>
+                    {index === 0 ? (
+                      <QuoteReviseDialog
+                        quoteId={quote.id}
+                        enquiryId={id}
+                        quoteNo={quote.quoteNo}
+                        defaultLineItems={quote.lineItems}
+                        defaultGstRate={quote.gstRate}
+                      />
+                    ) : null}
+                  </div>
                 </div>
               ))
             )}

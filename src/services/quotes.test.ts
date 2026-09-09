@@ -8,7 +8,13 @@ import { enquiries } from "@/db/schema/enquiries";
 import { states } from "@/db/schema/geography";
 import { quotes } from "@/db/schema/quotes";
 import { makeScope } from "@/lib/test-scope";
-import { createQuoteForEnquiry, formatQuoteNo, quoteYearMonth } from "@/services/quotes";
+import {
+  createQuoteForEnquiry,
+  formatQuoteNo,
+  getQuoteForRevision,
+  quoteYearMonth,
+  reviseQuote,
+} from "@/services/quotes";
 import { setServiceStatePriceComponents } from "@/services/service-pricing";
 
 describe("quoteYearMonth / formatQuoteNo (pure)", () => {
@@ -214,5 +220,177 @@ describe("createQuoteForEnquiry (integration)", () => {
     const gstAmountPaise = Math.round(((service?.basePricePaise ?? 0) * 18) / 100);
     expect(quote?.gstAmountPaise).toBe(gstAmountPaise);
     expect(quote?.totalPaise).toBe(subtotalPaise + gstAmountPaise);
+  });
+});
+
+describe("reviseQuote / getQuoteForRevision (integration)", () => {
+  const enquiryIds: string[] = [];
+  const managerId = randomUUID();
+  const executiveId = randomUUID();
+  const otherExecutiveId = randomUUID();
+  const managerScope = makeScope(managerId, "manager");
+  const executiveScope = makeScope(executiveId, "executive");
+  const otherExecutiveScope = makeScope(otherExecutiveId, "executive");
+  let serviceId: string;
+
+  beforeAll(async () => {
+    const service = await db.query.services.findFirst({
+      where: eq(services.slug, "pvt-ltd-registration"),
+    });
+    if (!service) throw new Error("Seed catalog first — pvt-ltd-registration service not found");
+    serviceId = service.id;
+
+    await db.insert(user).values([
+      {
+        id: managerId,
+        name: "Revise Quote Test Manager",
+        email: `revise-quote-manager-${managerId}@test.local`,
+        emailVerified: true,
+        role: "manager",
+      },
+      {
+        id: executiveId,
+        name: "Revise Quote Test Executive",
+        email: `revise-quote-exec-${executiveId}@test.local`,
+        emailVerified: true,
+        role: "executive",
+      },
+      {
+        id: otherExecutiveId,
+        name: "Revise Quote Test Other Executive",
+        email: `revise-quote-other-exec-${otherExecutiveId}@test.local`,
+        emailVerified: true,
+        role: "executive",
+      },
+    ]);
+  });
+
+  afterAll(async () => {
+    for (const id of enquiryIds) {
+      await db.delete(quotes).where(eq(quotes.enquiryId, id));
+    }
+    await db.delete(enquiries).where(ilike(enquiries.phone, "+919876641%"));
+    await db.delete(user).where(eq(user.id, managerId));
+    await db.delete(user).where(eq(user.id, executiveId));
+    await db.delete(user).where(eq(user.id, otherExecutiveId));
+  });
+
+  async function insertAssignedEnquiryWithQuote(assignedTo: string) {
+    const phone = `+919876641${randomUUID().slice(0, 6)}`;
+    const [created] = await db
+      .insert(enquiries)
+      .values({
+        name: "Revise Quote Fixture",
+        phone,
+        serviceInterestedId: serviceId,
+        assignedTo,
+        source: "website",
+      })
+      .returning();
+    if (!created) throw new Error("failed to insert fixture enquiry");
+    enquiryIds.push(created.id);
+
+    const quote = await createQuoteForEnquiry(created.id, null);
+    if (!quote) throw new Error("failed to create fixture quote");
+    return quote;
+  }
+
+  it("creates a new quote row instead of mutating the original", async () => {
+    const base = await insertAssignedEnquiryWithQuote(managerId);
+
+    const revised = await reviseQuote(
+      base.id,
+      {
+        lineItems: [{ label: "Professional fee", qty: 1, ratePaise: 500000 }],
+        gstRate: 18,
+      },
+      managerScope,
+    );
+    expect(revised).not.toBeNull();
+    expect(revised?.id).not.toBe(base.id);
+    expect(revised?.quoteNo).not.toBe(base.quoteNo);
+    expect(revised?.enquiryId).toBe(base.enquiryId);
+
+    const untouchedBase = await db.query.quotes.findFirst({ where: eq(quotes.id, base.id) });
+    expect(untouchedBase?.totalPaise).toBe(base.totalPaise);
+    expect(untouchedBase?.lineItems).toEqual(base.lineItems);
+  });
+
+  it("recomputes GST on only the Professional fee line from the edited amounts", async () => {
+    const base = await insertAssignedEnquiryWithQuote(managerId);
+
+    const revised = await reviseQuote(
+      base.id,
+      {
+        lineItems: [
+          { label: "Professional fee", qty: 1, ratePaise: 1000000 },
+          { label: "Government fee", qty: 1, ratePaise: 200000 },
+        ],
+        gstRate: 18,
+      },
+      managerScope,
+    );
+
+    expect(revised?.subtotalPaise).toBe(1200000);
+    expect(revised?.gstRate).toBe(18);
+    expect(revised?.gstAmountPaise).toBe(180000); // 18% of the 1,000,000 Professional fee only
+    expect(revised?.totalPaise).toBe(1380000);
+  });
+
+  it("carries over the client/service details from the base quote unchanged", async () => {
+    const base = await insertAssignedEnquiryWithQuote(managerId);
+
+    const revised = await reviseQuote(
+      base.id,
+      { lineItems: [{ label: "Professional fee", qty: 1, ratePaise: 500000 }], gstRate: 0 },
+      managerScope,
+    );
+
+    expect(revised?.clientName).toBe(base.clientName);
+    expect(revised?.clientPhone).toBe(base.clientPhone);
+    expect(revised?.serviceName).toBe(base.serviceName);
+  });
+
+  it("returns null for a quote that doesn't exist", async () => {
+    const result = await reviseQuote(
+      randomUUID(),
+      { lineItems: [{ label: "Professional fee", qty: 1, ratePaise: 500000 }], gstRate: 18 },
+      managerScope,
+    );
+    expect(result).toBeNull();
+  });
+
+  it("lets the assigned executive revise their own enquiry's quote", async () => {
+    const base = await insertAssignedEnquiryWithQuote(executiveId);
+
+    const revised = await reviseQuote(
+      base.id,
+      { lineItems: [{ label: "Professional fee", qty: 1, ratePaise: 500000 }], gstRate: 18 },
+      executiveScope,
+    );
+    expect(revised).not.toBeNull();
+  });
+
+  it("blocks an executive from revising a quote on an enquiry assigned to someone else", async () => {
+    const base = await insertAssignedEnquiryWithQuote(executiveId);
+
+    const result = await reviseQuote(
+      base.id,
+      { lineItems: [{ label: "Professional fee", qty: 1, ratePaise: 500000 }], gstRate: 18 },
+      otherExecutiveScope,
+    );
+    expect(result).toBeNull();
+
+    const unchanged = await db.query.quotes.findFirst({ where: eq(quotes.id, base.id) });
+    expect(unchanged?.totalPaise).toBe(base.totalPaise);
+  });
+
+  it("getQuoteForRevision mirrors the same visibility scoping", async () => {
+    const base = await insertAssignedEnquiryWithQuote(executiveId);
+
+    expect(await getQuoteForRevision(base.id, executiveScope)).not.toBeNull();
+    expect(await getQuoteForRevision(base.id, otherExecutiveScope)).toBeNull();
+    expect(await getQuoteForRevision(base.id, managerScope)).not.toBeNull();
+    expect(await getQuoteForRevision(randomUUID(), managerScope)).toBeNull();
   });
 });
