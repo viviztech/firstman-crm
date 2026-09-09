@@ -94,45 +94,24 @@ export function MarketingEnquiryForm({
         </p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="enquiry-service">What do you need help with?</Label>
-          <Select
-            name="serviceInterestedId"
-            defaultValue={defaultServiceId}
-            items={services.map((service) => ({ value: service.id, label: service.name }))}
-          >
-            <SelectTrigger id="enquiry-service" className="w-full">
-              <SelectValue placeholder="Select a service" />
-            </SelectTrigger>
-            <SelectContent>
-              {services.map((service) => (
-                <SelectItem key={service.id} value={service.id}>
-                  {service.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="enquiry-directors">Number of directors/partners</Label>
-          <Input
-            id="enquiry-directors"
-            name="numberOfDirectors"
-            type="number"
-            min={1}
-            max={50}
-            placeholder="e.g. 2"
-          />
-        </div>
-      </div>
-
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="enquiry-capital">Authorized capital</Label>
-        <MoneyInput id="enquiry-capital" name="capitalAmountPaise" placeholder="1,00,000" />
-        <p className="text-xs text-muted-foreground">
-          For company/LLP registration — some fees (e.g. MOA/AOA stamp duty) scale with this.
-        </p>
+        <Label htmlFor="enquiry-service">What do you need help with?</Label>
+        <Select
+          name="serviceInterestedId"
+          defaultValue={defaultServiceId}
+          items={services.map((service) => ({ value: service.id, label: service.name }))}
+        >
+          <SelectTrigger id="enquiry-service" className="w-full">
+            <SelectValue placeholder="Select a service" />
+          </SelectTrigger>
+          <SelectContent>
+            {services.map((service) => (
+              <SelectItem key={service.id} value={service.id}>
+                {service.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="flex flex-col gap-1.5">
