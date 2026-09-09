@@ -8,6 +8,7 @@ export const notificationTypeEnum = pgEnum("notification_type", [
   "order_status_changed",
   "invoice_overdue_digest",
   "task_overdue",
+  "quote_responded",
 ]);
 
 /**

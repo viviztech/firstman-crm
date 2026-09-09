@@ -88,3 +88,33 @@ export function verifyQuotePdfToken(quoteId: string, token: string): boolean {
   if (expected.length !== actual.length) return false;
   return timingSafeEqual(expected, actual);
 }
+
+// The client-facing "Approve / Request changes" page, linked from the quote email and WhatsApp
+// message — same long-lived window as the quote PDF link above (a client may sit on a quote for
+// weeks before responding), with its own "quote-response:" prefix so a leaked PDF token can never
+// be replayed against the response action, and vice versa.
+const QUOTE_RESPONSE_EXPIRY_MS = 30 * 24 * 60 * 60 * 1000;
+
+export function createQuoteResponseToken(quoteId: string): string {
+  const expiresAt = Date.now() + QUOTE_RESPONSE_EXPIRY_MS;
+  const signature = sign(`quote-response:${quoteId}.${expiresAt}`);
+  return `${expiresAt}.${signature}`;
+}
+
+/** Relative URL for the public quote-response page, ready to drop into an <a href> or send externally. */
+export function getQuoteResponseUrl(quoteId: string): string {
+  return `/quotes/${quoteId}/respond?token=${createQuoteResponseToken(quoteId)}`;
+}
+
+export function verifyQuoteResponseToken(quoteId: string, token: string): boolean {
+  const [expiresAtRaw, signature] = token.split(".");
+  if (!expiresAtRaw || !signature) return false;
+
+  const expiresAt = Number(expiresAtRaw);
+  if (!Number.isFinite(expiresAt) || Date.now() > expiresAt) return false;
+
+  const expected = Buffer.from(sign(`quote-response:${quoteId}.${expiresAt}`));
+  const actual = Buffer.from(signature);
+  if (expected.length !== actual.length) return false;
+  return timingSafeEqual(expected, actual);
+}

@@ -183,6 +183,13 @@
       "when": 1788860856207,
       "tag": "0025_spooky_miracleman",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1788960117726,
+      "tag": "0026_left_rhodey",
+      "breakpoints": true
     }
   ]
 }

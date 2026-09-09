@@ -9,6 +9,7 @@ import { registerInvoiceNotificationJobs } from "@/jobs/invoice-notifications";
 import { registerMarketingEnquiryNotificationJobs } from "@/jobs/marketing-enquiry-notifications";
 import { registerOrderNotificationJobs } from "@/jobs/order-notifications";
 import { registerPortalNotificationJobs } from "@/jobs/portal-notifications";
+import { registerQuoteResponseNotificationJobs } from "@/jobs/quote-response-notifications";
 import { registerSaleProformaNotificationJobs } from "@/jobs/sale-proforma-notifications";
 import { registerTaskOverdueCron } from "@/jobs/task-overdue-cron";
 import { registerUserInvitationJobs } from "@/jobs/user-invitation";
@@ -24,6 +25,7 @@ export async function registerJobs(): Promise<void> {
   await registerEnquiryNotificationJobs();
   await registerMarketingEnquiryNotificationJobs();
   await registerEnquiryQuoteNotificationJobs();
+  await registerQuoteResponseNotificationJobs();
   await registerOrderNotificationJobs();
   await registerSaleProformaNotificationJobs();
   await registerPortalNotificationJobs();

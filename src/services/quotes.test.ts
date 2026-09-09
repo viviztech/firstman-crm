@@ -11,8 +11,10 @@ import { makeScope } from "@/lib/test-scope";
 import {
   createQuoteForEnquiry,
   formatQuoteNo,
+  getQuoteForResponse,
   getQuoteForRevision,
   quoteYearMonth,
+  respondToQuote,
   reviseQuote,
 } from "@/services/quotes";
 import { setServiceStatePriceComponents } from "@/services/service-pricing";
@@ -392,5 +394,108 @@ describe("reviseQuote / getQuoteForRevision (integration)", () => {
     expect(await getQuoteForRevision(base.id, otherExecutiveScope)).toBeNull();
     expect(await getQuoteForRevision(base.id, managerScope)).not.toBeNull();
     expect(await getQuoteForRevision(randomUUID(), managerScope)).toBeNull();
+  });
+});
+
+describe("respondToQuote / getQuoteForResponse (integration)", () => {
+  const enquiryIds: string[] = [];
+  let serviceId: string;
+
+  beforeAll(async () => {
+    const service = await db.query.services.findFirst({
+      where: eq(services.slug, "pvt-ltd-registration"),
+    });
+    if (!service) throw new Error("Seed catalog first — pvt-ltd-registration service not found");
+    serviceId = service.id;
+  });
+
+  afterAll(async () => {
+    for (const id of enquiryIds) {
+      await db.delete(quotes).where(eq(quotes.enquiryId, id));
+    }
+    await db.delete(enquiries).where(ilike(enquiries.phone, "+919876642%"));
+  });
+
+  async function insertEnquiryWithQuote(statusOverride?: "won" | "lost") {
+    const phone = `+919876642${randomUUID().slice(0, 6)}`;
+    const [created] = await db
+      .insert(enquiries)
+      .values({
+        name: "Quote Response Fixture",
+        phone,
+        serviceInterestedId: serviceId,
+        source: "website",
+      })
+      .returning();
+    if (!created) throw new Error("failed to insert fixture enquiry");
+    enquiryIds.push(created.id);
+
+    const quote = await createQuoteForEnquiry(created.id, null);
+    if (!quote) throw new Error("failed to create fixture quote");
+
+    if (statusOverride) {
+      await db
+        .update(enquiries)
+        .set({ status: statusOverride })
+        .where(eq(enquiries.id, created.id));
+    }
+
+    return quote;
+  }
+
+  it("records an approval without touching the enquiry status", async () => {
+    const quote = await insertEnquiryWithQuote();
+
+    const updated = await respondToQuote(quote.id, { response: "approved" });
+    expect(updated?.clientResponse).toBe("approved");
+    expect(updated?.clientResponseAt).not.toBeNull();
+    expect(updated?.clientResponseNote).toBeNull();
+
+    const enquiry = await db.query.enquiries.findFirst({
+      where: eq(enquiries.id, quote.enquiryId),
+    });
+    expect(enquiry?.status).toBe("new");
+  });
+
+  it("records a negotiation request with a note and moves the enquiry to negotiation", async () => {
+    const quote = await insertEnquiryWithQuote();
+
+    const updated = await respondToQuote(quote.id, {
+      response: "negotiating",
+      note: "Could you revisit the professional fee?",
+    });
+    expect(updated?.clientResponse).toBe("negotiating");
+    expect(updated?.clientResponseNote).toBe("Could you revisit the professional fee?");
+
+    const enquiry = await db.query.enquiries.findFirst({
+      where: eq(enquiries.id, quote.enquiryId),
+    });
+    expect(enquiry?.status).toBe("negotiation");
+  });
+
+  it("never reopens an enquiry that's already won or lost", async () => {
+    const wonQuote = await insertEnquiryWithQuote("won");
+    await respondToQuote(wonQuote.id, { response: "negotiating", note: "too late" });
+    const wonEnquiry = await db.query.enquiries.findFirst({
+      where: eq(enquiries.id, wonQuote.enquiryId),
+    });
+    expect(wonEnquiry?.status).toBe("won");
+
+    const lostQuote = await insertEnquiryWithQuote("lost");
+    await respondToQuote(lostQuote.id, { response: "negotiating", note: "too late" });
+    const lostEnquiry = await db.query.enquiries.findFirst({
+      where: eq(enquiries.id, lostQuote.enquiryId),
+    });
+    expect(lostEnquiry?.status).toBe("lost");
+  });
+
+  it("returns null for a quote that doesn't exist", async () => {
+    expect(await respondToQuote(randomUUID(), { response: "approved" })).toBeNull();
+  });
+
+  it("getQuoteForResponse returns the quote with no scoping (public link access)", async () => {
+    const quote = await insertEnquiryWithQuote();
+    expect(await getQuoteForResponse(quote.id)).not.toBeNull();
+    expect(await getQuoteForResponse(randomUUID())).toBeNull();
   });
 });

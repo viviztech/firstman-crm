@@ -3,7 +3,7 @@ import { getAppUrl } from "@/lib/app-url";
 import { logger } from "@/lib/logger";
 import { formatMoney } from "@/lib/money";
 import { getBoss } from "@/lib/queue";
-import { getQuotePdfUrl } from "@/lib/signed-url";
+import { getQuotePdfUrl, getQuoteResponseUrl } from "@/lib/signed-url";
 import { recordMessageLog } from "@/services/message-log";
 import { createQuoteForEnquiry, getQuoteForNotification, markQuoteSent } from "@/services/quotes";
 import { sendWhatsAppDocument } from "@/services/whatsapp";
@@ -36,21 +36,25 @@ export async function enqueueQuoteRevisedNotification(payload: QuoteRevisedPaylo
 }
 
 /** WhatsApp document + email send, shared by the initial issue and every later revision, so a
- *  client always gets the same notification shape regardless of which triggered it. */
+ *  client always gets the same notification shape regardless of which triggered it. The response
+ *  link (Option A of the quote-approval feature — see lib/signed-url.ts) is the primary call to
+ *  action in the email and appended to the WhatsApp caption, so approving/negotiating never needs
+ *  a CRM login. */
 async function sendQuoteNotification(quote: NotifiableQuote): Promise<void> {
   const pdfUrl = getAppUrl(getQuotePdfUrl(quote.id));
+  const responseUrl = getAppUrl(getQuoteResponseUrl(quote.id));
 
   const result = await sendWhatsAppDocument({
     to: quote.clientPhone,
     documentUrl: pdfUrl,
     filename: `${quote.quoteNo}.pdf`,
-    caption: `Your quote for ${quote.serviceName} — ${formatMoney(quote.totalPaise)}`,
+    caption: `Your quote for ${quote.serviceName} — ${formatMoney(quote.totalPaise)}\n\nApprove or discuss this quote: ${responseUrl}`,
   });
   await recordMessageLog({
     channel: "whatsapp",
     to: quote.clientPhone,
     template: "enquiry_quote_issued",
-    payload: { pdfUrl },
+    payload: { pdfUrl, responseUrl },
     status: result.ok ? "sent" : "failed",
     error: result.ok ? undefined : result.error,
     entityType: "quote",
@@ -64,9 +68,10 @@ async function sendQuoteNotification(quote: NotifiableQuote): Promise<void> {
     lines: [
       `Thanks for your interest in ${quote.serviceName}. Based on the details you shared, here's our fee estimate${quote.stateName ? ` for ${quote.stateName}` : ""}: ${formatMoney(quote.totalPaise)}.`,
       "This is an estimate — we'll confirm final fees once we've reviewed your requirements and documents.",
+      `You can also download the quote PDF directly: ${pdfUrl}`,
     ],
-    ctaLabel: "Download your quote",
-    ctaUrl: pdfUrl,
+    ctaLabel: "Approve or discuss this quote",
+    ctaUrl: responseUrl,
     template: "enquiry_quote_issued",
     entityType: "quote",
     entityId: quote.id,

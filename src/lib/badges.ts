@@ -5,6 +5,7 @@ import type { documentStatusEnum } from "@/db/schema/documents";
 import type { enquirySourceEnum, enquiryStatusEnum } from "@/db/schema/enquiries";
 import type { invoiceKindEnum, invoiceStatusEnum, paymentMethodEnum } from "@/db/schema/invoices";
 import type { orderStatusEnum, orderTaskStatusEnum } from "@/db/schema/orders";
+import type { quoteClientResponseEnum } from "@/db/schema/quotes";
 
 export type ServiceRelationType = (typeof serviceRelationTypeEnum.enumValues)[number];
 export type ServiceRecurrence = (typeof recurrenceEnum.enumValues)[number];
@@ -328,4 +329,24 @@ export const PAYMENT_METHOD_LABEL: Record<PaymentMethod, string> = {
   cash: "Cash",
   card: "Card",
   cheque: "Cheque",
+};
+
+export type QuoteClientResponse = (typeof quoteClientResponseEnum.enumValues)[number];
+
+export const QUOTE_CLIENT_RESPONSE_BADGE: Record<
+  QuoteClientResponse,
+  { label: string; className: string }
+> = {
+  pending: {
+    label: "Awaiting response",
+    className: "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300",
+  },
+  approved: {
+    label: "Approved",
+    className: "bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-300",
+  },
+  negotiating: {
+    label: "Wants to negotiate",
+    className: "bg-orange-100 text-orange-800 dark:bg-orange-950 dark:text-orange-300",
+  },
 };

@@ -3,6 +3,7 @@ import {
   index,
   integer,
   jsonb,
+  pgEnum,
   pgTable,
   text,
   timestamp,
@@ -19,6 +20,14 @@ export type QuoteLineItem = {
   ratePaise: number;
   amountPaise: number;
 };
+
+/** The client's own response to a sent quote, captured from the signed public response link
+ *  (Option A of the quote-approval feature) — never edited by staff directly. */
+export const quoteClientResponseEnum = pgEnum("quote_client_response", [
+  "pending",
+  "approved",
+  "negotiating",
+]);
 
 /**
  * A generated, non-binding fee estimate sent to an enquirer as soon as their enquiry names an
@@ -56,6 +65,10 @@ export const quotes = pgTable(
     gstAmountPaise: integer("gst_amount_paise").notNull().default(0),
     totalPaise: integer("total_paise").notNull(),
     sentAt: timestamp("sent_at", { withTimezone: true }),
+    clientResponse: quoteClientResponseEnum("client_response").notNull().default("pending"),
+    clientResponseAt: timestamp("client_response_at", { withTimezone: true }),
+    // Free-text from the client when they pick "Request changes" on the response page.
+    clientResponseNote: text("client_response_note"),
   },
   (table) => [
     uniqueIndex("quotes_quote_no_idx").on(table.quoteNo),

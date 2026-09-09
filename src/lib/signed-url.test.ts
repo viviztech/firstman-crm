@@ -1,5 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { createDownloadToken, getDocumentDownloadUrl, verifyDownloadToken } from "@/lib/signed-url";
+import {
+  createDownloadToken,
+  createQuotePdfToken,
+  createQuoteResponseToken,
+  getDocumentDownloadUrl,
+  getQuoteResponseUrl,
+  verifyDownloadToken,
+  verifyQuoteResponseToken,
+} from "@/lib/signed-url";
 
 describe("signed-url", () => {
   beforeEach(() => {
@@ -48,5 +56,47 @@ describe("signed-url", () => {
   it("builds a download URL containing the route and a token query param", () => {
     const url = getDocumentDownloadUrl("doc-1");
     expect(url).toMatch(/^\/api\/documents\/doc-1\/download\?token=\d+\.[0-9a-f]+$/);
+  });
+});
+
+describe("quote-response token", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-01-01T00:00:00Z"));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("verifies a freshly-created token for the same quote id", () => {
+    const token = createQuoteResponseToken("quote-1");
+    expect(verifyQuoteResponseToken("quote-1", token)).toBe(true);
+  });
+
+  it("rejects the token for a different quote id", () => {
+    const token = createQuoteResponseToken("quote-1");
+    expect(verifyQuoteResponseToken("quote-2", token)).toBe(false);
+  });
+
+  it("rejects an expired token (30-day window)", () => {
+    const token = createQuoteResponseToken("quote-1");
+    vi.setSystemTime(new Date("2026-02-01T00:00:01Z"));
+    expect(verifyQuoteResponseToken("quote-1", token)).toBe(false);
+  });
+
+  it("rejects malformed tokens", () => {
+    expect(verifyQuoteResponseToken("quote-1", "not-a-token")).toBe(false);
+    expect(verifyQuoteResponseToken("quote-1", "")).toBe(false);
+  });
+
+  it("builds a response URL containing the route and a token query param", () => {
+    const url = getQuoteResponseUrl("quote-1");
+    expect(url).toMatch(/^\/quotes\/quote-1\/respond\?token=\d+\.[0-9a-f]+$/);
+  });
+
+  it("never accepts a quote PDF token on the response route — distinct prefixes isolate the two", () => {
+    const pdfToken = createQuotePdfToken("quote-1");
+    expect(verifyQuoteResponseToken("quote-1", pdfToken)).toBe(false);
   });
 });

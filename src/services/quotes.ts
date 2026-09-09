@@ -1,9 +1,10 @@
-import { and, desc, eq, isNull } from "drizzle-orm";
+import { and, desc, eq, isNull, notInArray } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/db";
 import { enquiries } from "@/db/schema/enquiries";
 import { type QuoteLineItem, quotes } from "@/db/schema/quotes";
 import type { ActorScope } from "@/lib/scope";
+import { optionalTrimmed } from "@/lib/validation/helpers";
 import { recordActivity } from "@/services/activity-log";
 import { enquiryScopeCondition } from "@/services/enquiries";
 import { computeServiceQuote } from "@/services/service-pricing";
@@ -236,5 +237,83 @@ export async function listQuotesForEnquiry(enquiryId: string) {
   return db.query.quotes.findMany({
     where: eq(quotes.enquiryId, enquiryId),
     orderBy: [desc(quotes.createdAt)],
+  });
+}
+
+/** Fields the public quote-response page needs — no ActorScope here: the signed token in the
+ *  URL (verifyQuoteResponseToken) is the sole authorization, same as the PDF route (spec 4.5's
+ *  signed-URL pattern), since the client visiting this link has no CRM session at all. */
+export async function getQuoteForResponse(id: string) {
+  const quote = await db.query.quotes.findFirst({ where: eq(quotes.id, id) });
+  return quote ?? null;
+}
+
+export const respondToQuoteInputSchema = z.object({
+  response: z.enum(["approved", "negotiating"]),
+  note: optionalTrimmed(1000),
+});
+
+export type RespondToQuoteInput = z.infer<typeof respondToQuoteInputSchema>;
+
+/**
+ * Records the client's own decision on a quote, from the public signed-link response page
+ * (Option A of the quote-approval feature) — no ActorScope, since this is the client acting,
+ * not staff. A "negotiating" response also nudges the parent enquiry to the existing
+ * `negotiation` kanban status so it surfaces on the board immediately, unless the enquiry has
+ * already moved past that (won/lost) — a stale quote link responded to after the deal already
+ * closed shouldn't reopen it. Approval intentionally leaves the enquiry status untouched: Sales
+ * conversion stays a deliberate staff action (spec 4.1), not something a client click triggers.
+ * Returns null if the quote doesn't exist.
+ */
+export async function respondToQuote(id: string, input: RespondToQuoteInput) {
+  return db.transaction(async (tx) => {
+    const quote = await tx.query.quotes.findFirst({ where: eq(quotes.id, id) });
+    if (!quote) return null;
+
+    const [updated] = await tx
+      .update(quotes)
+      .set({
+        clientResponse: input.response,
+        clientResponseAt: new Date(),
+        clientResponseNote: input.response === "negotiating" ? (input.note ?? null) : null,
+      })
+      .where(eq(quotes.id, id))
+      .returning();
+    if (!updated) throw new Error("Failed to record quote response");
+
+    if (input.response === "negotiating") {
+      await tx
+        .update(enquiries)
+        .set({ status: "negotiation" })
+        .where(
+          and(eq(enquiries.id, quote.enquiryId), notInArray(enquiries.status, ["won", "lost"])),
+        );
+    }
+
+    await recordActivity(
+      {
+        actorId: null,
+        entityType: "quote",
+        entityId: updated.id,
+        action: "client_responded",
+        diff: { response: input.response, note: input.note ?? null },
+      },
+      tx,
+    );
+
+    return updated;
+  });
+}
+
+/** Quote + its enquiry's assignee — for the internal "client responded" notification job. */
+export async function getQuoteForResponseNotification(id: string) {
+  return db.query.quotes.findFirst({
+    where: eq(quotes.id, id),
+    with: {
+      enquiry: {
+        columns: { id: true },
+        with: { assignee: { columns: { id: true, name: true, email: true } } },
+      },
+    },
   });
 }

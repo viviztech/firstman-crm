@@ -26,7 +26,11 @@ import { SectionIcon } from "@/components/ui/section-icon";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { db } from "@/db";
 import { activityLogs } from "@/db/schema/activity-logs";
-import { ENQUIRY_SOURCE_LABEL, ENQUIRY_STATUS_STAT_COLOR } from "@/lib/badges";
+import {
+  ENQUIRY_SOURCE_LABEL,
+  ENQUIRY_STATUS_STAT_COLOR,
+  QUOTE_CLIENT_RESPONSE_BADGE,
+} from "@/lib/badges";
 import { env } from "@/lib/env";
 import { formatMoney } from "@/lib/money";
 import { requireRole } from "@/lib/session";
@@ -337,6 +341,16 @@ export default async function EnquiryDetailPage({ params }: { params: Promise<{ 
                       >
                         {quote.sentAt ? "Sent" : "Not sent yet"}
                       </span>
+                      {quote.clientResponse !== "pending" ? (
+                        <span
+                          className={cn(
+                            "rounded-full px-2 py-0.5 text-xs",
+                            QUOTE_CLIENT_RESPONSE_BADGE[quote.clientResponse].className,
+                          )}
+                        >
+                          {QUOTE_CLIENT_RESPONSE_BADGE[quote.clientResponse].label}
+                        </span>
+                      ) : null}
                     </div>
                     <p className="mt-1 text-muted-foreground">
                       {formatMoney(quote.totalPaise)}
@@ -345,6 +359,11 @@ export default async function EnquiryDetailPage({ params }: { params: Promise<{ 
                       {" · "}
                       {formatInTimeZone(quote.createdAt, env.TZ_DISPLAY, "d MMM yyyy, h:mm a")}
                     </p>
+                    {quote.clientResponse === "negotiating" && quote.clientResponseNote ? (
+                      <p className="mt-1 rounded-md bg-orange-50 px-2 py-1 text-xs text-orange-900">
+                        "{quote.clientResponseNote}"
+                      </p>
+                    ) : null}
                   </div>
                   <div className="flex gap-2">
                     <Button
