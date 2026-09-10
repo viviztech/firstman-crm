@@ -45,17 +45,31 @@ function emptyRow(): ServiceLineRow {
 export function SalesServiceLinesEditor({
   services,
   defaultServiceId,
+  approvedPriceByServiceId,
   onSummaryChange,
 }: {
   services: ServiceOption[];
   defaultServiceId?: string | null;
+  /** serviceId -> the client's approved Professional fee (paise) for that service, from the
+   *  quote-approval feature — takes priority over the catalog's basePricePaise, both for the
+   *  initial default row and whenever that service is (re)selected, since it's the figure the
+   *  client actually agreed to pay. */
+  approvedPriceByServiceId?: Record<string, number>;
   /** Optional — lets a parent page (e.g. a summary sidebar) mirror the selection without this
    * component giving up ownership of its own row state. Unused by callers that don't need it. */
   onSummaryChange?: (summary: SalesServiceLineSummary[]) => void;
 }) {
   const [rows, setRows] = useState<ServiceLineRow[]>(() => {
     const initial = emptyRow();
-    return [defaultServiceId ? { ...initial, serviceId: defaultServiceId } : initial];
+    if (!defaultServiceId) return [initial];
+    const approvedPaise = approvedPriceByServiceId?.[defaultServiceId];
+    return [
+      {
+        ...initial,
+        serviceId: defaultServiceId,
+        priceRupees: approvedPaise != null ? paiseToRupees(approvedPaise) : "",
+      },
+    ];
   });
 
   useEffect(() => {
@@ -76,8 +90,12 @@ export function SalesServiceLinesEditor({
 
   function handleServiceChange(id: string, serviceId: string | null) {
     if (!serviceId) return;
+    const approvedPaise = approvedPriceByServiceId?.[serviceId];
     const service = services.find((candidate) => candidate.id === serviceId);
-    updateRow(id, { serviceId, priceRupees: paiseToRupees(service?.basePricePaise) });
+    updateRow(id, {
+      serviceId,
+      priceRupees: paiseToRupees(approvedPaise ?? service?.basePricePaise),
+    });
   }
 
   function addRow() {

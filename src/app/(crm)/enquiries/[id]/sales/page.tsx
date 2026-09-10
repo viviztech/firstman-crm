@@ -9,15 +9,17 @@ import { cn } from "@/lib/utils";
 import { listServicesForOrders } from "@/services/catalog";
 import { getEnquiry } from "@/services/enquiries";
 import { listStates } from "@/services/geography";
+import { getApprovedQuoteSummaryForEnquiry } from "@/services/quotes";
 
 export default async function EnquirySalesPage({ params }: { params: Promise<{ id: string }> }) {
   const user = await requireRole("super_admin", "manager", "executive");
   const { id } = await params;
 
-  const [enquiry, services, states] = await Promise.all([
+  const [enquiry, services, states, approvedQuote] = await Promise.all([
     getEnquiry(id, await toScope(user)),
     listServicesForOrders(),
     listStates(),
+    getApprovedQuoteSummaryForEnquiry(id),
   ]);
   if (!enquiry) {
     notFound();
@@ -58,6 +60,7 @@ export default async function EnquirySalesPage({ params }: { params: Promise<{ i
         }}
         services={services}
         states={states}
+        approvedQuote={approvedQuote}
       />
     </div>
   );

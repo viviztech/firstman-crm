@@ -11,8 +11,11 @@ import { makeScope } from "@/lib/test-scope";
 import {
   createQuoteForEnquiry,
   formatQuoteNo,
+  getApprovedProfessionalFeePaise,
+  getApprovedQuoteSummaryForEnquiry,
   getQuoteForResponse,
   getQuoteForRevision,
+  listApprovedQuoteSummariesByEnquiryId,
   quoteYearMonth,
   respondToQuote,
   reviseQuote,
@@ -497,5 +500,129 @@ describe("respondToQuote / getQuoteForResponse (integration)", () => {
     const quote = await insertEnquiryWithQuote();
     expect(await getQuoteForResponse(quote.id)).not.toBeNull();
     expect(await getQuoteForResponse(randomUUID())).toBeNull();
+  });
+});
+
+describe("getApprovedProfessionalFeePaise (pure)", () => {
+  it("returns the Professional fee line's amount, ignoring other lines", () => {
+    const amount = getApprovedProfessionalFeePaise({
+      lineItems: [
+        { label: "Professional fee", qty: 1, ratePaise: 999900, amountPaise: 999900 },
+        { label: "Government fee", qty: 1, ratePaise: 200000, amountPaise: 200000 },
+      ],
+    });
+    expect(amount).toBe(999900);
+  });
+
+  it("returns null when there's no Professional fee line", () => {
+    expect(
+      getApprovedProfessionalFeePaise({
+        lineItems: [{ label: "Government fee", qty: 1, ratePaise: 200000, amountPaise: 200000 }],
+      }),
+    ).toBeNull();
+  });
+});
+
+describe("getApprovedQuoteSummaryForEnquiry / listApprovedQuoteSummariesByEnquiryId (integration)", () => {
+  const enquiryIds: string[] = [];
+  const managerId = randomUUID();
+  let serviceId: string;
+
+  beforeAll(async () => {
+    const service = await db.query.services.findFirst({
+      where: eq(services.slug, "pvt-ltd-registration"),
+    });
+    if (!service) throw new Error("Seed catalog first — pvt-ltd-registration service not found");
+    serviceId = service.id;
+
+    await db.insert(user).values({
+      id: managerId,
+      name: "Approved Quote Summary Test Manager",
+      email: `approved-quote-summary-manager-${managerId}@test.local`,
+      emailVerified: true,
+      role: "manager",
+    });
+  });
+
+  afterAll(async () => {
+    for (const id of enquiryIds) {
+      await db.delete(quotes).where(eq(quotes.enquiryId, id));
+    }
+    await db.delete(enquiries).where(ilike(enquiries.phone, "+919876644%"));
+    await db.delete(user).where(eq(user.id, managerId));
+  });
+
+  async function insertEnquiryWithQuote() {
+    const phone = `+919876644${randomUUID().slice(0, 6)}`;
+    const [created] = await db
+      .insert(enquiries)
+      .values({
+        name: "Approved Quote Summary Fixture",
+        phone,
+        serviceInterestedId: serviceId,
+        source: "website",
+      })
+      .returning();
+    if (!created) throw new Error("failed to insert fixture enquiry");
+    enquiryIds.push(created.id);
+
+    const quote = await createQuoteForEnquiry(created.id, null);
+    if (!quote) throw new Error("failed to create fixture quote");
+    return quote;
+  }
+
+  it("returns null when the enquiry has no approved quote", async () => {
+    const quote = await insertEnquiryWithQuote();
+    expect(await getApprovedQuoteSummaryForEnquiry(quote.enquiryId)).toBeNull();
+  });
+
+  it("returns the approved quote's summary, with the Professional fee as the price", async () => {
+    const quote = await insertEnquiryWithQuote();
+    await respondToQuote(quote.id, { response: "approved" });
+
+    const summary = await getApprovedQuoteSummaryForEnquiry(quote.enquiryId);
+    expect(summary).not.toBeNull();
+    expect(summary?.quoteNo).toBe(quote.quoteNo);
+    expect(summary?.serviceId).toBe(serviceId);
+    expect(summary?.professionalFeePaise).toBe(
+      quote.lineItems.find((item) => item.label === "Professional fee")?.amountPaise,
+    );
+    expect(summary?.totalPaise).toBe(quote.totalPaise);
+    expect(summary?.respondedAt).not.toBeNull();
+  });
+
+  it("stops surfacing an approval once a revision supersedes it", async () => {
+    const quote = await insertEnquiryWithQuote();
+    await respondToQuote(quote.id, { response: "approved" });
+    expect(await getApprovedQuoteSummaryForEnquiry(quote.enquiryId)).not.toBeNull();
+
+    await reviseQuote(
+      quote.id,
+      { lineItems: [{ label: "Professional fee", qty: 1, ratePaise: 500000 }], gstRate: 18 },
+      makeScope(managerId, "manager"),
+    );
+
+    // The newest quote is the fresh, still-pending revision — the old approval no longer counts.
+    expect(await getApprovedQuoteSummaryForEnquiry(quote.enquiryId)).toBeNull();
+  });
+
+  it("batches approved-quote lookups for several enquiries in one call", async () => {
+    const approved = await insertEnquiryWithQuote();
+    await respondToQuote(approved.id, { response: "approved" });
+
+    const pending = await insertEnquiryWithQuote();
+
+    const summaries = await listApprovedQuoteSummariesByEnquiryId([
+      approved.enquiryId,
+      pending.enquiryId,
+    ]);
+    expect(summaries.size).toBe(1);
+    expect(summaries.get(approved.enquiryId)?.quoteNo).toBe(approved.quoteNo);
+    expect(summaries.has(pending.enquiryId)).toBe(false);
+  });
+
+  it("returns an empty map for an empty input array without querying", async () => {
+    const summaries = await listApprovedQuoteSummariesByEnquiryId([]);
+    expect(summaries.size).toBe(0);
   });
 });

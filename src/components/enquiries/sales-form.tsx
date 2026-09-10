@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { type FocusEvent, type FormEvent, useMemo, useState, useTransition } from "react";
 import { closeEnquiryAsSaleAction } from "@/actions/enquiries";
 import { lookupPincodeAction } from "@/actions/geography";
+import { ApprovedQuoteBanner } from "@/components/enquiries/approved-quote-banner";
 import {
   type SalesServiceLineSummary,
   SalesServiceLinesEditor,
@@ -24,6 +25,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { ENQUIRY_SOURCE_LABEL, type EnquirySource } from "@/lib/badges";
 import { formatMoney, rupeesToPaise } from "@/lib/money";
+import type { ApprovedQuoteSummary } from "@/services/quotes";
 
 type ServiceOption = { id: string; name: string; basePricePaise: number };
 type StateOption = { id: string; name: string };
@@ -43,6 +45,7 @@ export function SalesForm({
   defaults,
   services,
   states,
+  approvedQuote,
 }: {
   enquiryId: string;
   source: EnquirySource;
@@ -57,6 +60,9 @@ export function SalesForm({
   };
   services: ServiceOption[];
   states: StateOption[];
+  /** The client's most recently approved quote (spec 4.1's Sales action + the quote-approval
+   *  feature), if any — pre-fills the price field with the amount they already agreed to. */
+  approvedQuote?: ApprovedQuoteSummary | null;
 }) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
@@ -199,9 +205,15 @@ export function SalesForm({
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
             <p className="text-sm text-muted-foreground">Source: {ENQUIRY_SOURCE_LABEL[source]}</p>
+            {approvedQuote ? <ApprovedQuoteBanner approvedQuote={approvedQuote} /> : null}
             <SalesServiceLinesEditor
               services={services}
               defaultServiceId={defaults.serviceInterestedId}
+              approvedPriceByServiceId={
+                approvedQuote?.serviceId && approvedQuote.professionalFeePaise != null
+                  ? { [approvedQuote.serviceId]: approvedQuote.professionalFeePaise }
+                  : undefined
+              }
               onSummaryChange={setSummary}
             />
           </CardContent>

@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { type FocusEvent, type FormEvent, useRef, useState, useTransition } from "react";
 import { closeEnquiryAsSaleAction } from "@/actions/enquiries";
 import { lookupPincodeAction } from "@/actions/geography";
+import { ApprovedQuoteBanner } from "@/components/enquiries/approved-quote-banner";
 import { SalesServiceLinesEditor } from "@/components/enquiries/sales-service-lines-editor";
 import { Button } from "@/components/ui/button";
 import {
@@ -25,6 +26,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { ENQUIRY_SOURCE_LABEL, type EnquirySource } from "@/lib/badges";
+import type { ApprovedQuoteSummary } from "@/services/quotes";
 
 type ServiceOption = { id: string; name: string; basePricePaise: number };
 type StateOption = { id: string; name: string };
@@ -37,6 +39,7 @@ export function SalesDialog({
   defaults,
   services,
   states,
+  approvedQuote,
 }: {
   enquiryId: string;
   open: boolean;
@@ -53,6 +56,9 @@ export function SalesDialog({
   };
   services: ServiceOption[];
   states: StateOption[];
+  /** The client's most recently approved quote (quote-approval feature), if any — pre-fills the
+   *  price field with the amount they already agreed to. */
+  approvedQuote?: ApprovedQuoteSummary | null;
 }) {
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
@@ -178,9 +184,16 @@ export function SalesDialog({
 
           <p className="text-sm text-muted-foreground">Source: {ENQUIRY_SOURCE_LABEL[source]}</p>
 
+          {approvedQuote ? <ApprovedQuoteBanner approvedQuote={approvedQuote} /> : null}
+
           <SalesServiceLinesEditor
             services={services}
             defaultServiceId={defaults.serviceInterestedId}
+            approvedPriceByServiceId={
+              approvedQuote?.serviceId && approvedQuote.professionalFeePaise != null
+                ? { [approvedQuote.serviceId]: approvedQuote.professionalFeePaise }
+                : undefined
+            }
           />
 
           <div className="flex flex-col gap-2">

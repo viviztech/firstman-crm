@@ -6,6 +6,7 @@ import { requireRole } from "@/lib/session";
 import { listServicesForOrders } from "@/services/catalog";
 import { listEnquiriesForBoard } from "@/services/enquiries";
 import { listStates } from "@/services/geography";
+import { listApprovedQuoteSummariesByEnquiryId } from "@/services/quotes";
 
 export default async function EnquiriesKanbanPage() {
   const user = await requireRole("super_admin", "manager", "executive");
@@ -14,6 +15,9 @@ export default async function EnquiriesKanbanPage() {
     listServicesForOrders(),
     listStates(),
   ]);
+  const approvedQuotesByEnquiryId = await listApprovedQuoteSummariesByEnquiryId(
+    enquiries.map((enquiry) => enquiry.id),
+  );
 
   return (
     <div className="flex flex-col gap-4">
@@ -34,7 +38,12 @@ export default async function EnquiriesKanbanPage() {
         </div>
       </div>
 
-      <KanbanBoard enquiries={enquiries} services={services} states={states} />
+      <KanbanBoard
+        enquiries={enquiries}
+        services={services}
+        states={states}
+        approvedQuotesByEnquiryId={Object.fromEntries(approvedQuotesByEnquiryId)}
+      />
     </div>
   );
 }

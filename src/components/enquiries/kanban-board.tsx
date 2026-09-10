@@ -17,6 +17,7 @@ import type { BoardEnquiry } from "@/components/enquiries/kanban-types";
 import { LostDialog } from "@/components/enquiries/lost-dialog";
 import { SalesDialog } from "@/components/enquiries/sales-dialog";
 import { ENQUIRY_STATUS_ORDER, type EnquiryStatus } from "@/lib/badges";
+import type { ApprovedQuoteSummary } from "@/services/quotes";
 
 export type { BoardEnquiry } from "@/components/enquiries/kanban-types";
 
@@ -32,10 +33,15 @@ export function KanbanBoard({
   enquiries: initialEnquiries,
   services,
   states,
+  approvedQuotesByEnquiryId,
 }: {
   enquiries: BoardEnquiry[];
   services: ServiceOption[];
   states: StateOption[];
+  /** enquiryId -> the client's latest approved quote (quote-approval feature), for the
+   *  drag-to-Won Sales dialog's price pre-fill. A plain object, not a Map, since it crosses the
+   *  server/client boundary as a prop. */
+  approvedQuotesByEnquiryId?: Record<string, ApprovedQuoteSummary>;
 }) {
   const [enquiries, setEnquiries] = useState(initialEnquiries);
   const [salesTarget, setSalesTarget] = useState<{
@@ -135,6 +141,7 @@ export function KanbanBoard({
           }}
           services={services}
           states={states}
+          approvedQuote={approvedQuotesByEnquiryId?.[salesEnquiry.id] ?? null}
         />
       ) : null}
 

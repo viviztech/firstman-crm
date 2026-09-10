@@ -1,4 +1,4 @@
-import { and, desc, eq, isNull, notInArray } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, notInArray } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/db";
 import { enquiries } from "@/db/schema/enquiries";
@@ -238,6 +238,90 @@ export async function listQuotesForEnquiry(enquiryId: string) {
     where: eq(quotes.enquiryId, enquiryId),
     orderBy: [desc(quotes.createdAt)],
   });
+}
+
+/** The client-approved Professional fee amount from a quote — excludes government fees/stamp
+ *  duty and GST, matching what the Sales form's price field represents (services/orders.ts's
+ *  quotedPricePaise, invoiced as its own line with GST added separately). Null if the quote
+ *  somehow has no such line (shouldn't happen — every quote's breakdown always leads with one). */
+export function getApprovedProfessionalFeePaise(quote: {
+  lineItems: QuoteLineItem[];
+}): number | null {
+  const professionalFee = quote.lineItems.find((item) => item.label === TAXABLE_LINE_LABEL);
+  return professionalFee?.amountPaise ?? null;
+}
+
+export type ApprovedQuoteSummary = {
+  quoteNo: string;
+  serviceId: string | null;
+  professionalFeePaise: number | null;
+  totalPaise: number;
+  respondedAt: Date | null;
+};
+
+function toApprovedQuoteSummary(quote: {
+  quoteNo: string;
+  serviceId: string | null;
+  lineItems: QuoteLineItem[];
+  totalPaise: number;
+  clientResponseAt: Date | null;
+}): ApprovedQuoteSummary {
+  return {
+    quoteNo: quote.quoteNo,
+    serviceId: quote.serviceId,
+    professionalFeePaise: getApprovedProfessionalFeePaise(quote),
+    totalPaise: quote.totalPaise,
+    respondedAt: quote.clientResponseAt,
+  };
+}
+
+/**
+ * The most recent quote the client actually approved, if any — feeds the Sales conversion
+ * form's price pre-fill (spec 4.1's Sales action) so the executive closes the sale at the
+ * figure the client already agreed to instead of retyping or re-deriving it. Only the newest
+ * quote counts: a revision (reviseQuote above) always creates a fresh row with clientResponse
+ * reset to "pending", so an approval on an older, superseded quote doesn't linger here once a
+ * revision goes out.
+ */
+export async function getApprovedQuoteSummaryForEnquiry(
+  enquiryId: string,
+): Promise<ApprovedQuoteSummary | null> {
+  // Deliberately not filtered to clientResponse="approved" in the query — an approval only
+  // counts when it's on the enquiry's single latest quote. Filtering there would let an older
+  // approved quote resurface after a revision (reviseQuote above) went out and hasn't been
+  // responded to yet, showing the executive a stale, possibly-wrong price.
+  const latest = await db.query.quotes.findFirst({
+    where: eq(quotes.enquiryId, enquiryId),
+    orderBy: [desc(quotes.createdAt)],
+  });
+  return latest?.clientResponse === "approved" ? toApprovedQuoteSummary(latest) : null;
+}
+
+/** Batched form of getApprovedQuoteSummaryForEnquiry, for a list view (the kanban board) where
+ *  fetching one quote per card would be an N+1. One query for every visible enquiry, keyed by
+ *  enquiryId; an enquiry with no approved *latest* quote simply has no entry. */
+export async function listApprovedQuoteSummariesByEnquiryId(
+  enquiryIds: string[],
+): Promise<Map<string, ApprovedQuoteSummary>> {
+  const summaries = new Map<string, ApprovedQuoteSummary>();
+  if (enquiryIds.length === 0) return summaries;
+
+  // Same "only the latest quote counts" reasoning as the single-enquiry version above — fetch
+  // every quote (not just approved ones) so a newer, not-yet-approved revision correctly hides
+  // an older approval rather than the batch silently falling back to it.
+  const allQuotes = await db.query.quotes.findMany({
+    where: inArray(quotes.enquiryId, enquiryIds),
+    orderBy: [desc(quotes.createdAt)],
+  });
+  const resolvedEnquiryIds = new Set<string>();
+  for (const quote of allQuotes) {
+    if (resolvedEnquiryIds.has(quote.enquiryId)) continue; // already resolved this enquiry's latest quote
+    resolvedEnquiryIds.add(quote.enquiryId);
+    if (quote.clientResponse === "approved") {
+      summaries.set(quote.enquiryId, toApprovedQuoteSummary(quote));
+    }
+  }
+  return summaries;
 }
 
 /** Fields the public quote-response page needs — no ActorScope here: the signed token in the
