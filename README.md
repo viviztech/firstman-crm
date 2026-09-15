@@ -586,6 +586,23 @@ prescribe an exact answer:
     (Digital Signature, other Licensing Services, ISO Certification, IPR, and
     the rest of Registration Services) are intentionally left on the generic
     template pending a decision on how far to extend this.
+25. **Trademark Registration added as its own flagship page**: the highest-value
+    remaining page outside "Registration & Licensing" proper (it's IPR Services,
+    its own vertical category), same standalone-registration pattern as
+    Assumption #24. Its most load-bearing fact: filing (`trademark-registration`'s
+    catalog `estimatedDays: 5`) is not the same thing as registration — full
+    registration realistically takes 12-24 months through examination, a
+    4-month Journal opposition window, and certificate issuance, stated
+    explicitly rather than left implied the way some competitor pages blur it.
+    Government fee is ₹4,500/class (individual/DPIIT-startup/Udyam-MSME) or
+    ₹9,000/class (others), with no bundling discount across classes. The
+    existing separate `trademark-objection` catalog service is deliberately
+    kept out of this page's scope — both an Examination Report reply (Section
+    9/11 objection) and an Opposition Counter-Statement are listed as billed
+    separately in the cost breakdown, since they need a legal argument, not
+    a filing. Also flags that using ® before registration is actually granted
+    is prohibited under Indian law (™ has no such restriction) — a fact most
+    competitor pages under-emphasize.
 
 ## Phase checklists (per `CLAUDE.md` §5)
 

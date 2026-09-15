@@ -3062,6 +3062,281 @@ export const SERVICE_CONTENT_OVERRIDES: Record<string, ServiceContentOverride> =
     metaDescription:
       "FSSAI Basic Registration in 7 business days. {{FEE}} professional fee plus ₹100/year government fee. Confirm your turnover band before you file.",
   },
+  "trademark-registration": {
+    base: {
+      eyebrow: "Trademark Registration",
+      summary:
+        "Trademark registration is the process of filing Form TM-A with the Trade Marks Registry to secure exclusive rights over a brand name, logo, or slogan under the Trade Marks Act, 1999. Filing itself takes days, but full registration — examination, journal publication, and certificate issuance — realistically takes 12 to 24 months, even when nothing goes wrong. The government fee is ₹4,500 per class for individuals, DPIIT-recognised startups, and Udyam-registered MSMEs, and ₹9,000 per class for everyone else. FirstMan's professional fee starts at {{FEE}}, separate from the government fee.",
+      idealFor: [
+        "Brands, products, or founders who want to stop others from using a confusingly similar name, logo, or slogan, and to actually be able to sue over it",
+        "Businesses that need a registered mark before licensing it, franchising, or listing on marketplaces that require one",
+        "Anyone currently using an unregistered mark — a competitor filing first can force you to rebrand later",
+      ],
+      outcomes: [
+        "TM-A filing acknowledgement with your application number, usable to start marking your brand ™ immediately",
+        "A cleared name/logo, checked against the existing Register before filing",
+        "Tracking through examination, journal publication, and, if unopposed, the registration certificate",
+        "The right to use the ® symbol once, and only once, registration is actually granted",
+      ],
+      includes: [
+        "Trademark search across the existing Register and pending applications, for the classes you need",
+        "Class selection guidance under the Nice Classification (45 classes: 1-34 goods, 35-45 services)",
+        "Form TM-A preparation and e-filing",
+        "Application-status tracking through examination and journal publication",
+        "WhatsApp progress updates through each stage",
+      ],
+      process: [
+        {
+          title: "Trademark search and class selection",
+          body: "We search the Register and pending applications for conflicts, and confirm exactly which of the 45 Nice classes your goods/services fall under before you pay for classes you don't need.",
+        },
+        {
+          title: "TM-A preparation and filing",
+          body: "The application is filed on the IP India e-filing portal with your mark, applicant details, and chosen classes; you receive your application number and can start using ™ immediately.",
+        },
+        {
+          title: "Examination tracking",
+          body: "We track the Examiner's review and, if an Examination Report raises an objection, flag it to you immediately — a reply is due within 1 month, and missing that deadline abandons the application entirely.",
+        },
+        {
+          title: "Publication and certificate",
+          body: "Once accepted, the mark is published in the Trademark Journal for a 4-month opposition window; if unopposed, the Registry issues the registration certificate.",
+        },
+      ],
+    },
+    heroNote:
+      "The ₹4,500 or ₹9,000 per-class government fee (by applicant category) is separate from the {{FEE}} professional fee, and is paid per class at filing — there's no discount for bundling multiple classes into one application. Filing typically takes days; full registration realistically takes 12 to 24 months even without objection or opposition.",
+    timeline: [
+      { day: "Day 1-2", milestone: "Trademark search completed; classes confirmed" },
+      { day: "Day 3-5", milestone: "TM-A filed; application number issued; ™ usable immediately" },
+      {
+        day: "Month 3-9",
+        milestone: "Examiner reviews the application (examination backlog varies year to year)",
+      },
+      {
+        day: "If objected",
+        milestone:
+          "1 month to reply to the Examination Report (further one-month extensions possible) — not replying abandons the application",
+      },
+      {
+        day: "4 months post-acceptance",
+        milestone: "Mark published in the Trademark Journal; opposition window runs its course",
+      },
+      {
+        day: "Month 12-24 (typical, unopposed)",
+        milestone: "Registration certificate issued; ® becomes usable only from this point",
+      },
+    ],
+    costBreakdown: {
+      intro:
+        "The professional fee covers the filing stage. The government fee scales per class, and the two real costs most people don't budget for are an examination-report objection or a third-party opposition, both billed as separate engagements since they need a legal reply, not just paperwork.",
+      rows: [
+        {
+          item: "Professional fee (filing, per class)",
+          when: "At filing",
+          range: "{{FEE}}",
+          includedInFee: "Yes",
+        },
+        {
+          item: "Government fee — individual/startup/MSME",
+          when: "At filing, per class",
+          range: "₹4,500/class",
+          includedInFee: "No, statutory",
+        },
+        {
+          item: "Government fee — company/LLP/others",
+          when: "At filing, per class",
+          range: "₹9,000/class",
+          includedInFee: "No, statutory",
+        },
+        {
+          item: "Examination Report objection reply, if raised",
+          when: "Within 1 month of the report",
+          range: "Billed as a separate Trademark Objection engagement",
+          includedInFee: "No",
+        },
+        {
+          item: "Opposition Counter-Statement, if a third party opposes",
+          when: "Within 2 months of the Notice of Opposition",
+          range: "Billed as a separate, more involved engagement",
+          includedInFee: "No",
+        },
+        {
+          item: "Expedited examination (Form TM-M), optional",
+          when: "At filing, if chosen",
+          range: "₹20,000 (startup/MSME) or ₹40,000 (others)",
+          includedInFee: "No, statutory, optional",
+        },
+        {
+          item: "Renewal, every 10 years",
+          when: "Before the 10-year term ends",
+          range: "₹9,000/class on time, ₹13,500/class if late",
+          includedInFee: "No",
+        },
+      ],
+      note: "Filing is the affordable part. If the Registry raises an objection or a third party opposes your mark, the reply needs a legal argument on distinctiveness or similarity, not just a form — that's why those are priced separately, once we know what's actually being argued.",
+    },
+    rejectionReasonsKicker: "Avoid an abandoned application",
+    rejectionReasonsHeading: "Why trademark applications get objected to, and how we prevent it.",
+    rejectionReasons: [
+      {
+        reason: "Lack of distinctiveness (Section 9)",
+        detail:
+          "A mark that's descriptive, generic, or too close to common trade terms for your goods/services. We assess distinctiveness before filing, not after an objection.",
+      },
+      {
+        reason: "Similarity to an existing mark (Section 11)",
+        detail:
+          "The single most common ground — visual or phonetic similarity to a mark already on the Register or pending. Our pre-filing search is built specifically to catch this.",
+      },
+      {
+        reason: "Missing or inconsistent applicant details",
+        detail:
+          "A mismatch between your identity proof and the application can trigger a formality objection.",
+      },
+      {
+        reason: "Wrong or incomplete class selection",
+        detail:
+          "Filing under a class that doesn't actually cover your goods/services leaves you unprotected in the class that matters, without ever triggering an objection to warn you.",
+      },
+      {
+        reason: "Ignoring the Examination Report",
+        detail:
+          "A genuine objection isn't fatal, but missing the 1-month reply window is — the application is abandoned outright, and you lose your filing date and must reapply from scratch.",
+      },
+    ],
+    complianceKicker: "After registration",
+    complianceHeading: "What keeps your trademark enforceable.",
+    complianceCalendar: [
+      {
+        milestone: "Renewal (Form TM-R)",
+        dueBy: "Every 10 years, before the term ends",
+        penalty: "The mark enters a 6-month grace period, then becomes removable from the Register",
+      },
+      {
+        milestone: "Late renewal, within the grace period",
+        dueBy: "Within 6 months of expiry",
+        penalty: "₹13,500/class instead of ₹9,000/class",
+      },
+      {
+        milestone: "Restoration, after removal",
+        dueBy: "At the Registrar's discretion, after the grace period",
+        penalty: "₹18,000/class, and restoration isn't guaranteed",
+      },
+      {
+        milestone: "Correct symbol usage (™ vs ®)",
+        dueBy: "™ from filing, ® only from grant",
+        penalty: "Using ® before registration is prohibited under Indian trademark law",
+      },
+    ],
+    localNote: {
+      heading: "Chennai has its own Trade Marks Registry office.",
+      body: "India has five Trade Marks Registry offices — Mumbai, Delhi, Kolkata, Ahmedabad, and Chennai. Applications and any hearings for southern-region applicants are handled from the Chennai office, not routed to a distant city, which matters if your application ever needs an in-person hearing.",
+    },
+    scopeIntro:
+      "Government fees are statutory and scale per class; a genuine legal dispute over your mark — an objection or an opposition — is a different kind of work from filing, and priced once we know what's actually being argued.",
+    scopeTable: {
+      included: [
+        "Trademark search across the Register and pending applications",
+        "Class selection under the Nice Classification",
+        "TM-A preparation and e-filing",
+        "Application-status tracking through examination and journal publication",
+        "Registration certificate handover, once granted",
+        "WhatsApp progress updates through each stage",
+      ],
+      excluded: [
+        "Government fee (₹4,500 or ₹9,000 per class, statutory)",
+        "Examination Report objection reply (a separate Trademark Objection engagement)",
+        "Opposition Counter-Statement and hearing representation",
+        "Expedited examination (Form TM-M) government fee, if chosen",
+        "Renewal filing, due every 10 years",
+        "Trademark watch/monitoring for future conflicting filings",
+      ],
+    },
+    faqs: [
+      {
+        question: "How long does trademark registration actually take?",
+        answer:
+          "Filing itself takes days — you get an application number and can use ™ immediately. Full registration, through examination, journal publication, and certificate issuance, realistically takes 12 to 24 months even without any objection or opposition.",
+      },
+      {
+        question: "What's the actual government fee?",
+        answer:
+          "₹4,500 per class for individuals, DPIIT-recognised startups, and Udyam-registered MSMEs; ₹9,000 per class for companies, LLPs, and other entities. It's paid per class, with no discount for filing multiple classes together.",
+      },
+      {
+        question: "Can I use the ® symbol right after filing?",
+        answer:
+          "No. Using ® before your registration is actually granted is prohibited under Indian trademark law. You can use ™ freely from the moment you file, or even before, but ® is reserved for marks that have completed the full registration process.",
+      },
+      {
+        question: "What happens if the Registry raises an objection?",
+        answer:
+          "You get an Examination Report citing the ground, usually Section 9 (the mark itself lacks distinctiveness) or Section 11 (it's too similar to an existing mark). You must reply within 1 month — ignoring it abandons the application entirely and you lose your filing date.",
+      },
+      {
+        question: "What's the difference between an objection and an opposition?",
+        answer:
+          "An objection comes from the government Examiner during examination, before publication. An opposition comes from a third party after your mark is published in the Trademark Journal, and needs a more involved Counter-Statement and often a hearing.",
+      },
+      {
+        question: "Can I speed up the examination?",
+        answer:
+          "Yes, through Form TM-M with an additional government fee — ₹20,000 for startups/MSMEs, ₹40,000 for other entities — which can bring examination down to about a month instead of the standard wait.",
+      },
+      {
+        question: "How many classes do I need?",
+        answer:
+          "One class covers a specific category of goods or services under the Nice Classification (45 classes total). If you sell products and also offer services under the same mark, you likely need more than one class — we confirm this with you before filing so you're not under-protected.",
+      },
+      {
+        question: "Does registering my mark protect it everywhere in the world?",
+        answer:
+          "No. Indian trademark registration protects you only within India. International protection needs a separate filing, such as through the Madrid Protocol.",
+      },
+      {
+        question: "What if someone is already using a similar name but hasn't registered it?",
+        answer:
+          "Prior use can still matter under passing-off law even without registration, but registration gives you clear statutory rights and a much faster enforcement position — this is exactly why we run a search before filing, not just for existing registrations but for real conflict risk.",
+      },
+      {
+        question: "Do I have to renew my trademark?",
+        answer:
+          "Yes, every 10 years, indefinitely, through Form TM-R. Miss the deadline and you get a 6-month grace period at a higher fee; miss that too and the mark can be removed from the Register, restorable only at the Registrar's discretion.",
+      },
+      {
+        question:
+          "What's the penalty for someone using my registered trademark without permission?",
+        answer:
+          "Imprisonment of 6 months to 3 years and a fine of ₹50,000 to ₹2,00,000 for unauthorised use — but this remedy is only available once your mark is actually registered.",
+      },
+      {
+        question: "Can I trademark just a logo, just a name, or both?",
+        answer:
+          "Both, but as separate applications if you want independent protection for each — a combined logo-plus-wordmark filing protects them only as they appear together, not the name or logo individually.",
+      },
+      {
+        question:
+          "What if my application gets objected to under Section 11 because of a similar existing mark?",
+        answer:
+          "You can argue against the similarity, show your mark is distinguishable, or in some cases obtain a No Objection Certificate from the existing mark's owner. This needs a proper written reply, which is why it's handled as a distinct engagement.",
+      },
+      {
+        question: "Is a company name registration the same as a trademark?",
+        answer:
+          "No. Registering a company name with the MCA doesn't give you trademark rights, and a registered trademark doesn't automatically reserve your company name. Many businesses need both.",
+      },
+      {
+        question: "Can I file a trademark application before I've actually started using the mark?",
+        answer:
+          'Yes, India allows "proposed to be used" applications, though genuine prior use can strengthen your position, especially in a dispute.',
+      },
+    ],
+    lastUpdated: "September 2026",
+    metaTitle: "Trademark Registration India — TM-A Filing, ₹4,500/₹9,000 per Class",
+    metaDescription:
+      "Trademark registration with a pre-filing conflict search. {{FEE}} professional fee plus the ₹4,500 or ₹9,000 government fee per class. Full registration typically 12-24 months.",
+  },
 };
 
 export function getServiceContentOverride(slug: string): ServiceContentOverride | undefined {
