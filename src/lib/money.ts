@@ -28,6 +28,13 @@ export function sumPaise(amounts: number[]): number {
   return amounts.reduce((total, amount) => total + amount, 0);
 }
 
+/** Splits a rounded GST amount into equal CGST/SGST halves without losing a rupee to rounding —
+ *  the second half absorbs any odd paisa so the two always sum back to gstAmountPaise exactly. */
+export function splitGstHalves(amountPaise: number): [number, number] {
+  const half = Math.floor(amountPaise / 2);
+  return [half, amountPaise - half];
+}
+
 /**
  * Storage/business logic stay in integer paise throughout (spec §2) — these two only exist at
  * the form-input boundary, where staff type and read rupees. Never used for arithmetic.

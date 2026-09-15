@@ -534,6 +534,25 @@ prescribe an exact answer:
     0005's `pickUpJobCardAction`, previously only reachable from the
     operations dashboard), aimed at giving executives a faster, more scannable
     working view instead of a long single-column stack of cards.
+23. **The proforma/tax invoice PDF was rebuilt to match the quotation PDF's
+    branded design**: the two documents a client actually receives
+    (quotation and invoice) had drifted apart — the quote PDF got a full
+    branding/terms/money-formatting overhaul first, leaving the invoice PDF's
+    plain black-and-white table looking like a different product. The shared
+    look (brand top bar, badge header, doc-info box, two-up info boxes,
+    bordered/striped line-items table, amount-in-words + CGST/SGST-split
+    totals box, terms & conditions, signature footer) is now factored out of
+    `quote-document.tsx` into `lib/pdf/document-theme.ts` (styles/colors) and
+    `lib/money.ts`'s `splitGstHalves` (CGST/SGST rounding), so
+    `invoice-document.tsx` — covering both `proforma` and `tax` invoice
+    kinds — reuses the exact same scaffold instead of a second hand-rolled
+    stylesheet. Invoice-specific differences stayed content-only: no
+    per-line GST filtering (an invoice's whole subtotal shares one flat
+    `gstRate`, unlike a quote's taxable-fee-vs-nil-rated-govt-fee split), a
+    proforma-only advance-payment disclaimer, and an invoice-appropriate
+    terms list (payment/refund terms rather than quotation validity terms).
+    `renderInvoicePdf` now also passes `invoice.createdAt` so the PDF can show
+    an issue date the way the quote PDF always has.
 
 ## Phase checklists (per `CLAUDE.md` §5)
 

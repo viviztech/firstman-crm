@@ -15,6 +15,7 @@ export async function renderInvoicePdf(invoiceId: string): Promise<Buffer | null
       invoice={{
         invoiceNo: invoice.invoiceNo,
         kind: invoice.kind,
+        createdAt: invoice.createdAt,
         dueDate: invoice.dueDate,
         lineItems: invoice.lineItems,
         subtotalPaise: invoice.subtotalPaise,
