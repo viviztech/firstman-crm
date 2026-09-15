@@ -46,6 +46,9 @@ export type ServiceContentOverride = {
     rows: { factor: string; values: string[] }[];
   };
   documentGroups?: { title: string; note?: string; items: string[] }[];
+  /** Defaults to "Documents required for incorporation." — override for a non-incorporation filing. */
+  documentGroupsHeading?: string;
+  documentGroupsSubtext?: string;
   timeline?: { day: string; milestone: string }[];
   costBreakdown?: {
     intro: string;
@@ -53,7 +56,16 @@ export type ServiceContentOverride = {
     note: string;
   };
   rejectionReasons?: { reason: string; detail: string }[];
+  /** Default kicker/heading assume an MCA incorporation filing ("SPICe+", "resubmission") —
+   *  override both for services where "rejection" or "clarification query" fits the department's
+   *  actual vocabulary better (e.g. GST REG-03, FSSAI FoSCoS). */
+  rejectionReasonsKicker?: string;
+  rejectionReasonsHeading?: string;
   complianceCalendar?: { milestone: string; dueBy: string; penalty: string }[];
+  /** Default kicker/heading ("After incorporation" / "Your first 12 months of compliance.")
+   *  assume a freshly incorporated company — override for a standalone registration/license. */
+  complianceKicker?: string;
+  complianceHeading?: string;
   localNote?: { heading: string; body: string };
   scopeTable?: { included: string[]; excluded: string[] };
   scopeIntro?: string;
@@ -2048,6 +2060,1007 @@ export const SERVICE_CONTENT_OVERRIDES: Record<string, ServiceContentOverride> =
     metaTitle: "Partnership Firm Registration India",
     metaDescription:
       "Partnership firm registration (deed, stamping, and optional Registrar of Firms filing) from {{FEE}} professional fee.",
+  },
+  "gst-registration": {
+    base: {
+      eyebrow: "GST Registration",
+      summary:
+        "GST registration is the process of obtaining a GSTIN under the Central Goods and Services Tax Act, 2017, by filing Form REG-01 on the GST portal. It becomes mandatory once your turnover crosses ₹40 lakh for goods (₹20 lakh in special category states) or ₹20 lakh for services (₹10 lakh in special category states) — or immediately, regardless of turnover, if you supply goods inter-state, sell through an e-commerce operator, or operate as a casual taxable person. FirstMan's professional fee starts at {{FEE}}; the government itself charges no fee for GST registration.",
+      idealFor: [
+        "Businesses that have crossed, or are about to cross, the ₹40 lakh/₹20 lakh turnover threshold (₹20 lakh/₹10 lakh in special category states)",
+        "Anyone required to register regardless of turnover: inter-state goods suppliers, e-commerce sellers, and casual taxable persons",
+        "Businesses that need input tax credit on purchases, or a GSTIN to bid for B2B and government contracts",
+      ],
+      outcomes: [
+        "A 15-digit GSTIN (Goods and Services Tax Identification Number)",
+        "Registration certificate (Form REG-06)",
+        "Aadhaar-authenticated promoter/signatory profile on the GST portal",
+        "A confirmed return-filing schedule — monthly, quarterly, or composition",
+      ],
+      includes: [
+        "Threshold and mandatory-registration check specific to your business",
+        "REG-01 preparation: business details, principal place of business, bank details, HSN/SAC mapping",
+        "Aadhaar authentication coordination for every promoter and authorised signatory",
+        "REG-03 clarification response, if the department raises one",
+        "WhatsApp progress updates through approval",
+      ],
+      process: [
+        {
+          title: "Eligibility and scheme check",
+          body: "We confirm whether registration is mandatory for you yet, and whether the composition scheme or regular registration fits your turnover and sales pattern better.",
+        },
+        {
+          title: "REG-01 preparation and Aadhaar authentication",
+          body: "We prepare your business, promoter, and bank details, map your goods/services to the correct HSN/SAC codes, and coordinate OTP-based Aadhaar authentication for every promoter and signatory.",
+        },
+        {
+          title: "Filing and query response",
+          body: "REG-01 is filed on the GST portal. If the department raises a REG-03 clarification, we prepare and file the REG-04 response within the 7-working-day window.",
+        },
+        {
+          title: "GSTIN issuance and onboarding",
+          body: "Once approved, your GSTIN and REG-06 certificate are issued, and we brief you on your confirmed return-filing cadence and due dates.",
+        },
+      ],
+    },
+    heroNote:
+      "GST registration carries no government fee — the {{FEE}} figure is FirstMan's professional fee for preparing and filing your application end to end, including REG-03 query handling if one is raised.",
+    documentGroups: [
+      {
+        title: "Identity and business",
+        note: "Names across PAN, Aadhaar, and the application must match exactly — a mismatch is one of the most common query triggers.",
+        items: [
+          "PAN card of the business/proprietor/partners/directors",
+          "Aadhaar card, for OTP-based authentication",
+          "Passport-size photograph of each proprietor/partner/director",
+          "Certificate of incorporation or partnership deed, for companies/LLPs/firms",
+        ],
+      },
+      {
+        title: "Principal place of business",
+        note: "Address proof must clearly establish the premises as your place of business.",
+        items: [
+          "Electricity, water, or property tax receipt (recent)",
+          "Rent/lease agreement, where the premises is rented",
+          "No Objection Certificate from the owner, where applicable",
+        ],
+      },
+      {
+        title: "Bank details",
+        note: "The account name must match your PAN/entity name exactly, and the cheque or statement image must be clearly legible.",
+        items: ["Cancelled cheque, or the first page of a bank passbook/statement"],
+      },
+    ],
+    timeline: [
+      { day: "Day 1", milestone: "Documents collected; HSN/SAC codes confirmed; REG-01 drafted" },
+      {
+        day: "Day 1-2",
+        milestone: "REG-01 filed; Aadhaar authentication completed by every promoter/signatory",
+      },
+      {
+        day: "Day 3",
+        milestone: "Deemed approval if Aadhaar-authenticated and flagged low-risk (Rule 14A)",
+      },
+      {
+        day: "Day 4-7",
+        milestone: "Standard-track approval, or a REG-03 query raised and answered via REG-04",
+      },
+      {
+        day: "Up to Day 30",
+        milestone:
+          "If routed to physical verification (failed/skipped Aadhaar authentication), an officer visits the premises before approval",
+      },
+    ],
+    costBreakdown: {
+      intro:
+        "GST registration itself is free from the government — the cost most businesses underestimate isn't the registration step, it's the recurring return-filing cycle that starts the moment your GSTIN is issued, whether or not you've made a sale yet.",
+      rows: [
+        {
+          item: "Professional fee (registration)",
+          when: "At filing",
+          range: "{{FEE}}",
+          includedInFee: "Yes",
+        },
+        {
+          item: "Government fee",
+          when: "At filing",
+          range: "Nil",
+          includedInFee: "No fee exists",
+        },
+        {
+          item: "Digital Signature Certificate (companies/LLPs only)",
+          when: "At filing, if applicable",
+          range: "₹1,500 – ₹3,000",
+          includedInFee: "No, at cost",
+        },
+        {
+          item: "GSTR-1 + GSTR-3B filing",
+          when: "Monthly or quarterly (QRMP)",
+          range: "₹500 – ₹2,000 per return",
+          includedInFee: "No",
+        },
+        {
+          item: "CMP-08 filing (composition scheme)",
+          when: "Quarterly, if opted",
+          range: "₹500 – ₹1,500 per quarter",
+          includedInFee: "No",
+        },
+        {
+          item: "GSTR-9 annual return",
+          when: "Annual, mandatory above ₹2 crore turnover",
+          range: "₹3,000 – ₹10,000",
+          includedInFee: "No",
+        },
+        {
+          item: "Late filing fee, if a return is missed",
+          when: "Per return, per day of delay",
+          range: "₹20 – ₹50/day, capped by turnover slab",
+          includedInFee: "No, statutory",
+        },
+      ],
+      note: "Nil returns still have to be filed every period, even with zero sales — missing that deadline attracts the same late fee as a real return.",
+    },
+    rejectionReasonsKicker: "Avoid a REG-03 query",
+    rejectionReasonsHeading:
+      "Why GST applications get flagged for clarification, and how we prevent it.",
+    rejectionReasons: [
+      {
+        reason: "Address proof issues",
+        detail:
+          "An outdated document, the wrong format, or proof that doesn't clearly establish commercial use of the premises. We format-check and date-check every document before filing.",
+      },
+      {
+        reason: "Bank account proof mismatch",
+        detail:
+          "The account name not matching the applicant/entity name, or an unclear cancelled cheque or statement image. We verify this before submission, not after a query.",
+      },
+      {
+        reason: "PAN mismatch",
+        detail: "A name or detail on the application not matching PAN records exactly.",
+      },
+      {
+        reason: "DSC issues for companies and LLPs",
+        detail:
+          "An expired, improperly installed, or mismatched Class III DSC blocks validation. We check DSC validity against your actual filing date.",
+      },
+      {
+        reason: "Aadhaar authentication failure",
+        detail:
+          "A failed or skipped Aadhaar OTP authentication routes the application straight to mandatory physical verification, adding up to 30 working days. We walk every promoter and signatory through this step before submission.",
+      },
+      {
+        reason: "Incorrect HSN/SAC codes",
+        detail:
+          "A classification that doesn't match your actual goods or services can trigger a departmental query on its own.",
+      },
+    ],
+    complianceKicker: "After registration",
+    complianceHeading: "What compliance follows, and by when.",
+    complianceCalendar: [
+      {
+        milestone: "GSTR-1 (outward supplies)",
+        dueBy: "Monthly, or quarterly under QRMP",
+        penalty: "Late fee ₹50/day (₹20/day for nil returns), capped by turnover slab",
+      },
+      {
+        milestone: "GSTR-3B (summary return and tax payment)",
+        dueBy: "Monthly, or quarterly under QRMP",
+        penalty: "Late fee plus 18% p.a. interest on the tax due",
+      },
+      {
+        milestone: "CMP-08 (composition scheme)",
+        dueBy: "Quarterly, if opted for composition",
+        penalty: "Late fee applies; repeated default can end composition eligibility",
+      },
+      {
+        milestone: "GSTR-9 (annual return)",
+        dueBy: "31 December, mandatory above ₹2 crore turnover",
+        penalty: "Late fee ₹200/day (₹100 CGST + ₹100 SGST), capped by turnover",
+      },
+      {
+        milestone: "E-way bill, for applicable consignments",
+        dueBy: "Before goods movement",
+        penalty: "Goods can be detained in transit without a valid e-way bill",
+      },
+    ],
+    localNote: {
+      heading: "Filed against your Tamil Nadu GST jurisdiction.",
+      body: "Your application is processed by the state or central GST officer assigned to your principal place of business's ward or circle. For businesses registering in Chennai and across Tamil Nadu, we confirm the correct jurisdiction before filing so the application reaches the right desk the first time, not after a REG-03 query about it.",
+    },
+    scopeIntro:
+      "GST registration has no government fee, so the scope split below is about what's a one-time filing task versus what becomes an ongoing, separately billed obligation once your GSTIN is live.",
+    scopeTable: {
+      included: [
+        "Eligibility and mandatory-registration check",
+        "REG-01 preparation and filing",
+        "Aadhaar authentication coordination for all promoters/signatories",
+        "HSN/SAC classification for your goods/services",
+        "REG-03 clarification response, if raised",
+        "GSTIN and registration certificate (REG-06) handover",
+        "WhatsApp progress updates through approval",
+      ],
+      excluded: [
+        "Monthly/quarterly GSTR-1 and GSTR-3B filing (a separate recurring engagement)",
+        "Digital Signature Certificate, for companies/LLPs where required",
+        "Physical verification visit coordination, if the application is routed to that track",
+        "Composition-to-regular (or regular-to-composition) scheme switch",
+        "Amendment or cancellation of an existing GSTIN",
+      ],
+    },
+    faqs: [
+      {
+        question: "Is there really no government fee for GST registration?",
+        answer:
+          "Correct — GST registration carries no government fee. If a quote you've received lists a separate 'government fee' for GST registration alone, ask what it's actually covering.",
+      },
+      {
+        question: "What's the real penalty if I operate without registering when I'm required to?",
+        answer:
+          "Under Section 122 of the CGST Act, ₹10,000 or 10% of the tax due, whichever is higher, for an unintentional default — up to 100% of the tax due for deliberate evasion, plus 18% p.a. interest on the unpaid tax. Input tax credit for your unregistered period cannot be claimed back once you do register.",
+      },
+      {
+        question: "Do I have to register even if my turnover is below the threshold?",
+        answer:
+          "Yes, in specific cases, regardless of turnover: inter-state supply of goods, selling through an e-commerce operator, or operating as a casual taxable person. Inter-state service providers get a threshold exemption that inter-state goods sellers don't.",
+      },
+      {
+        question: "How long does GST registration actually take?",
+        answer:
+          "3 working days if your application is Aadhaar-authenticated and flagged low-risk under Rule 14A's deemed-approval track, 7 working days on the standard track, and up to 30 working days if it's routed to physical verification.",
+      },
+      {
+        question: "What happens if the department raises a REG-03 query?",
+        answer:
+          "You get 7 working days to respond using Form REG-04. Missing that window leads to automatic rejection under CGST Rule 9, and you'd need to file a fresh application from scratch.",
+      },
+      {
+        question: "Should I register under the composition scheme instead of regular GST?",
+        answer:
+          "Composition suits small goods businesses (turnover up to ₹1.5 crore, ₹75 lakh in special category states) that don't need input tax credit and don't sell inter-state. Talk to us before choosing — switching schemes later is a formal process, not a checkbox change.",
+      },
+      {
+        question: "Can I claim input tax credit for purchases made before my GSTIN was issued?",
+        answer:
+          "No. Input tax credit for your unregistered period cannot be claimed retroactively once you register.",
+      },
+      {
+        question: "What if my Aadhaar authentication fails?",
+        answer:
+          "Your application is routed to mandatory physical verification of the business premises, which can extend approval to up to 30 working days. We prepare you for this possibility before it happens, not after.",
+      },
+      {
+        question: "Do I need a separate GST registration in every state I operate in?",
+        answer:
+          "Yes. GST registration is state-wise — a separate GSTIN is needed for each state where you have a place of business or cross the applicable threshold.",
+      },
+      {
+        question: "What's the difference between my PAN and my GSTIN?",
+        answer:
+          "PAN is your permanent income-tax identity. GSTIN is a 15-digit number derived from your PAN plus your state code, issued specifically for GST compliance.",
+      },
+      {
+        question: "What happens immediately after I get my GSTIN?",
+        answer:
+          "Monthly or quarterly return filing begins right away — GSTR-1 and GSTR-3B, or CMP-08 under composition — regardless of whether you've made any sales yet. Nil returns still have to be filed.",
+      },
+      {
+        question: "Can I cancel my GST registration if I stop the business?",
+        answer:
+          "Yes, through a separate cancellation application — it doesn't happen automatically just because you stop filing returns, and any unfiled returns before cancellation still attract late fees.",
+      },
+      {
+        question: "Do I need a commercial address for GST registration?",
+        answer:
+          "Not necessarily — a residential address works in most states with valid ownership or rental proof, though some states expect specific documentation for home-based businesses. We confirm your state's exact requirement before filing.",
+      },
+      {
+        question: "Is a Digital Signature Certificate compulsory for GST registration?",
+        answer:
+          "Only for companies and LLPs, which must file using a Class III DSC. Proprietorships and most partnerships can complete authentication through Aadhaar e-sign instead.",
+      },
+    ],
+    lastUpdated: "September 2026",
+    metaTitle: "GST Registration Online India — GSTIN in 3-7 Business Days",
+    metaDescription:
+      "GST registration with no government fee — {{FEE}} professional fee only. Aadhaar-authenticated approval in 3-7 working days, REG-03 query handling included.",
+  },
+  "msme-udyam-registration": {
+    base: {
+      eyebrow: "Udyam / MSME Registration",
+      summary:
+        "Udyam registration is the process of self-declaring your business as a Micro, Small, or Medium Enterprise on the government's Udyam portal, using only Aadhaar and PAN — no documents are uploaded, and the process is completely free. Effective 1 April 2025, the classification limits were revised upward: Micro enterprises can have investment up to ₹2.5 crore and turnover up to ₹10 crore, Small up to ₹25 crore/₹100 crore, and Medium up to ₹125 crore/₹500 crore. FirstMan's {{FEE}} professional fee covers getting your classification and NIC code right the first time; the government charges nothing.",
+      idealFor: [
+        "Businesses that qualify as Micro, Small, or Medium under the revised limits (investment up to ₹125 crore, turnover up to ₹500 crore) and want the payment-protection, tender, and lending advantages that come with it",
+        "Vendors and suppliers who need Udyam status to bid for MSME-reserved government tenders and procurement",
+        "Businesses that want to be paid on time — a buyer purchasing from a Udyam-registered Micro or Small enterprise must pay within 45 days or owe compound interest",
+      ],
+      outcomes: [
+        "A Udyam Registration Number and permanent certificate, with no renewal ever required",
+        "Correct Micro/Small/Medium classification based on verified investment and turnover",
+        "Legal standing to invoke the 45-day payment protection under the MSMED Act, 2006",
+        "Eligibility for MSME-reserved government tenders and procurement exemptions",
+      ],
+      includes: [
+        "Aadhaar and PAN verification, and NIC code selection matched to your actual business activity",
+        "Investment and turnover figures reconciled against your ITR/GST data before submission",
+        "Udyam Registration Number and certificate handover",
+        "Guidance on the mandatory annual data update and reclassification rule",
+        "WhatsApp progress updates through certificate issuance",
+      ],
+      process: [
+        {
+          title: "Eligibility and classification check",
+          body: "We confirm your investment and turnover fall within the revised Micro/Small/Medium limits and work out the correct classification before filing — the stricter of the two figures decides it, not whichever category you'd prefer.",
+        },
+        {
+          title: "NIC code and data preparation",
+          body: "We match your business activity to the correct National Industrial Classification code — a wrong code blocks activity-specific scheme access even after you're registered — and prepare your Aadhaar, PAN, GSTIN, and bank details.",
+        },
+        {
+          title: "Self-declaration filing",
+          body: "Details are submitted on the Udyam portal, where they're validated in real time against Income Tax and GST records — no documents are uploaded.",
+        },
+        {
+          title: "Certificate issuance and annual-update briefing",
+          body: "Your Udyam Registration Number and certificate are issued instantly on successful validation. We brief you on the mandatory annual data refresh due every year by 31 March.",
+        },
+      ],
+    },
+    heroNote:
+      "Udyam registration itself is completely free from the government and, once your details validate cleanly, is typically instant. The {{FEE}} professional fee is for getting your classification and NIC code right the first time — an error there means the wrong scheme access later, not a form rejection you'd notice immediately.",
+    costBreakdown: {
+      intro:
+        "Udyam has no recurring government cost at all: a permanent certificate, a free annual update, and no renewal step. The only 'cost' most businesses run into is paying a third party for something the portal already does for free.",
+      rows: [
+        {
+          item: "Professional fee (registration)",
+          when: "At filing",
+          range: "{{FEE}}",
+          includedInFee: "Yes",
+        },
+        {
+          item: "Government fee",
+          when: "At filing",
+          range: "Nil",
+          includedInFee: "No fee exists",
+        },
+        {
+          item: "Annual data update (turnover/investment refresh)",
+          when: "Every year, by 31 March",
+          range: "Nil — self-service on the official portal",
+          includedInFee: "No fee exists",
+        },
+        {
+          item: '"Udyam renewal" fee some third-party sites charge',
+          when: "N/A",
+          range: "₹0 — there is no renewal requirement",
+          includedInFee: "Not a real government charge",
+        },
+      ],
+      note: "If a website asks you to pay a 'Udyam renewal fee' or a periodic certificate fee, it isn't part of the official process — Udyam registration never expires and never needs renewing.",
+    },
+    rejectionReasonsKicker: "Avoid a stuck application",
+    rejectionReasonsHeading: "Why Udyam applications get stuck, and how we prevent it.",
+    rejectionReasons: [
+      {
+        reason: "Aadhaar or PAN typo",
+        detail:
+          "Even a single incorrect digit in a 12-digit Aadhaar or 10-digit PAN blocks validation outright. We verify both before submission.",
+      },
+      {
+        reason: "Wrong NIC code",
+        detail:
+          "The NIC code decides scheme eligibility, not just a label — a software company filed under a manufacturing code can't access IT/ITeS-specific schemes even after registering. We match your actual activity to the correct code.",
+      },
+      {
+        reason: "Turnover/investment figures that don't reconcile with ITR or GST",
+        detail:
+          "The portal cross-checks your declared figures against Income Tax and GST records in real time; a mismatch stalls validation. We reconcile your figures before you submit.",
+      },
+      {
+        reason: "Self-classifying into a preferred category",
+        detail:
+          "Classification uses whichever of investment or turnover puts you in the stricter, lower category — not whichever you'd prefer. We calculate this correctly rather than let you guess and get flagged.",
+      },
+      {
+        reason: "Skipping the mandatory annual update",
+        detail:
+          "Not a filing-stage rejection, but a live registration going stale — unreported growth or ownership changes cause data mismatches that can affect access to newer scheme benefits later.",
+      },
+    ],
+    complianceKicker: "After registration",
+    complianceHeading: "The one thing you actually have to do afterward.",
+    complianceCalendar: [
+      {
+        milestone: "Annual data update (turnover/investment)",
+        dueBy: "By 31 March every year",
+        penalty: "No fine, but stale data can delay reclassification and scheme access",
+      },
+      {
+        milestone: "Reclassification on upward growth",
+        dueBy: "Takes effect the following financial year",
+        penalty: "None — a transition year is built in automatically",
+      },
+      {
+        milestone: "Reclassification on downward shrinkage",
+        dueBy: "Takes effect immediately",
+        penalty: "None — reclassification to the lower category is immediate",
+      },
+      {
+        milestone: "Update after ownership or structure changes",
+        dueBy: "As soon as they happen",
+        penalty: "Portal data falls out of sync with your GST/Income Tax records if not updated",
+      },
+    ],
+    scopeIntro:
+      "Udyam registration has no government fee, so this split is about what we handle as the one-time filing versus what stays a quick, free, self-service step on your side afterward.",
+    scopeTable: {
+      included: [
+        "Eligibility and classification check",
+        "NIC code selection matched to your actual business",
+        "Aadhaar/PAN/GSTIN/bank data preparation",
+        "Udyam Registration Number and certificate handover",
+        "Guidance on the mandatory annual update",
+        "WhatsApp progress updates through certificate issuance",
+      ],
+      excluded: [
+        "The annual data update itself in future years (free, self-service — we'll remind you)",
+        "GST or Income Tax return filing that the update depends on",
+        "Correction of an existing Udyam registration filed elsewhere",
+        "Scheme-specific applications that use your Udyam status, such as collateral-free loan schemes",
+      ],
+    },
+    faqs: [
+      {
+        question: "Is Udyam registration really free?",
+        answer:
+          "Yes, completely free directly through the government portal. Our {{FEE}} professional fee is for getting your classification, NIC code, and data right the first time.",
+      },
+      {
+        question: "What are the current Micro/Small/Medium limits?",
+        answer:
+          "Effective 1 April 2025: Micro up to ₹2.5 crore investment / ₹10 crore turnover; Small up to ₹25 crore / ₹100 crore; Medium up to ₹125 crore / ₹500 crore.",
+      },
+      {
+        question: "Do I need to upload any documents?",
+        answer:
+          "No. Udyam is a no-upload, self-declaration system based only on your Aadhaar and PAN, cross-verified against your Income Tax and GST records.",
+      },
+      {
+        question:
+          "How is my classification decided if my investment and turnover fall into different categories?",
+        answer:
+          "The stricter of the two applies. If your investment qualifies as Small but your turnover qualifies as Micro, you're classified as Micro.",
+      },
+      {
+        question: "Do I have to renew my Udyam certificate?",
+        answer:
+          "No. It's a one-time, permanent certificate. If any website charges you a 'renewal fee,' it isn't part of the official process.",
+      },
+      {
+        question: "What is the mandatory annual update, and what happens if I skip it?",
+        answer:
+          "You must refresh your turnover/investment figures by 31 March every year, based on your latest GST/ITR data. Skipping it doesn't cancel your registration, but stale data can affect scheme eligibility and delay reclassification.",
+      },
+      {
+        question: "What's the 45-day payment rule, and does it actually help?",
+        answer:
+          "Any buyer purchasing from a Udyam-registered Micro or Small enterprise must pay within 45 days, or the agreed period if shorter. Delayed payment attracts compound interest at three times the RBI-notified rate, and that interest isn't deductible as a business expense for the buyer — a real financial incentive, not just a paper right.",
+      },
+      {
+        question: "Can traders — retailers and wholesalers — register under Udyam?",
+        answer:
+          "Yes, for specified NIC codes covering trading activity, though scheme access differs from manufacturing and service enterprises.",
+      },
+      {
+        question: "Does Udyam registration help with government tenders?",
+        answer:
+          "Yes. Many tenders are reserved for MSMEs, and registered enterprises get exemptions such as relaxed EMD and turnover eligibility during the application process.",
+      },
+      {
+        question: "What happens if I outgrow my current classification?",
+        answer:
+          "Reclassification to a higher category applies from the following financial year, giving you a transition year. Reclassification to a lower category, if your business shrinks, applies immediately.",
+      },
+      {
+        question: "Do exports count toward my turnover for classification?",
+        answer:
+          "No. Export turnover is excluded when calculating turnover for MSME classification.",
+      },
+      {
+        question: "Is Udyam registration linked to my GST registration?",
+        answer:
+          "Yes. Your GSTIN, where applicable, is validated against the Udyam portal, and your turnover data for the annual update is drawn from your GST returns.",
+      },
+      {
+        question: "Can I register under Udyam without a GSTIN?",
+        answer:
+          "Yes, if your business is exempt from mandatory GST registration — you can skip the GSTIN field and proceed with Aadhaar and PAN alone.",
+      },
+      {
+        question: "What if I need my Udyam data corrected later?",
+        answer:
+          "Corrections and updates are made directly on the Udyam portal using your existing Udyam Registration Number — no fresh registration is needed.",
+      },
+    ],
+    lastUpdated: "September 2026",
+    metaTitle: "Udyam / MSME Registration Online — Free Process, Done Right",
+    metaDescription:
+      "Udyam registration with correct Micro/Small/Medium classification and NIC code selection. {{FEE}} professional fee; the government charges nothing.",
+  },
+  "iec-registration": {
+    base: {
+      eyebrow: "Import Export Code (IEC)",
+      summary:
+        "The Import Export Code (IEC) is a 10-digit, PAN-based identification number issued by the DGFT (Directorate General of Foreign Trade) that's mandatory for any commercial import or export from India. It's filed online via Form ANF-2A on the DGFT portal, carries a flat ₹500 government fee, and has lifetime validity with no renewal — but it must be updated online every year between April and June, or it gets deactivated. FirstMan's professional fee starts at {{FEE}}, separate from the ₹500 government fee.",
+      idealFor: [
+        "Businesses planning to import or export goods commercially — customs clearance is impossible without an active IEC",
+        "Exporters who need IEC to receive payment through authorised banking channels or access government export incentive schemes",
+        "Existing importers/exporters whose IEC has been deactivated for missing the annual April-June update window",
+      ],
+      outcomes: [
+        "A 10-digit IEC certificate from DGFT, valid for life",
+        "A PAN-based Importer Exporter Profile on the DGFT portal",
+        "Confirmation of the mandatory annual update window so your IEC never lapses",
+      ],
+      includes: [
+        "PAN, bank, and address-proof name reconciliation before filing, to prevent the single most common rejection cause",
+        "ANF-2A preparation and filing on the DGFT portal",
+        "Government fee (₹500) payment coordination",
+        "Support through DGFT's NPCI-based real-time bank account validation",
+        "WhatsApp progress updates through certificate issuance",
+      ],
+      process: [
+        {
+          title: "Name reconciliation across PAN, bank, and address proof",
+          body: "We check your firm name, PAN name, and bank account name are identical before filing — this single mismatch, not a missing document, causes most IEC delays.",
+        },
+        {
+          title: "ANF-2A preparation and filing",
+          body: "The application is filed online on the DGFT portal with PAN, Aadhaar, address proof, bank certificate or cancelled cheque, and a photograph.",
+        },
+        {
+          title: "Government fee payment and bank validation",
+          body: "The ₹500 government fee is paid online, and your bank account is validated in real time under DGFT's NPCI-linked verification.",
+        },
+        {
+          title: "Certificate issuance",
+          body: "Once validated, your IEC certificate is issued by DGFT, typically within 1 to 3 business days.",
+        },
+      ],
+    },
+    heroNote:
+      "The ₹500 DGFT government fee is separate from the {{FEE}} professional fee, and is paid directly on the government portal at the time of filing.",
+    timeline: [
+      {
+        day: "Day 1",
+        milestone: "Name reconciliation across PAN, bank, and address proof; ANF-2A drafted",
+      },
+      {
+        day: "Day 1",
+        milestone:
+          "Application filed; ₹500 government fee paid; bank account validated in real time (NPCI-based)",
+      },
+      { day: "Day 2-3", milestone: "IEC certificate issued by DGFT" },
+      {
+        day: "If validation fails",
+        milestone:
+          'Application marked "Deficient" rather than rejected — corrected bank details resubmitted before issuance',
+      },
+    ],
+    costBreakdown: {
+      intro:
+        "The only recurring cost of holding an IEC is remembering the free April-June annual update — miss it, and DGFT deactivates the code until it's refreshed, which can hold up a shipment at the worst possible time.",
+      rows: [
+        {
+          item: "Professional fee (registration)",
+          when: "At filing",
+          range: "{{FEE}}",
+          includedInFee: "Yes",
+        },
+        {
+          item: "Government fee (DGFT)",
+          when: "At filing",
+          range: "₹500",
+          includedInFee: "No, statutory",
+        },
+        {
+          item: "Annual update (April-June window)",
+          when: "Every year",
+          range: "Nil — self-service on the DGFT portal",
+          includedInFee: "No fee exists",
+        },
+        {
+          item: "Reactivation after a missed annual update",
+          when: "As needed",
+          range: "Nil, but delays customs clearance until done",
+          includedInFee: "No fee exists, but time-sensitive",
+        },
+      ],
+      note: "Beyond the flat ₹500 government fee at filing, IEC has no other statutory charge — the annual update that keeps it active is also free.",
+    },
+    rejectionReasonsKicker: "Avoid a Deficient/Rejected status",
+    rejectionReasonsHeading: "Why IEC applications get rejected, and how we prevent it.",
+    rejectionReasons: [
+      {
+        reason: "Name mismatch between PAN and bank account",
+        detail:
+          'The single most common cause of delay — even "Pvt Ltd" versus "Private Limited" can trigger a manual review. We reconcile every name field before filing.',
+      },
+      {
+        reason: "Failed real-time bank validation",
+        detail:
+          'DGFT\'s NPCI-linked check validates your PAN, name, and account number together; a mismatch marks the application "Deficient" rather than approved. We pre-check this before submission.',
+      },
+      {
+        reason: "Address proof that doesn't match the application",
+        detail: "An outdated or differently formatted address document raises a query on its own.",
+      },
+      {
+        reason: "Incomplete or unclear document uploads",
+        detail:
+          "Scanned documents must be legible PDF/JPEG files — a blurry upload is a common, entirely avoidable delay.",
+      },
+      {
+        reason: "Government fee not reflecting on the portal",
+        detail:
+          "Payment must clear and show up on the DGFT portal before the application proceeds. We confirm this rather than assume the filing is complete once payment is made.",
+      },
+    ],
+    complianceKicker: "After issuance",
+    complianceHeading: "The one annual task that keeps your IEC active.",
+    complianceCalendar: [
+      {
+        milestone: "Annual IEC update",
+        dueBy: "Every year, between April and June",
+        penalty: 'IEC marked "deactivated" if missed — reactivation needed before further use',
+      },
+      {
+        milestone: "Reactivation after deactivation",
+        dueBy: "As soon as noticed",
+        penalty: "Customs clearance blocked until the code is reactivated",
+      },
+      {
+        milestone: "Modification after firm, bank, or address changes",
+        dueBy: "As soon as they happen",
+        penalty:
+          "DGFT records fall out of sync, risking a bank-validation mismatch on future filings",
+      },
+    ],
+    scopeIntro:
+      "Beyond the flat ₹500 government fee, IEC has no other statutory charge — this split is about what's a one-time filing task versus what stays your responsibility every year afterward.",
+    scopeTable: {
+      included: [
+        "Name reconciliation across PAN, bank, and address proof",
+        "ANF-2A preparation and filing",
+        "Government fee (₹500) payment coordination",
+        "Support through DGFT's real-time bank account validation",
+        "IEC certificate handover",
+        "WhatsApp progress updates through certificate issuance",
+      ],
+      excluded: [
+        "Annual April-June update in future years (free, self-service — we'll remind you)",
+        "Import/export customs clearance and documentation for individual shipments",
+        "Modification of an existing IEC — firm name, address, or bank change",
+        "DGFT scheme-specific registration, such as RCMC or export incentive scheme applications",
+      ],
+    },
+    faqs: [
+      {
+        question: "Does IEC expire or need renewal?",
+        answer:
+          "No, it has lifetime validity. But you must update it online every year between April and June, or DGFT deactivates it.",
+      },
+      {
+        question: "What happens if I miss the annual update window?",
+        answer:
+          'DGFT marks the IEC "deactivated." It isn\'t cancelled, but customs clearance and export benefit access are blocked until you reactivate it by completing the update.',
+      },
+      {
+        question: "What's the real cost of getting an IEC?",
+        answer:
+          "The {{FEE}} professional fee plus a flat ₹500 government fee — no other statutory charge exists, and the annual update afterward is free.",
+      },
+      {
+        question: "Can I import or export without an IEC?",
+        answer:
+          "Not for commercial trade. Customs won't clear a commercial shipment without an active IEC. Certain narrow exemptions, such as personal-use goods not connected with trade, apply only in specific, notified cases — check with us if you think yours might qualify.",
+      },
+      {
+        question: "Why do most IEC applications actually get delayed?",
+        answer:
+          "A name mismatch between your PAN, firm name, and bank account — not a missing document — causes most delays, especially since DGFT's real-time bank validation checks all three together.",
+      },
+      {
+        question: "What is the new NPCI-based bank validation?",
+        answer:
+          "Since February 2026, DGFT validates your declared bank account in real time against NPCI records, checking your PAN, name, and account number together before accepting the application.",
+      },
+      {
+        question: "What happens if bank validation fails?",
+        answer:
+          'The application is marked "Deficient" rather than rejected outright — you can correct the bank details and resubmit without starting the application over.',
+      },
+      {
+        question: "Do I need a current account, or can I use a savings account?",
+        answer:
+          "DGFT doesn't mandate a current account specifically, but the account name must exactly match your PAN/firm name regardless of account type.",
+      },
+      {
+        question: "Is IEC the same as GST registration?",
+        answer:
+          "No. GSTIN is for tax compliance; IEC is specifically for customs clearance and cross-border trade identification. Most exporters need both.",
+      },
+      {
+        question: "Can a single person — a sole proprietor — get an IEC?",
+        answer:
+          "Yes. A sole proprietorship, partnership, LLP, or company can all apply, using the entity's PAN.",
+      },
+      {
+        question: "Can I modify my IEC if my firm name or address changes?",
+        answer:
+          "Yes, through a modification application on the DGFT portal, separate from the initial registration.",
+      },
+      {
+        question: "How fast can I actually get an IEC?",
+        answer:
+          "Typically 1 to 3 business days once your PAN, bank, and address details reconcile cleanly and the government fee reflects on the portal.",
+      },
+      {
+        question: "Do I need a fresh IEC for every export shipment, or just once?",
+        answer:
+          "Just once. The same IEC covers all your future import/export shipments, as long as you keep it active with the annual update.",
+      },
+    ],
+    lastUpdated: "September 2026",
+    metaTitle: "Import Export Code (IEC) Registration — DGFT, ₹500 Govt Fee",
+    metaDescription:
+      "IEC registration in 1-3 business days. {{FEE}} professional fee plus the flat ₹500 DGFT government fee — no other statutory charge.",
+  },
+  "fssai-registration": {
+    base: {
+      eyebrow: "FSSAI Basic Registration",
+      summary:
+        "FSSAI Basic Registration is the mandatory food-safety registration for food business operators with an annual turnover up to ₹1.5 crore, filed through Form A on the FoSCoS portal. It carries a government fee of ₹100 per year and, for registrations granted from 1 April 2026 onward, perpetual validity with no renewal cycle. FirstMan's professional fee starts at {{FEE}}, separate from the government fee.",
+      idealFor: [
+        "Food businesses with annual turnover up to ₹1.5 crore — home kitchens, small manufacturers, petty food retailers, and single-outlet food service operators",
+        "Businesses that need FSSAI compliance before they can legally sell, store, distribute, or manufacture any food product",
+        "Operators who've outgrown a purely informal setup and need registration before a platform, distributor, or landlord will work with them",
+      ],
+      outcomes: [
+        "An FSSAI Basic Registration certificate with a 14-digit registration number",
+        "Compliance with Section 31 of the Food Safety and Standards Act, 2006, avoiding the Section 63 penalty for operating unregistered",
+        "A registration number to display at your premises and print on packaging, as required",
+      ],
+      includes: [
+        "Turnover check to confirm Basic Registration, not a State or Central License, is the correct category for you",
+        "Form A preparation and filing on the FoSCoS portal",
+        "Government fee (₹100/year) payment coordination",
+        "Document review before upload to prevent the most common rejection triggers",
+        "WhatsApp progress updates through certificate issuance",
+      ],
+      process: [
+        {
+          title: "Category and turnover check",
+          body: "We confirm your annual turnover genuinely falls within the ₹1.5 crore Basic Registration band — above that, you'd need a State License instead, a different filing entirely.",
+        },
+        {
+          title: "Form A preparation",
+          body: "We prepare your business details, food category, and operator information for the simplified Form A application.",
+        },
+        {
+          title: "FoSCoS filing and fee payment",
+          body: "The application is filed online, and the ₹100/year government fee is paid and confirmed as reflecting on the portal.",
+        },
+        {
+          title: "Certificate issuance",
+          body: "Once the Designated Officer approves the application, your registration certificate is issued with your 14-digit FSSAI number.",
+        },
+      ],
+    },
+    heroNote:
+      "The ₹100/year government fee is separate from the {{FEE}} professional fee. If your turnover is closer to, or above, ₹1.5 crore, tell us before we file — Basic Registration is the wrong category for a State License-eligible business, and choosing it anyway causes a rejection, not just a warning.",
+    timeline: [
+      {
+        day: "Day 1-2",
+        milestone: "Turnover/category check confirmed; Form A and documents prepared",
+      },
+      { day: "Day 3", milestone: "Application filed on FoSCoS; ₹100/year government fee paid" },
+      {
+        day: "Day 3-7",
+        milestone:
+          "Designated Officer reviews the application (up to 30 days if a query is raised and not promptly answered)",
+      },
+      { day: "Day 7", milestone: "Registration certificate issued, on a clean, query-free filing" },
+    ],
+    costBreakdown: {
+      intro:
+        "Basic Registration's government fee is genuinely small — the cost that actually catches food businesses out is staying on Basic Registration after their turnover has crossed into State License territory.",
+      rows: [
+        {
+          item: "Professional fee (registration)",
+          when: "At filing",
+          range: "{{FEE}}",
+          includedInFee: "Yes",
+        },
+        {
+          item: "Government fee",
+          when: "Per year of validity chosen",
+          range: "₹100/year",
+          includedInFee: "No, statutory",
+        },
+        {
+          item: "State License, if turnover crosses ₹1.5 crore later",
+          when: "At the time of crossing",
+          range: "₹2,000 – ₹5,000/year",
+          includedInFee: "No, a separate filing",
+        },
+        {
+          item: "Renewal, for registrations issued before 1 April 2026",
+          when: "Before the original validity term expires",
+          range: "Same ₹100/year rate, for the renewed term",
+          includedInFee: "No",
+        },
+      ],
+      note: "Registrations issued from 1 April 2026 carry perpetual validity and never need renewal; ones issued before that date keep their original 1-to-5-year term and must still be renewed on schedule.",
+    },
+    rejectionReasonsKicker: "Avoid a rejected application",
+    rejectionReasonsHeading: "Why FSSAI applications get rejected, and how we prevent it.",
+    rejectionReasons: [
+      {
+        reason: "Blurry or unreadable document uploads",
+        detail:
+          "A common, entirely avoidable rejection trigger. We check every scan before it's submitted.",
+      },
+      {
+        reason: "Name or address mismatches",
+        detail: "Your ID proof, business address, and application details must all agree exactly.",
+      },
+      {
+        reason: "Wrong category chosen",
+        detail:
+          "Applying for Basic Registration when your turnover actually needs a State License. We confirm your turnover band before filing, not after a rejection.",
+      },
+      {
+        reason: "Turnover misdeclaration without supporting proof",
+        detail:
+          "Where a CA certificate is required to support a declared turnover figure, a missing or mismatched one is a common rejection trigger.",
+      },
+      {
+        reason: "No response to a Designated Officer's query within 30 days",
+        detail:
+          "The system auto-rejects the application if you don't respond in time. We track every query and respond well inside the window.",
+      },
+      {
+        reason: "Payment not reflecting within the stipulated FoSCoS window",
+        detail:
+          "The application is auto-rejected if the fee doesn't show up on the portal in time. We confirm payment reflects before treating the filing as complete.",
+      },
+    ],
+    complianceKicker: "After registration",
+    complianceHeading: "What keeps your registration valid.",
+    complianceCalendar: [
+      {
+        milestone: "Display of registration certificate/number",
+        dueBy: "At all times, at your business premises",
+        penalty: "Can attract a compliance notice during an inspection",
+      },
+      {
+        milestone: "Printing your FSSAI number on food packaging",
+        dueBy: "On every applicable product label",
+        penalty: "Non-compliance is itself a labelling violation",
+      },
+      {
+        milestone: "Renewal, for pre-1 April 2026 registrations",
+        dueBy: "Before your original validity term ends",
+        penalty: "A lapsed registration is treated the same as operating unregistered",
+      },
+      {
+        milestone: "Upgrading to a State License",
+        dueBy: "As soon as turnover crosses ₹1.5 crore",
+        penalty: "Continuing on Basic Registration above the threshold is itself a violation",
+      },
+    ],
+    localNote: {
+      heading: "Filed with the Tamil Nadu Food Safety Department.",
+      body: "Basic Registration for a Chennai or Tamil Nadu food business is processed by the state's Designated Officer for your area. We confirm the correct jurisdiction before filing so the application reaches the right desk, and can coordinate document handover at our Anna Nagar West office if you'd rather do that than scan everything yourself.",
+    },
+    scopeIntro:
+      "Basic Registration's government fee is small and fixed, so this split is about what's a one-time filing task versus what stays a separate engagement if your business grows past the ₹1.5 crore threshold.",
+    scopeTable: {
+      included: [
+        "Turnover and category check",
+        "Form A preparation and filing",
+        "Government fee (₹100/year) payment coordination",
+        "Document review before submission",
+        "Registration certificate handover",
+        "WhatsApp progress updates through certificate issuance",
+      ],
+      excluded: [
+        "Upgrade to a State or Central License, if turnover crosses the threshold",
+        "Renewal filing for pre-1 April 2026 registrations approaching expiry",
+        "Food safety compliance audits or on-site inspection readiness",
+        "Packaging/labelling compliance review beyond the FSSAI number requirement",
+      ],
+    },
+    faqs: [
+      {
+        question: "What turnover qualifies for Basic Registration versus a full License?",
+        answer:
+          "Basic Registration covers annual turnover up to ₹1.5 crore. Above that, up to ₹50 crore needs a State License, and above ₹50 crore — or for specific categories like importers — needs a Central License.",
+      },
+      {
+        question: "What's the real penalty for operating without FSSAI?",
+        answer:
+          "Under Section 63 of the Food Safety and Standards Act, 2006: imprisonment up to 6 months and a fine up to ₹5 lakh, for any person who manufactures, sells, stores, distributes, or imports food without the required registration or license.",
+      },
+      {
+        question: "Is there really no full exemption for very small food businesses?",
+        answer:
+          "Correct — every food business needs at least Basic Registration; there's no informal-operation exemption. Only the category, Registration versus License, changes with your turnover and business type.",
+      },
+      {
+        question: "Does my FSSAI registration expire?",
+        answer:
+          "Registrations granted from 1 April 2026 carry perpetual validity with no renewal. Ones granted before that date keep their original 1-to-5-year term and must be renewed on schedule.",
+      },
+      {
+        question: "What if I chose a validity term before the perpetual-validity rule applied?",
+        answer:
+          "You keep that original term and need to renew it as scheduled. The perpetual-validity rule applies to registrations granted from 1 April 2026 onward, not retroactively.",
+      },
+      {
+        question: "What happens if the Designated Officer asks a question about my application?",
+        answer:
+          "You get 30 days to respond. Missing that window leads to automatic rejection, and you'd need to reapply.",
+      },
+      {
+        question: "What if my payment doesn't reflect on the FoSCoS portal in time?",
+        answer:
+          "The application is automatically rejected. We confirm your payment reflects on the portal before treating the filing as complete.",
+      },
+      {
+        question:
+          "Can I run a home-based food business — a cloud kitchen or tiffin service — on Basic Registration?",
+        answer:
+          "Yes, as long as your turnover stays within ₹1.5 crore. The category depends on turnover and business type, not on whether you have a commercial kitchen.",
+      },
+      {
+        question: "Do I need to display my FSSAI number anywhere?",
+        answer:
+          "Yes, at your business premises and on the packaging or labelling of every applicable food product.",
+      },
+      {
+        question: "What happens if my turnover crosses ₹1.5 crore after I register?",
+        answer:
+          "You need to upgrade to a State License. Continuing to operate on Basic Registration above the threshold is itself a compliance violation.",
+      },
+      {
+        question: "Is a CA certificate required for FSSAI registration?",
+        answer:
+          "Not always — but where your declared turnover needs supporting proof, an unsupported or mismatched figure is a common rejection trigger. We confirm what your specific application needs.",
+      },
+      {
+        question: "How long does FSSAI Basic Registration actually take?",
+        answer:
+          "Typically 7 business days for a clean, query-free filing; longer if the Designated Officer raises a query, since you then have up to 30 days to respond.",
+      },
+      {
+        question: "Can I get FSSAI registration entirely online?",
+        answer:
+          "Yes, the entire Form A application is filed online through FoSCoS. Some Designated Officers may still request an in-person visit depending on your food category and premises.",
+      },
+      {
+        question:
+          "What if I actually need a State or Central License instead — can FirstMan help with that too?",
+        answer:
+          "Yes. FSSAI State License and FSSAI Central License are separate engagements for businesses above the ₹1.5 crore Basic Registration threshold — talk to us and we'll confirm which one actually fits your turnover.",
+      },
+    ],
+    lastUpdated: "September 2026",
+    metaTitle: "FSSAI Basic Registration Online — For Turnover up to ₹1.5 Crore",
+    metaDescription:
+      "FSSAI Basic Registration in 7 business days. {{FEE}} professional fee plus ₹100/year government fee. Confirm your turnover band before you file.",
   },
 };
 

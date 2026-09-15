@@ -87,9 +87,12 @@ export default async function ServiceDetailPage({ params }: { params: Promise<{ 
   const extraSections: Record<ExtraSectionKey, ReactNode> = {
     avoidResubmission: override?.rejectionReasons ? (
       <section>
-        <p className="marketing-kicker">Avoid resubmission</p>
+        <p className="marketing-kicker">
+          {override.rejectionReasonsKicker ?? "Avoid resubmission"}
+        </p>
         <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-950">
-          Why SPICe+ filings get rejected, and how we prevent it.
+          {override.rejectionReasonsHeading ??
+            "Why SPICe+ filings get rejected, and how we prevent it."}
         </h2>
         <div className="mt-7 grid gap-4 sm:grid-cols-2">
           {override.rejectionReasons.map((item) => (
@@ -103,9 +106,9 @@ export default async function ServiceDetailPage({ params }: { params: Promise<{ 
     ) : null,
     afterIncorporation: override?.complianceCalendar ? (
       <section>
-        <p className="marketing-kicker">After incorporation</p>
+        <p className="marketing-kicker">{override.complianceKicker ?? "After incorporation"}</p>
         <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-950">
-          Your first 12 months of compliance.
+          {override.complianceHeading ?? "Your first 12 months of compliance."}
         </h2>
         <div className="mt-6 overflow-x-auto rounded-xl border border-slate-200">
           <table className="w-full text-sm">
@@ -344,10 +347,11 @@ export default async function ServiceDetailPage({ params }: { params: Promise<{ 
             <section className="rounded-2xl bg-slate-50 p-7">
               <p className="marketing-kicker">Documents</p>
               <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-950">
-                Documents required for incorporation.
+                {override.documentGroupsHeading ?? "Documents required for incorporation."}
               </h2>
               <p className="mt-2 text-sm text-slate-600">
-                Requirements differ by who is involved in the filing.
+                {override.documentGroupsSubtext ??
+                  "Requirements differ by who is involved in the filing."}
               </p>
               <div className="mt-6 grid gap-6 sm:grid-cols-3">
                 {override.documentGroups.map((group) => (

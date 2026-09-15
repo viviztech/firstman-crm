@@ -553,6 +553,39 @@ prescribe an exact answer:
     terms list (payment/refund terms rather than quotation validity terms).
     `renderInvoicePdf` now also passes `invoice.createdAt` so the PDF can show
     an issue date the way the quote PDF always has.
+24. **Differentiated content extended to 4 flagship "Registration & Licensing"
+    pages, deliberately without the Company Registration structure-comparison
+    pattern**: the same boilerplate-reuse problem the SEO audit flagged for
+    `/services/<slug>` pages (Assumption prior work, `ebd63aa`→`84c5488`) was
+    only fixed for the 5 Company Registration structure pages. Extended it to
+    `gst-registration`, `msme-udyam-registration`, `iec-registration`, and
+    `fssai-registration` (Basic Registration specifically, not the separate
+    `fssai-state-license`/`fssai-central-license` catalog services) — the
+    first batch of the much larger (~38-service) Registration & Licensing
+    vertical, chosen as the highest-traffic four. Unlike the 5 Company
+    Registration pages, these deliberately skip `decisionFramework`/
+    `structureComparison` — a registration/license isn't a mutually-exclusive
+    alternative to a different one the way Pvt Ltd/LLP/OPC are, so there's no
+    "choose X instead" decision to frame. Two of the shared template's section
+    headings were hardcoded for the incorporation context ("Avoid
+    resubmission" / "...SPICe+ filings...", "After incorporation" / "...12
+    months of compliance"); these are now overridable
+    (`rejectionReasonsKicker`/`Heading`, `complianceKicker`/`Heading`,
+    `documentGroupsHeading`/`Subtext` on `ServiceContentOverride`), defaulting
+    to the original text so the 5 existing pages are byte-for-byte unchanged.
+    Content was sourced via fresh web research (not reused competitor notes —
+    none existed from the earlier work) and leans on verified, currently-live
+    facts most competitor pages get wrong or leave stale: GST registration has
+    no government fee at all; Udyam's classification limits were revised
+    1 April 2025 (Micro ≤₹2.5cr/≤₹10cr, Small ≤₹25cr/≤₹100cr, Medium
+    ≤₹125cr/≤₹500cr) and some third-party sites falsely charge a "Udyam
+    renewal fee" that doesn't exist; IEC's biggest rejection cause since
+    DGFT's Feb 2026 NPCI bank validation is a PAN/bank/firm name mismatch, not
+    a missing document; FSSAI registrations/licenses issued from 1 April 2026
+    carry perpetual validity. The remaining ~34 services in this vertical
+    (Digital Signature, other Licensing Services, ISO Certification, IPR, and
+    the rest of Registration Services) are intentionally left on the generic
+    template pending a decision on how far to extend this.
 
 ## Phase checklists (per `CLAUDE.md` §5)
 
