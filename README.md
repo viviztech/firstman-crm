@@ -520,6 +520,20 @@ prescribe an exact answer:
     measure — Gmail's ~500 messages/day sending cap and shared-IP
     deliverability make it unsuitable long-term; revisit with a dedicated
     transactional provider (Brevo, SES, etc.) before scaling outbound volume.
+22. **The Job Card's PDF export was removed; `/orders/[id]` is now the only job
+    card view**: Assumption #16 (ADR 0002) had already called the PDF a
+    "secondary print affordance" once the live-tracking page shipped, and it
+    was never wired into any notification send (WhatsApp/email always link to
+    the page, not a file) — so `services/job-card-pdf.tsx`,
+    `lib/pdf/job-card-document.tsx`, and the `/api/orders/[id]/job-card` route
+    were deleted outright rather than left as dead code. The detail page itself
+    was reorganized into a two-column layout (a sticky "Job card details"
+    summary panel — pricing, timeline, assignment — alongside the main
+    tasks/documents/invoices/activity column) and gained an inline "Pick up"
+    action in the header for an unassigned operations executive (reusing ADR
+    0005's `pickUpJobCardAction`, previously only reachable from the
+    operations dashboard), aimed at giving executives a faster, more scannable
+    working view instead of a long single-column stack of cards.
 
 ## Phase checklists (per `CLAUDE.md` §5)
 

@@ -25,6 +25,7 @@ import { OrderStatusBadge } from "@/components/orders/order-status-badge";
 import { OrderStatusSelect } from "@/components/orders/order-status-select";
 import { OrderStatusTimeline } from "@/components/orders/order-status-timeline";
 import { OrderTaskList } from "@/components/orders/order-task-list";
+import { PickUpJobCardButton } from "@/components/orders/pick-up-job-card-button";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -163,14 +164,10 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                 </p>
               </div>
             </div>
-            <div className="flex flex-wrap gap-2">
-              <Button
-                variant="outline"
-                nativeButton={false}
-                render={<a href={`/api/orders/${id}/job-card`} target="_blank" rel="noreferrer" />}
-              >
-                Job card (PDF)
-              </Button>
+            <div className="flex flex-wrap items-center gap-2">
+              {!order.assignee && user.role === "executive" ? (
+                <PickUpJobCardButton orderId={id} />
+              ) : null}
               {canManage ? (
                 <>
                   <Button
@@ -230,195 +227,220 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
         />
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-sm text-muted-foreground">
-              <SectionIcon icon={IndianRupee} color="green" />
-              Pricing
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-1 text-sm">
-            <span>Quoted: {formatMoney(order.quotedPricePaise)}</span>
-            <span>Govt. fee: {order.govtFeePaise ? formatMoney(order.govtFeePaise) : "—"}</span>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-sm text-muted-foreground">
-              <SectionIcon icon={CalendarClock} color="purple" />
-              Timeline
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-1 text-sm">
-            <span>Started: {formatInTimeZone(order.startedAt, env.TZ_DISPLAY, "d MMM yyyy")}</span>
-            <span className={isOverdue ? "font-medium text-destructive" : undefined}>
-              Due: {formatInTimeZone(order.dueAt, env.TZ_DISPLAY, "d MMM yyyy")}
-              {isOverdue ? " · Overdue" : ""}
-            </span>
-            {order.completedAt ? (
-              <span>
-                Completed: {formatInTimeZone(order.completedAt, env.TZ_DISPLAY, "d MMM yyyy")}
-              </span>
-            ) : null}
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-sm text-muted-foreground">
-              <SectionIcon icon={User} color="blue" />
-              Ownership
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="text-sm">
-            Assigned to: {order.assignee?.name ?? "Unassigned"}
-          </CardContent>
-        </Card>
-        {order.notes ? (
-          <Card>
+      <div className="grid items-start gap-4 lg:grid-cols-3">
+        <div className="flex flex-col gap-4 lg:order-2 lg:col-span-1">
+          <Card className="lg:sticky lg:top-4">
             <CardHeader>
-              <CardTitle className="text-sm text-muted-foreground">Notes</CardTitle>
+              <CardTitle className="text-sm text-muted-foreground">Job card details</CardTitle>
             </CardHeader>
-            <CardContent className="text-sm whitespace-pre-wrap">{order.notes}</CardContent>
-          </Card>
-        ) : null}
-        {relatedServices.length > 0 ? (
-          <Card className="sm:col-span-2">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-sm text-muted-foreground">
-                <SectionIcon icon={Sparkles} color="pink" />
-                You might also suggest
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-2 text-sm">
-              {relatedServices.map((relation) => (
-                <div key={relation.id} className="flex items-center justify-between">
-                  <span>
-                    {relation.relatedService.name}{" "}
-                    <span className="text-xs text-muted-foreground">
-                      ({SERVICE_RELATION_TYPE_LABEL[relation.relationType]})
-                    </span>
-                  </span>
-                  <span className="text-muted-foreground">
-                    {formatMoney(relation.relatedService.basePricePaise)}
-                  </span>
-                </div>
-              ))}
+            <CardContent className="flex flex-col divide-y divide-border text-sm">
+              <div className="flex items-start justify-between gap-3 py-3 first:pt-0">
+                <span className="flex items-center gap-2 text-muted-foreground">
+                  <SectionIcon icon={IndianRupee} color="green" />
+                  Quoted price
+                </span>
+                <span className="font-medium">{formatMoney(order.quotedPricePaise)}</span>
+              </div>
+              <div className="flex items-start justify-between gap-3 py-3">
+                <span className="flex items-center gap-2 text-muted-foreground">
+                  <SectionIcon icon={IndianRupee} color="green" />
+                  Govt. fee
+                </span>
+                <span className="font-medium">
+                  {order.govtFeePaise ? formatMoney(order.govtFeePaise) : "—"}
+                </span>
+              </div>
+              <div className="flex items-start justify-between gap-3 py-3">
+                <span className="flex items-center gap-2 text-muted-foreground">
+                  <SectionIcon icon={CalendarClock} color="purple" />
+                  Started
+                </span>
+                <span className="font-medium">
+                  {formatInTimeZone(order.startedAt, env.TZ_DISPLAY, "d MMM yyyy")}
+                </span>
+              </div>
+              <div className="flex items-start justify-between gap-3 py-3">
+                <span className="flex items-center gap-2 text-muted-foreground">
+                  <SectionIcon icon={CalendarClock} color="purple" />
+                  {order.completedAt ? "Completed" : "Due"}
+                </span>
+                <span
+                  className={cn(
+                    "font-medium",
+                    isOverdue && !order.completedAt && "text-destructive",
+                  )}
+                >
+                  {formatInTimeZone(order.completedAt ?? order.dueAt, env.TZ_DISPLAY, "d MMM yyyy")}
+                  {isOverdue && !order.completedAt ? " · Overdue" : ""}
+                </span>
+              </div>
+              <div className="flex items-start justify-between gap-3 py-3 last:pb-0">
+                <span className="flex items-center gap-2 text-muted-foreground">
+                  <SectionIcon icon={User} color="blue" />
+                  Assigned to
+                </span>
+                {order.assignee ? (
+                  <span className="font-medium">{order.assignee.name}</span>
+                ) : (
+                  <Badge
+                    variant="outline"
+                    className="border-amber-300 text-amber-700 dark:border-amber-800 dark:text-amber-400"
+                  >
+                    Unassigned
+                  </Badge>
+                )}
+              </div>
             </CardContent>
           </Card>
-        ) : null}
-      </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <SectionIcon icon={ListChecks} color="blue" />
-            Tasks
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <OrderTaskList orderId={id} tasks={order.tasks} />
-        </CardContent>
-      </Card>
+          {order.notes ? (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm text-muted-foreground">Notes</CardTitle>
+              </CardHeader>
+              <CardContent className="text-sm whitespace-pre-wrap">{order.notes}</CardContent>
+            </Card>
+          ) : null}
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <SectionIcon icon={FileCheck2} color="amber" />
-            Documents
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <DocumentChecklist
-            documents={order.documents.map((document) => ({
-              id: document.id,
-              label: document.label,
-              status: document.status,
-              fileName: document.fileName,
-              rejectReason: document.rejectReason,
-              downloadUrl: document.path ? getDocumentDownloadUrl(document.id) : null,
-            }))}
-            canManage={canManage}
-          />
-        </CardContent>
-      </Card>
+          {relatedServices.length > 0 ? (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <SectionIcon icon={Sparkles} color="pink" />
+                  You might also suggest
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="flex flex-col gap-2 text-sm">
+                {relatedServices.map((relation) => (
+                  <div key={relation.id} className="flex items-center justify-between">
+                    <span>
+                      {relation.relatedService.name}{" "}
+                      <span className="text-xs text-muted-foreground">
+                        ({SERVICE_RELATION_TYPE_LABEL[relation.relationType]})
+                      </span>
+                    </span>
+                    <span className="text-muted-foreground">
+                      {formatMoney(relation.relatedService.basePricePaise)}
+                    </span>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          ) : null}
+        </div>
 
-      {canViewFinancials ? (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <SectionIcon icon={Receipt} color="teal" />
-              Invoices
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-4">
-            <div>
-              <Button
-                variant="outline"
-                nativeButton={false}
-                render={<Link href={`/invoices/new?clientId=${order.client.id}&orderId=${id}`} />}
-              >
-                New invoice
-              </Button>
-            </div>
-            {invoices.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No invoices yet.</p>
-            ) : (
-              <div className="flex flex-col gap-2">
-                {invoices.map((invoice) => (
-                  <Link
-                    key={invoice.id}
-                    href={`/invoices/${invoice.id}`}
-                    className={cn(
-                      "flex items-center justify-between rounded-lg border border-l-4 p-3 text-sm hover:bg-muted/50",
-                      STAT_COLOR_CLASSES[INVOICE_STATUS_STAT_COLOR[invoice.status]].border,
-                    )}
-                  >
-                    <div className="flex flex-col">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">{invoice.invoiceNo}</span>
-                        <InvoiceKindBadge kind={invoice.kind} />
-                      </div>
-                      <span className="text-muted-foreground">
-                        Due {formatInTimeZone(invoice.dueDate, env.TZ_DISPLAY, "d MMM yyyy")}
+        <div className="flex flex-col gap-4 lg:order-1 lg:col-span-2">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <SectionIcon icon={ListChecks} color="blue" />
+                Tasks
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <OrderTaskList orderId={id} tasks={order.tasks} />
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <SectionIcon icon={FileCheck2} color="amber" />
+                Documents
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <DocumentChecklist
+                documents={order.documents.map((document) => ({
+                  id: document.id,
+                  label: document.label,
+                  status: document.status,
+                  fileName: document.fileName,
+                  rejectReason: document.rejectReason,
+                  downloadUrl: document.path ? getDocumentDownloadUrl(document.id) : null,
+                }))}
+                canManage={canManage}
+              />
+            </CardContent>
+          </Card>
+
+          {canViewFinancials ? (
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0">
+                <CardTitle className="flex items-center gap-2">
+                  <SectionIcon icon={Receipt} color="teal" />
+                  Invoices
+                </CardTitle>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  nativeButton={false}
+                  render={<Link href={`/invoices/new?clientId=${order.client.id}&orderId=${id}`} />}
+                >
+                  New invoice
+                </Button>
+              </CardHeader>
+              <CardContent>
+                {invoices.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No invoices yet.</p>
+                ) : (
+                  <div className="flex flex-col gap-2">
+                    {invoices.map((invoice) => (
+                      <Link
+                        key={invoice.id}
+                        href={`/invoices/${invoice.id}`}
+                        className={cn(
+                          "flex items-center justify-between rounded-lg border border-l-4 p-3 text-sm hover:bg-muted/50",
+                          STAT_COLOR_CLASSES[INVOICE_STATUS_STAT_COLOR[invoice.status]].border,
+                        )}
+                      >
+                        <div className="flex flex-col">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium">{invoice.invoiceNo}</span>
+                            <InvoiceKindBadge kind={invoice.kind} />
+                          </div>
+                          <span className="text-muted-foreground">
+                            Due {formatInTimeZone(invoice.dueDate, env.TZ_DISPLAY, "d MMM yyyy")}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span>{formatMoney(invoice.totalPaise)}</span>
+                          <InvoiceStatusBadge status={invoice.status} />
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          ) : null}
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <SectionIcon icon={History} color="slate" />
+                Activity
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-2">
+              {activity.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No activity recorded yet.</p>
+              ) : (
+                activity.map((entry) => (
+                  <div key={entry.id} className="rounded-lg border p-3 text-sm">
+                    <div className="flex justify-between text-muted-foreground">
+                      <span>{entry.action}</span>
+                      <span>
+                        {formatInTimeZone(entry.createdAt, env.TZ_DISPLAY, "d MMM yyyy, h:mm a")}
                       </span>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <span>{formatMoney(invoice.totalPaise)}</span>
-                      <InvoiceStatusBadge status={invoice.status} />
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      ) : null}
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <SectionIcon icon={History} color="slate" />
-            Activity
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-2">
-          {activity.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No activity recorded yet.</p>
-          ) : (
-            activity.map((entry) => (
-              <div key={entry.id} className="rounded-lg border p-3 text-sm">
-                <div className="flex justify-between text-muted-foreground">
-                  <span>{entry.action}</span>
-                  <span>
-                    {formatInTimeZone(entry.createdAt, env.TZ_DISPLAY, "d MMM yyyy, h:mm a")}
-                  </span>
-                </div>
-              </div>
-            ))
-          )}
-        </CardContent>
-      </Card>
+                  </div>
+                ))
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </div>
   );
 }
