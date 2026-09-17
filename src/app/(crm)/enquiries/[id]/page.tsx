@@ -104,10 +104,16 @@ export default async function EnquiryDetailPage({ params }: { params: Promise<{ 
   );
 
   return (
-    <div className="flex flex-col gap-6">
-      <Card className={cn("border-l-4", statusClasses.border)}>
+    <div className="enquiry-workflow mx-auto flex w-full max-w-[1400px] flex-col gap-6">
+      <Card
+        className={cn(
+          "relative overflow-hidden border-pink-100 bg-white shadow-[0_18px_45px_-32px_rgba(107,28,64,0.35)]",
+          statusClasses.border,
+        )}
+      >
+        <div className="pointer-events-none absolute -right-12 -top-24 size-56 rounded-full bg-pink-100/70 blur-3xl" />
         <CardContent className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div className="flex items-start gap-3">
+          <div className="relative flex items-start gap-3">
             <div
               className={cn(
                 "flex size-11 shrink-0 items-center justify-center rounded-xl",
@@ -118,7 +124,9 @@ export default async function EnquiryDetailPage({ params }: { params: Promise<{ 
             </div>
             <div className="flex flex-col gap-1.5">
               <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-2xl font-semibold tracking-tight">{enquiry.name}</h1>
+                <h1 className="text-2xl font-bold tracking-[-0.035em] text-[#0b203a]">
+                  {enquiry.name}
+                </h1>
                 <EnquiryStatusBadge status={enquiry.status} />
               </div>
               <p className="text-sm text-muted-foreground">
@@ -134,7 +142,7 @@ export default async function EnquiryDetailPage({ params }: { params: Promise<{ 
                 {enquiry.convertedClient ? (
                   <Link
                     href={`/clients/${enquiry.convertedClient.id}`}
-                    className="text-primary hover:underline"
+                    className="font-semibold text-pink-600 hover:text-pink-800"
                   >
                     View client: {enquiry.convertedClient.name}
                   </Link>
@@ -142,7 +150,7 @@ export default async function EnquiryDetailPage({ params }: { params: Promise<{ 
                 {enquiry.convertedOrder ? (
                   <Link
                     href={`/orders/${enquiry.convertedOrder.id}`}
-                    className="text-primary hover:underline"
+                    className="font-semibold text-pink-600 hover:text-pink-800"
                   >
                     View job card: {enquiry.convertedOrder.orderNo}
                   </Link>
@@ -150,9 +158,9 @@ export default async function EnquiryDetailPage({ params }: { params: Promise<{ 
               </div>
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="relative flex gap-2">
             <Button
-              variant="ghost"
+              variant="outline"
               size="sm"
               nativeButton={false}
               render={<Link href={`/enquiries/${id}/edit`} />}
@@ -196,9 +204,9 @@ export default async function EnquiryDetailPage({ params }: { params: Promise<{ 
       </div>
 
       {canAct ? (
-        <div className="flex gap-2">
+        <div className="flex flex-col gap-2 rounded-2xl border border-pink-100 bg-white p-3 shadow-[0_12px_30px_-28px_rgba(107,28,64,0.4)] sm:flex-row">
           <Button
-            className="flex-1"
+            className="h-9 flex-1 bg-pink-600 text-white hover:bg-pink-700"
             nativeButton={false}
             render={<Link href={`/enquiries/${id}/sales`} />}
           >
@@ -260,11 +268,14 @@ export default async function EnquiryDetailPage({ params }: { params: Promise<{ 
         </Card>
       </div>
 
-      <Tabs defaultValue="followups">
-        <TabsList>
+      <Tabs
+        defaultValue="followups"
+        className="rounded-2xl border border-pink-100 bg-white p-4 shadow-[0_14px_35px_-30px_rgba(107,28,64,0.4)]"
+      >
+        <TabsList className="bg-pink-50/70">
           <TabsTrigger value="followups">
             Follow-ups
-            <TabMeta count={enquiry.followups.length} dot="bg-blue-500" />
+            <TabMeta count={enquiry.followups.length} dot="bg-pink-500" />
           </TabsTrigger>
           <TabsTrigger value="quotes">
             Quotes
@@ -276,7 +287,7 @@ export default async function EnquiryDetailPage({ params }: { params: Promise<{ 
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="followups">
+        <TabsContent value="followups" className="pt-3">
           <div className="flex flex-col gap-2">
             {enquiry.followups.length === 0 ? (
               <p className="text-sm text-muted-foreground">No follow-ups logged yet.</p>
@@ -284,7 +295,7 @@ export default async function EnquiryDetailPage({ params }: { params: Promise<{ 
               enquiry.followups.map((followup) => (
                 <div
                   key={followup.id}
-                  className="rounded-lg border border-l-4 border-l-blue-500 p-3 text-sm"
+                  className="rounded-lg border border-l-4 border-l-pink-500 p-3 text-sm"
                 >
                   <div className="flex justify-between text-muted-foreground">
                     <span>{followup.user?.name ?? "Unknown"}</span>
@@ -309,7 +320,7 @@ export default async function EnquiryDetailPage({ params }: { params: Promise<{ 
           </div>
         </TabsContent>
 
-        <TabsContent value="quotes">
+        <TabsContent value="quotes" className="pt-3">
           <div className="flex flex-col gap-2">
             {quotes.length === 0 ? (
               <p className="text-sm text-muted-foreground">
@@ -393,7 +404,7 @@ export default async function EnquiryDetailPage({ params }: { params: Promise<{ 
           </div>
         </TabsContent>
 
-        <TabsContent value="activity">
+        <TabsContent value="activity" className="pt-3">
           <div className="flex flex-col gap-2">
             {activity.length === 0 ? (
               <p className="text-sm text-muted-foreground">No activity recorded yet.</p>

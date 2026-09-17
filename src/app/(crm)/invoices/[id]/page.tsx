@@ -1,5 +1,13 @@
 import { formatInTimeZone } from "date-fns-tz";
 import { and, desc, eq } from "drizzle-orm";
+import {
+  ArrowLeftIcon,
+  CalendarDaysIcon,
+  CreditCardIcon,
+  HistoryIcon,
+  ReceiptIndianRupeeIcon,
+  Rows3Icon,
+} from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { toScope } from "@/actions/shared";
@@ -57,63 +65,84 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
   const balancePaise = invoice.totalPaise - paidSoFar;
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-start justify-between">
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-semibold">{invoice.invoiceNo}</h1>
-            <InvoiceKindBadge kind={invoice.kind} />
-            <InvoiceStatusBadge status={invoice.status} />
-          </div>
-          <p className="text-sm text-muted-foreground">
-            <Link href={`/clients/${invoice.client.id}`} className="hover:underline">
-              {invoice.client.name}
+    <div className="invoice-workflow flex min-w-0 flex-col gap-5">
+      <section className="relative overflow-hidden rounded-2xl border border-pink-100 bg-gradient-to-r from-pink-50/70 via-white to-white p-5 shadow-[0_18px_45px_-32px_rgba(107,28,64,0.35)] sm:p-6">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+          <div className="flex flex-col gap-2">
+            <Link
+              href="/invoices"
+              className="inline-flex w-fit items-center gap-1 text-xs font-semibold text-pink-600 hover:text-pink-800"
+            >
+              <ArrowLeftIcon className="size-3.5" aria-hidden="true" />
+              Back to invoices
             </Link>
-            {invoice.order ? (
-              <>
-                {" · "}
-                <Link href={`/orders/${invoice.order.id}`} className="hover:underline">
-                  {invoice.order.orderNo}
-                </Link>
-              </>
-            ) : null}
-          </p>
-          {invoice.kind === "proforma" ? (
-            <p className="text-xs text-muted-foreground">
-              Advance-payment request only — not a tax invoice. The final GST invoice is generated
-              automatically once the order is completed and this proforma is paid in full.
+            <div className="flex items-start gap-3">
+              <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-pink-600 text-white shadow-sm shadow-pink-200">
+                <ReceiptIndianRupeeIcon className="size-5" aria-hidden="true" />
+              </span>
+              <div className="flex flex-wrap items-center gap-2">
+                <h1 className="font-mono text-2xl font-bold tracking-[-0.035em] text-[#0b203a]">
+                  {invoice.invoiceNo}
+                </h1>
+                <InvoiceKindBadge kind={invoice.kind} />
+                <InvoiceStatusBadge status={invoice.status} />
+              </div>
+            </div>
+            <p className="ml-14 text-sm text-slate-500">
+              <Link href={`/clients/${invoice.client.id}`} className="hover:underline">
+                {invoice.client.name}
+              </Link>
+              {invoice.order ? (
+                <>
+                  {" · "}
+                  <Link href={`/orders/${invoice.order.id}`} className="hover:underline">
+                    {invoice.order.orderNo}
+                  </Link>
+                </>
+              ) : null}
             </p>
-          ) : null}
-        </div>
-        <div className="flex flex-wrap justify-end gap-2">
-          <Button
-            variant="outline"
-            nativeButton={false}
-            render={<a href={getInvoicePdfUrl(id)} target="_blank" rel="noreferrer" />}
-          >
-            Download PDF
-          </Button>
-          {isDraft ? (
+            {invoice.kind === "proforma" ? (
+              <p className="ml-14 max-w-2xl text-xs leading-5 text-slate-500">
+                Advance-payment request only — not a tax invoice. The final GST invoice is generated
+                automatically once the order is completed and this proforma is paid in full.
+              </p>
+            ) : null}
+          </div>
+          <div className="flex flex-wrap gap-2 lg:justify-end">
             <Button
               variant="outline"
               nativeButton={false}
-              render={<Link href={`/invoices/${id}/edit`} />}
+              render={<a href={getInvoicePdfUrl(id)} target="_blank" rel="noreferrer" />}
             >
-              Edit
+              Download PDF
             </Button>
-          ) : null}
-          {isDraft ? <SendInvoiceButton invoiceId={id} invoiceNo={invoice.invoiceNo} /> : null}
-          {isPayable ? <RecordPaymentDialog invoiceId={id} balancePaise={balancePaise} /> : null}
-          {canCancel ? <CancelInvoiceButton invoiceId={id} invoiceNo={invoice.invoiceNo} /> : null}
-          {isDraft && canDelete ? (
-            <DeleteInvoiceButton invoiceId={id} invoiceNo={invoice.invoiceNo} />
-          ) : null}
+            {isDraft ? (
+              <Button
+                variant="outline"
+                nativeButton={false}
+                render={<Link href={`/invoices/${id}/edit`} />}
+              >
+                Edit
+              </Button>
+            ) : null}
+            {isDraft ? <SendInvoiceButton invoiceId={id} invoiceNo={invoice.invoiceNo} /> : null}
+            {isPayable ? <RecordPaymentDialog invoiceId={id} balancePaise={balancePaise} /> : null}
+            {canCancel ? (
+              <CancelInvoiceButton invoiceId={id} invoiceNo={invoice.invoiceNo} />
+            ) : null}
+            {isDraft && canDelete ? (
+              <DeleteInvoiceButton invoiceId={id} invoiceNo={invoice.invoiceNo} />
+            ) : null}
+          </div>
         </div>
-      </div>
+      </section>
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-sm text-muted-foreground">Line items</CardTitle>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Rows3Icon className="size-4 text-pink-600" aria-hidden="true" />
+            Line items
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
@@ -146,7 +175,7 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
               <span className="text-muted-foreground">GST ({invoice.gstRate}%)</span>
               <span>{formatMoney(invoice.gstAmountPaise)}</span>
             </div>
-            <div className="flex w-56 justify-between border-t pt-1 font-medium">
+            <div className="flex w-56 justify-between border-t border-pink-100 pt-2 text-base font-bold text-[#0b203a]">
               <span>Total</span>
               <span>{formatMoney(invoice.totalPaise)}</span>
             </div>
@@ -169,7 +198,10 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
       <div className="grid gap-4 sm:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm text-muted-foreground">Dates</CardTitle>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <CalendarDaysIcon className="size-4 text-pink-600" aria-hidden="true" />
+              Dates
+            </CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col gap-1 text-sm">
             <span>Due: {formatInTimeZone(invoice.dueDate, env.TZ_DISPLAY, "d MMM yyyy")}</span>
@@ -182,7 +214,10 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm text-muted-foreground">Payments</CardTitle>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <CreditCardIcon className="size-4 text-pink-600" aria-hidden="true" />
+              Payments
+            </CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col gap-2 text-sm">
             {invoice.payments.length === 0 ? (
@@ -207,14 +242,20 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
         </Card>
       </div>
 
-      <div className="flex flex-col gap-2">
-        <h2 className="text-lg font-medium">Activity</h2>
+      <div className="flex flex-col gap-3 rounded-2xl border border-pink-100 bg-white p-5 shadow-sm">
+        <h2 className="flex items-center gap-2 text-lg font-bold text-[#0b203a]">
+          <HistoryIcon className="size-4.5 text-pink-600" aria-hidden="true" />
+          Activity
+        </h2>
         {activity.length === 0 ? (
           <p className="text-sm text-muted-foreground">No activity recorded yet.</p>
         ) : (
           activity.map((entry) => (
-            <div key={entry.id} className="rounded-lg border p-3 text-sm">
-              <div className="flex justify-between text-muted-foreground">
+            <div
+              key={entry.id}
+              className="rounded-lg border border-slate-200 bg-slate-50/50 p-3 text-sm"
+            >
+              <div className="flex flex-col gap-1 text-slate-500 sm:flex-row sm:justify-between">
                 <span>{entry.action}</span>
                 <span>
                   {formatInTimeZone(entry.createdAt, env.TZ_DISPLAY, "d MMM yyyy, h:mm a")}

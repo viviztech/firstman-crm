@@ -118,7 +118,10 @@ export function ServiceForm<T extends { id: string } | undefined>({
   }
 
   return (
-    <form action={formAction} className="flex max-w-3xl flex-col gap-4">
+    <form
+      action={formAction}
+      className="catalog-service-form flex w-full flex-col gap-5 rounded-2xl border border-pink-100 bg-white p-4 shadow-[0_18px_45px_-36px_rgba(107,28,64,0.45)] sm:p-6"
+    >
       <input type="hidden" name="isRecurring" value={isRecurring ? "true" : "false"} />
       <input
         type="hidden"
@@ -268,13 +271,13 @@ export function ServiceForm<T extends { id: string } | undefined>({
         ) : null}
       </div>
 
-      <div className="flex flex-col gap-2 rounded-lg border p-3">
+      <div className="flex flex-col gap-3 rounded-xl border border-pink-100 bg-pink-50/30 p-4">
         <span className="text-sm font-medium">Task checklist</span>
         <p className="text-xs text-muted-foreground">
           Generated as order tasks when an order is created for this service.
         </p>
         {checklist.map((item) => (
-          <div key={item.key} className="flex gap-2">
+          <div key={item.key} className="flex flex-col gap-2 sm:flex-row">
             <Input
               placeholder="Task title"
               value={item.title}
@@ -287,7 +290,7 @@ export function ServiceForm<T extends { id: string } | undefined>({
               placeholder="Day offset"
               value={item.dayOffset}
               onChange={(e) => updateChecklistRow(item.key, { dayOffset: Number(e.target.value) })}
-              className="w-32"
+              className="w-full sm:w-32"
             />
             <Button
               type="button"
@@ -310,10 +313,10 @@ export function ServiceForm<T extends { id: string } | undefined>({
         </Button>
       </div>
 
-      <div className="flex flex-col gap-2 rounded-lg border p-3">
+      <div className="flex flex-col gap-3 rounded-xl border border-pink-100 bg-pink-50/30 p-4">
         <span className="text-sm font-medium">Required documents</span>
         {documents.map((doc) => (
-          <div key={doc.key} className="flex gap-2">
+          <div key={doc.key} className="flex flex-col gap-2 sm:flex-row">
             <Input
               placeholder="Document label"
               value={doc.value}
@@ -341,13 +344,13 @@ export function ServiceForm<T extends { id: string } | undefined>({
         </Button>
       </div>
 
-      <div className="flex flex-col gap-2 rounded-lg border p-3">
+      <div className="flex flex-col gap-3 rounded-xl border border-pink-100 bg-pink-50/30 p-4">
         <span className="text-sm font-medium">Related services</span>
         <p className="text-xs text-muted-foreground">
           Surfaced as a suggestion on orders for this service.
         </p>
         {relations.map((relation) => (
-          <div key={relation.key} className="flex gap-2">
+          <div key={relation.key} className="flex flex-col gap-2 sm:flex-row">
             <Select
               value={relation.relatedServiceId}
               onValueChange={(value) =>
@@ -376,7 +379,7 @@ export function ServiceForm<T extends { id: string } | undefined>({
                 label: SERVICE_RELATION_TYPE_LABEL[value],
               }))}
             >
-              <SelectTrigger className="w-40">
+              <SelectTrigger className="w-full sm:w-40">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -411,8 +414,8 @@ export function ServiceForm<T extends { id: string } | undefined>({
 
       {state && !state.ok ? <p className="text-sm text-destructive">{state.error}</p> : null}
 
-      <div>
-        <Button type="submit" disabled={isPending}>
+      <div className="flex justify-end border-t border-pink-100 pt-5">
+        <Button type="submit" className="min-w-36" disabled={isPending}>
           {isPending ? "Saving…" : submitLabel}
         </Button>
       </div>

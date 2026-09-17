@@ -65,7 +65,7 @@ function TaskRow({ orderId, task }: { orderId: string; task: OrderTaskRow }) {
   return (
     <div
       className={cn(
-        "flex items-center justify-between gap-3 rounded-lg border border-l-4 p-3 text-sm",
+        "flex flex-col gap-3 rounded-lg border border-l-4 p-3 text-sm sm:flex-row sm:items-center sm:justify-between",
         colors.border,
       )}
     >
@@ -111,7 +111,7 @@ function TaskRow({ orderId, task }: { orderId: string; task: OrderTaskRow }) {
           label: ORDER_TASK_STATUS_BADGE[value].label,
         }))}
       >
-        <SelectTrigger className="w-36">
+        <SelectTrigger className="w-full sm:w-36">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -147,7 +147,7 @@ export function OrderTaskList({ orderId, tasks }: { orderId: string; tasks: Orde
           <div
             className={cn(
               "h-full rounded-full transition-[width]",
-              percentDone === 100 ? "bg-green-500" : "bg-blue-500",
+              percentDone === 100 ? "bg-green-500" : "bg-pink-500",
             )}
             style={{ width: `${percentDone}%` }}
           />

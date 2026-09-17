@@ -2,11 +2,9 @@ import { PencilLine } from "lucide-react";
 import { notFound } from "next/navigation";
 import { updateEnquiryAction } from "@/actions/enquiries";
 import { toScope } from "@/actions/shared";
-import { STAT_COLOR_CLASSES } from "@/components/dashboard/dashboard-colors";
 import { EnquiryForm } from "@/components/enquiries/enquiry-form";
-import { Card, CardContent } from "@/components/ui/card";
+import { EnquiryPageHeader } from "@/components/enquiries/enquiry-page-header";
 import { requireRole } from "@/lib/session";
-import { cn } from "@/lib/utils";
 import { listServiceOptions } from "@/services/catalog";
 import { getEnquiry } from "@/services/enquiries";
 import { listStates } from "@/services/geography";
@@ -30,23 +28,15 @@ export default async function EditEnquiryPage({ params }: { params: Promise<{ id
   }
 
   return (
-    <div className="flex max-w-3xl flex-col gap-4">
-      <Card className={cn("border-l-4", STAT_COLOR_CLASSES.purple.border)}>
-        <CardContent className="flex items-center gap-3">
-          <div
-            className={cn(
-              "flex size-11 shrink-0 items-center justify-center rounded-xl",
-              STAT_COLOR_CLASSES.purple.chip,
-            )}
-          >
-            <PencilLine className="size-5" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight">Edit enquiry</h1>
-            <p className="text-sm text-muted-foreground">Update {enquiry.name}'s details.</p>
-          </div>
-        </CardContent>
-      </Card>
+    <div className="enquiry-workflow mx-auto flex w-full max-w-4xl flex-col gap-5">
+      <EnquiryPageHeader
+        title="Edit enquiry"
+        description={`Keep ${enquiry.name}'s contact, service, ownership, and follow-up details current.`}
+        icon={PencilLine}
+        tone="violet"
+        backHref={`/enquiries/${id}`}
+        backLabel="Back to enquiry"
+      />
       <EnquiryForm
         action={updateEnquiryAction.bind(null, id)}
         role={user.role}

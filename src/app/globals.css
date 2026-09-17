@@ -113,9 +113,9 @@
   --sidebar: oklch(0.99 0.001 197.1);
   --sidebar-foreground: oklch(0.148 0.004 228.8);
   --sidebar-primary: var(--primary);
-  --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: var(--brand-muted);
-  --sidebar-accent-foreground: var(--primary);
+  --sidebar-accent-foreground: #9c2054;
   --sidebar-border: var(--border);
   --sidebar-ring: var(--ring);
 
@@ -149,6 +149,175 @@
 
 /* Marketing site only — a restrained, once-on-load hero entrance and a faint dot-grid texture. */
 @layer utilities {
+  .dashboard-system,
+  .enquiries-system,
+  .enquiry-workflow,
+  .client-workflow,
+  .catalog-workflow,
+  .order-workflow,
+  .compliance-workflow,
+  .invoice-workflow {
+    --primary: #ba2a66;
+    --ring: #ba2a66;
+    position: relative;
+  }
+
+  .dashboard-system::before,
+  .enquiries-system::before,
+  .enquiry-workflow::before,
+  .client-workflow::before,
+  .catalog-workflow::before,
+  .order-workflow::before,
+  .compliance-workflow::before,
+  .invoice-workflow::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background-image: radial-gradient(
+      circle at 1px 1px,
+      rgb(186 42 102 / 0.055) 1px,
+      transparent 0
+    );
+    background-size: 26px 26px;
+    mask-image: linear-gradient(to bottom, black, transparent 28rem);
+    -webkit-mask-image: linear-gradient(to bottom, black, transparent 28rem);
+  }
+
+  .enquiry-workflow [data-slot="card"] {
+    border-color: rgb(250 225 235 / 0.9);
+    border-radius: 1rem;
+    box-shadow: 0 14px 35px -30px rgb(107 28 64 / 0.5);
+  }
+
+  .enquiry-workflow [data-slot="card-header"] {
+    border-bottom: 1px solid rgb(253 243 247);
+    background: linear-gradient(to right, rgb(248 250 252 / 0.9), white);
+  }
+
+  .enquiry-workflow [data-slot="card-title"] {
+    color: #0b203a;
+    font-weight: 700;
+  }
+
+  .enquiry-workflow [data-slot="input"],
+  .enquiry-workflow [data-slot="textarea"],
+  .enquiry-workflow [data-slot="select-trigger"] {
+    border-color: rgb(250 225 235);
+    background-color: rgb(248 250 252 / 0.65);
+  }
+
+  .client-workflow [data-slot="card"] {
+    border-color: rgb(250 225 235 / 0.9);
+    border-radius: 1rem;
+    box-shadow: 0 14px 35px -30px rgb(107 28 64 / 0.5);
+  }
+
+  .client-workflow [data-slot="card-header"] {
+    border-bottom: 1px solid rgb(253 243 247);
+    background: linear-gradient(to right, rgb(248 250 252 / 0.9), white);
+  }
+
+  .client-workflow [data-slot="card-title"] {
+    color: #0b203a;
+    font-weight: 700;
+  }
+
+  .client-workflow [data-slot="input"],
+  .client-workflow [data-slot="textarea"],
+  .client-workflow [data-slot="select-trigger"] {
+    border-color: rgb(250 225 235);
+    background-color: rgb(248 250 252 / 0.65);
+  }
+
+  .catalog-workflow [data-slot="card"] {
+    border-color: rgb(250 225 235 / 0.9);
+    border-radius: 1rem;
+    box-shadow: 0 14px 35px -30px rgb(107 28 64 / 0.5);
+  }
+
+  .catalog-workflow [data-slot="card-header"] {
+    border-bottom: 1px solid rgb(253 243 247);
+    background: linear-gradient(to right, rgb(248 250 252 / 0.9), white);
+  }
+
+  .catalog-workflow [data-slot="input"],
+  .catalog-workflow [data-slot="textarea"],
+  .catalog-workflow [data-slot="select-trigger"] {
+    border-color: rgb(250 225 235);
+    background-color: rgb(248 250 252 / 0.65);
+  }
+
+  .order-workflow [data-slot="card"] {
+    border-color: rgb(250 225 235 / 0.9);
+    border-radius: 1rem;
+    box-shadow: 0 14px 35px -30px rgb(107 28 64 / 0.5);
+  }
+
+  .order-workflow [data-slot="card-header"] {
+    border-bottom: 1px solid rgb(253 243 247);
+    background: linear-gradient(to right, rgb(248 250 252 / 0.9), white);
+  }
+
+  .order-workflow [data-slot="card-title"] {
+    color: #0b203a;
+    font-weight: 700;
+  }
+
+  .order-workflow [data-slot="input"],
+  .order-workflow [data-slot="textarea"],
+  .order-workflow [data-slot="select-trigger"] {
+    border-color: rgb(250 225 235);
+    background-color: rgb(248 250 252 / 0.65);
+  }
+
+  .compliance-workflow [data-slot="card"] {
+    border-color: rgb(250 225 235 / 0.9);
+    border-radius: 1rem;
+    box-shadow: 0 14px 35px -30px rgb(107 28 64 / 0.5);
+  }
+
+  .compliance-workflow [data-slot="card-header"] {
+    border-bottom: 1px solid rgb(253 243 247);
+    background: linear-gradient(to right, rgb(248 250 252 / 0.9), white);
+  }
+
+  .compliance-workflow [data-slot="card-title"] {
+    color: #0b203a;
+    font-weight: 700;
+  }
+
+  .compliance-workflow [data-slot="input"],
+  .compliance-workflow [data-slot="textarea"],
+  .compliance-workflow [data-slot="select-trigger"] {
+    border-color: rgb(250 225 235);
+    background-color: rgb(248 250 252 / 0.65);
+  }
+
+  .invoice-workflow [data-slot="card"] {
+    border-color: rgb(250 225 235 / 0.9);
+    border-radius: 1rem;
+    box-shadow: 0 14px 35px -30px rgb(107 28 64 / 0.5);
+  }
+
+  .invoice-workflow [data-slot="card-header"] {
+    border-bottom: 1px solid rgb(253 243 247);
+    background: linear-gradient(to right, rgb(248 250 252 / 0.9), white);
+  }
+
+  .invoice-workflow [data-slot="card-title"] {
+    color: #0b203a;
+    font-weight: 700;
+  }
+
+  .invoice-workflow [data-slot="input"],
+  .invoice-workflow [data-slot="textarea"],
+  .invoice-workflow [data-slot="select-trigger"] {
+    border-color: rgb(250 225 235);
+    background-color: rgb(248 250 252 / 0.65);
+  }
+
   .marketing-hero-grid {
     background-image: radial-gradient(circle at 1px 1px, var(--border) 1px, transparent 0);
     background-size: 28px 28px;

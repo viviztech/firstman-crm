@@ -83,7 +83,7 @@ export function OperationsExecutiveDashboard({
       count: availableJobCards.length,
       dot: "bg-purple-500",
     },
-    { value: "job-cards", label: "My Job Cards", count: myJobCards.length, dot: "bg-blue-500" },
+    { value: "job-cards", label: "My Job Cards", count: myJobCards.length, dot: "bg-pink-500" },
     { value: "tasks", label: "Tasks", count: tasks.length, dot: "bg-amber-500" },
     {
       value: "completed",

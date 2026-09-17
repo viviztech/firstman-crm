@@ -93,7 +93,9 @@ export default async function DashboardPage() {
   const showManagerStats = user.role === "super_admin" || user.role === "manager";
   const isWorkforceManager = user.role === "manager" && scope.team === "workforce";
   const isFranchiseManager = user.role === "manager" && scope.team === "franchise";
-  const isBackofficeAdmin = user.role === "manager" && !isWorkforceManager && !isFranchiseManager;
+  const isBackofficeAdmin =
+    user.role === "super_admin" ||
+    (user.role === "manager" && !isWorkforceManager && !isFranchiseManager);
   const [enquiriesByStatus, revenue, ordersByStatus, overdueTasks, topServices] = showManagerStats
     ? await Promise.all([
         getEnquiriesThisMonthByStatus(scope),
@@ -248,7 +250,7 @@ export default async function DashboardPage() {
             : undefined;
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="dashboard-system mx-auto flex w-full max-w-[1600px] flex-col gap-6">
       <DashboardHero userName={user.name} roleLabel={portalRole} headline={headline} />
 
       {franchiseNetwork ? <FranchiseManagerDashboard data={franchiseNetwork} /> : null}
@@ -351,17 +353,30 @@ export default async function DashboardPage() {
       ) : null}
 
       {showManagerStats ? (
-        <div className="grid gap-4 md:grid-cols-2">
-          <SectionCard title="Enquiries this month by status" icon={BarChart3Icon} color="blue">
-            <EnquiriesFunnelChart data={enquiriesByStatus} />
-          </SectionCard>
-          <SectionCard title="Revenue this month vs last" icon={TrendingUpIcon} color="green">
-            <RevenueChart
-              thisMonthPaise={revenue.thisMonthPaise}
-              lastMonthPaise={revenue.lastMonthPaise}
-            />
-          </SectionCard>
-        </div>
+        <section aria-labelledby="performance-heading" className="flex flex-col gap-3">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.14em] text-pink-600">
+              Performance
+            </p>
+            <h2
+              id="performance-heading"
+              className="mt-1 text-lg font-bold tracking-tight text-[#0b203a]"
+            >
+              Monthly business pulse
+            </h2>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            <SectionCard title="Enquiries this month by status" icon={BarChart3Icon} color="blue">
+              <EnquiriesFunnelChart data={enquiriesByStatus} />
+            </SectionCard>
+            <SectionCard title="Revenue this month vs last" icon={TrendingUpIcon} color="green">
+              <RevenueChart
+                thisMonthPaise={revenue.thisMonthPaise}
+                lastMonthPaise={revenue.lastMonthPaise}
+              />
+            </SectionCard>
+          </div>
+        </section>
       ) : null}
 
       {showManagerStats ? (

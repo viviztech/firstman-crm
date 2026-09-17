@@ -16,8 +16,8 @@ export type StatColor =
 
 export const STAT_COLOR_CLASSES: Record<StatColor, { border: string; chip: string }> = {
   blue: {
-    border: "border-l-blue-500",
-    chip: "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300",
+    border: "border-l-pink-500",
+    chip: "bg-pink-100 text-pink-700 dark:bg-pink-950 dark:text-pink-300",
   },
   red: {
     border: "border-l-red-500",

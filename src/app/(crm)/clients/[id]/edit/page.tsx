@@ -1,7 +1,9 @@
+import { PencilLineIcon } from "lucide-react";
 import { notFound } from "next/navigation";
 import { updateClientAction } from "@/actions/clients";
 import { toScope } from "@/actions/shared";
 import { ClientForm } from "@/components/clients/client-form";
+import { ClientPageHeader } from "@/components/clients/client-page-header";
 import { requireRole } from "@/lib/session";
 import { getClient } from "@/services/clients";
 import { listStates } from "@/services/geography";
@@ -22,8 +24,14 @@ export default async function EditClientPage({ params }: { params: Promise<{ id:
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      <h1 className="text-2xl font-semibold">Edit client</h1>
+    <div className="client-workflow mx-auto flex w-full max-w-4xl flex-col gap-5">
+      <ClientPageHeader
+        title="Edit client"
+        description={`Keep ${client.name}'s identity, contact, tax, address, and ownership details current.`}
+        icon={PencilLineIcon}
+        backHref={`/clients/${id}`}
+        backLabel="Back to client"
+      />
       <ClientForm
         action={updateClientAction.bind(null, id)}
         role={user.role}

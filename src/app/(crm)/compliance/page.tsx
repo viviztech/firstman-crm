@@ -1,3 +1,4 @@
+import { CalendarDaysIcon, PlusIcon, ShieldCheckIcon } from "lucide-react";
 import Link from "next/link";
 import { toScope } from "@/actions/shared";
 import { ComplianceFiltersForm } from "@/components/compliance/compliance-filters-form";
@@ -22,29 +23,56 @@ export default async function CompliancePage({
   });
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold">Compliance</h1>
-          <p className="text-sm text-muted-foreground">
-            {user.role === "executive"
-              ? "Deadlines for clients assigned to you."
-              : "All client compliance deadlines."}
-          </p>
+    <div className="compliance-workflow flex flex-col gap-5">
+      <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#9c2054] via-[#ba2a66] to-[#d94b86] px-5 py-6 text-white shadow-[0_22px_55px_-30px_rgba(107,28,64,0.65)] sm:px-7 sm:py-7">
+        <div
+          className="pointer-events-none absolute inset-y-0 right-0 w-1/2 opacity-30"
+          aria-hidden="true"
+          style={{
+            backgroundImage: "radial-gradient(circle at 1px 1px, white 1.5px, transparent 0)",
+            backgroundSize: "24px 24px",
+            maskImage: "linear-gradient(to left, black, transparent)",
+          }}
+        />
+        <div className="relative flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
+          <div>
+            <div className="mb-3 flex size-11 items-center justify-center rounded-xl bg-white/15 ring-1 ring-white/25 backdrop-blur-sm">
+              <ShieldCheckIcon className="size-5" aria-hidden="true" />
+            </div>
+            <p className="text-xs font-semibold tracking-[0.18em] text-pink-100 uppercase">
+              Deadline control desk
+            </p>
+            <h1 className="mt-1 text-3xl font-bold tracking-[-0.04em] sm:text-4xl">Compliance</h1>
+            <p className="mt-2 max-w-xl text-sm leading-6 text-pink-50/90">
+              {user.role === "executive"
+                ? "Monitor statutory deadlines for the clients assigned to you."
+                : "Monitor every client obligation, filing date, and recurring requirement."}
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="mr-1 rounded-xl bg-white/12 px-4 py-2 text-right ring-1 ring-white/20">
+              <p className="text-2xl font-bold leading-none">{result.total}</p>
+              <p className="mt-1 text-[11px] text-pink-100">matching deadlines</p>
+            </div>
+            <Button
+              className="bg-white/15 text-white ring-1 ring-white/30 hover:bg-white/25"
+              nativeButton={false}
+              render={<Link href="/compliance/calendar" />}
+            >
+              <CalendarDaysIcon className="size-4" aria-hidden="true" />
+              Calendar
+            </Button>
+            <Button
+              className="bg-white text-pink-700 shadow-sm hover:bg-pink-50 hover:text-pink-800"
+              nativeButton={false}
+              render={<Link href="/compliance/new" />}
+            >
+              <PlusIcon className="size-4" aria-hidden="true" />
+              New item
+            </Button>
+          </div>
         </div>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            nativeButton={false}
-            render={<Link href="/compliance/calendar" />}
-          >
-            Calendar
-          </Button>
-          <Button nativeButton={false} render={<Link href="/compliance/new" />}>
-            New item
-          </Button>
-        </div>
-      </div>
+      </section>
 
       <ComplianceFiltersForm search={q} status={status} />
 

@@ -39,9 +39,15 @@ export default async function CrmLayout({ children }: { children: ReactNode }) {
 
   return (
     <SidebarProvider>
+      <a
+        href="#main-content"
+        className="fixed top-3 left-3 z-50 -translate-y-20 rounded-md bg-foreground px-3 py-2 text-sm font-medium text-background transition-transform focus-visible:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+      >
+        Skip to main content
+      </a>
       <AppSidebar role={user.role} team={staffScope.team} />
-      <SidebarInset>
-        <header className="flex h-14 shrink-0 items-center gap-3 border-b px-4">
+      <SidebarInset className="min-w-0 w-0">
+        <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-3 border-b bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/80">
           <SidebarTrigger />
           <Separator orientation="vertical" className="h-4" />
           <div className="max-w-md flex-1">
@@ -61,7 +67,9 @@ export default async function CrmLayout({ children }: { children: ReactNode }) {
             />
           </div>
         </header>
-        <main className="flex flex-1 flex-col gap-4 p-4">{children}</main>
+        <main id="main-content" className="flex flex-1 flex-col gap-4 p-4 sm:p-6">
+          {children}
+        </main>
       </SidebarInset>
     </SidebarProvider>
   );

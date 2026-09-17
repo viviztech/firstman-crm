@@ -133,10 +133,16 @@ export default async function ClientProfilePage({ params }: { params: Promise<{ 
   const tileCount = 2 + (canManage ? 1 : 0) + (canViewFinancials ? 1 : 0);
 
   return (
-    <div className="flex flex-col gap-6">
-      <Card className={cn("border-l-4", typeClasses.border)}>
+    <div className="client-workflow mx-auto flex w-full max-w-[1400px] flex-col gap-6">
+      <Card
+        className={cn(
+          "relative overflow-hidden border-pink-100 bg-white shadow-[0_18px_45px_-32px_rgba(107,28,64,0.35)]",
+          typeClasses.border,
+        )}
+      >
+        <div className="pointer-events-none absolute -right-12 -top-24 size-56 rounded-full bg-pink-100/70 blur-3xl" />
         <CardContent className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div className="flex items-start gap-3">
+          <div className="relative flex items-start gap-3">
             <div
               className={cn(
                 "flex size-11 shrink-0 items-center justify-center rounded-xl",
@@ -147,7 +153,9 @@ export default async function ClientProfilePage({ params }: { params: Promise<{ 
             </div>
             <div className="flex flex-col gap-1">
               <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-2xl font-semibold tracking-tight">{client.name}</h1>
+                <h1 className="text-2xl font-bold tracking-[-0.035em] text-[#0b203a]">
+                  {client.name}
+                </h1>
                 <Badge variant={client.type === "business" ? "default" : "secondary"}>
                   {client.type}
                 </Badge>
@@ -159,7 +167,7 @@ export default async function ClientProfilePage({ params }: { params: Promise<{ 
             </div>
           </div>
           {canManage ? (
-            <div className="flex gap-2">
+            <div className="relative flex gap-2">
               <Button
                 variant="outline"
                 nativeButton={false}
@@ -219,12 +227,15 @@ export default async function ClientProfilePage({ params }: { params: Promise<{ 
         ) : null}
       </div>
 
-      <Tabs defaultValue="overview">
-        <TabsList>
+      <Tabs
+        defaultValue="overview"
+        className="rounded-2xl border border-pink-100 bg-white p-4 shadow-[0_14px_35px_-30px_rgba(107,28,64,0.4)]"
+      >
+        <TabsList className="w-full justify-start overflow-x-auto bg-pink-50/70">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="orders">
             Job Cards
-            <TabMeta count={orders.length} dot="bg-blue-500" />
+            <TabMeta count={orders.length} dot="bg-pink-500" />
           </TabsTrigger>
           <TabsTrigger value="documents">
             Documents

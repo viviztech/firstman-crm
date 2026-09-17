@@ -89,9 +89,9 @@ export function ServiceStatePricingEditor({
   const configuredStateIds = new Set(statePrices.map((row) => row.stateId));
 
   return (
-    <Card className="max-w-3xl">
+    <Card>
       <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle className="text-sm text-muted-foreground">State-wise pricing</CardTitle>
+        <CardTitle className="text-base font-semibold text-[#0b203a]">State-wise pricing</CardTitle>
         <Button size="sm" variant="outline" onClick={() => setDialogRow("new")}>
           Add state pricing
         </Button>
@@ -153,7 +153,7 @@ function StatePriceListRow({
   }
 
   return (
-    <div className="flex items-center justify-between border-b pb-2 last:border-0 last:pb-0">
+    <div className="flex flex-col gap-3 border-b pb-3 last:border-0 last:pb-0 sm:flex-row sm:items-center sm:justify-between">
       <div>
         <span className="font-medium">{row.stateName}</span>
         <span className="ml-2 text-muted-foreground">

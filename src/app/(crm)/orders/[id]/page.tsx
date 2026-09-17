@@ -128,8 +128,13 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
         };
 
   return (
-    <div className="flex flex-col gap-6">
-      <Card className={cn("border-l-4", statusClasses.border)}>
+    <div className="order-workflow flex min-w-0 w-full flex-col gap-6">
+      <Card
+        className={cn(
+          "relative overflow-hidden border-l-4 bg-gradient-to-r from-pink-50/45 via-white to-white",
+          statusClasses.border,
+        )}
+      >
         <CardContent className="flex flex-col gap-5">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div className="flex items-start gap-3">
@@ -143,7 +148,9 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
               </div>
               <div className="flex flex-col gap-1.5">
                 <div className="flex flex-wrap items-center gap-2">
-                  <h1 className="text-2xl font-semibold tracking-tight">{order.orderNo}</h1>
+                  <h1 className="text-2xl font-bold tracking-[-0.035em] text-[#0b203a]">
+                    {order.orderNo}
+                  </h1>
                   {isWipStatus(order.status) ? <Badge variant="secondary">WIP</Badge> : null}
                   {canManage ? (
                     <OrderStatusSelect orderId={id} status={order.status} />
@@ -227,8 +234,8 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
         />
       </div>
 
-      <div className="grid items-start gap-4 lg:grid-cols-3">
-        <div className="flex flex-col gap-4 lg:order-2 lg:col-span-1">
+      <div className="grid min-w-0 items-start gap-4 lg:grid-cols-3">
+        <div className="flex min-w-0 flex-col gap-4 lg:order-2 lg:col-span-1">
           <Card className="lg:sticky lg:top-4">
             <CardHeader>
               <CardTitle className="text-sm text-muted-foreground">Job card details</CardTitle>
@@ -276,7 +283,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
               </div>
               <div className="flex items-start justify-between gap-3 py-3 last:pb-0">
                 <span className="flex items-center gap-2 text-muted-foreground">
-                  <SectionIcon icon={User} color="blue" />
+                  <SectionIcon icon={User} color="pink" />
                   Assigned to
                 </span>
                 {order.assignee ? (
@@ -329,11 +336,11 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
           ) : null}
         </div>
 
-        <div className="flex flex-col gap-4 lg:order-1 lg:col-span-2">
+        <div className="flex min-w-0 flex-col gap-4 lg:order-1 lg:col-span-2">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <SectionIcon icon={ListChecks} color="blue" />
+                <SectionIcon icon={ListChecks} color="pink" />
                 Tasks
               </CardTitle>
             </CardHeader>

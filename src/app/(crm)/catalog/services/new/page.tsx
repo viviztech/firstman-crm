@@ -1,4 +1,6 @@
+import { PackagePlusIcon } from "lucide-react";
 import { createServiceAction } from "@/actions/catalog";
+import { CatalogPageHeader } from "@/components/catalog/catalog-page-header";
 import { ServiceForm } from "@/components/catalog/service-form";
 import { requireRole } from "@/lib/session";
 import { listServiceCategoryOptions, listServiceOptions } from "@/services/catalog";
@@ -11,8 +13,12 @@ export default async function NewServicePage() {
   ]);
 
   return (
-    <div className="flex flex-col gap-4">
-      <h1 className="text-2xl font-semibold">New service</h1>
+    <div className="catalog-workflow mx-auto flex w-full max-w-4xl flex-col gap-5">
+      <CatalogPageHeader
+        title="New service"
+        description="Add a service, pricing, delivery timeline, and the documents your team needs to fulfil it."
+        icon={PackagePlusIcon}
+      />
       <ServiceForm
         action={createServiceAction}
         categories={categories}

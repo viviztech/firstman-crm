@@ -1,7 +1,9 @@
+import { CalendarCogIcon } from "lucide-react";
 import { notFound } from "next/navigation";
 import { updateComplianceItemAction } from "@/actions/compliance";
 import { toScope } from "@/actions/shared";
 import { ComplianceEditForm } from "@/components/compliance/compliance-edit-form";
+import { CompliancePageHeader } from "@/components/compliance/compliance-page-header";
 import { requireRole } from "@/lib/session";
 import { listServiceOptions } from "@/services/catalog";
 import { getComplianceItem } from "@/services/compliance";
@@ -20,8 +22,13 @@ export default async function EditCompliancePage({ params }: { params: Promise<{
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      <h1 className="text-2xl font-semibold">Edit compliance item</h1>
+    <div className="compliance-workflow mx-auto flex w-full max-w-4xl flex-col gap-5">
+      <CompliancePageHeader
+        title="Edit compliance item"
+        description={`Update the deadline, recurrence, and service details for ${item.title}.`}
+        icon={CalendarCogIcon}
+        backHref={`/compliance/${id}`}
+      />
       <ComplianceEditForm
         action={updateComplianceItemAction.bind(null, id)}
         services={services}

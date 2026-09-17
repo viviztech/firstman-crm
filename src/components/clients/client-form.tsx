@@ -85,152 +85,162 @@ export function ClientForm<T extends { id: string } | undefined>({
   const canAssign = role !== "executive";
 
   return (
-    <form action={formAction} className="flex max-w-2xl flex-col gap-4">
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="type">Type</Label>
-          <Select
-            name="type"
-            defaultValue={defaultValues?.type ?? "individual"}
-            items={[
-              { value: "individual", label: "Individual" },
-              { value: "business", label: "Business" },
-            ]}
-          >
-            <SelectTrigger id="type" className="w-full">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="individual">Individual</SelectItem>
-              <SelectItem value="business">Business</SelectItem>
-            </SelectContent>
-          </Select>
+    <form action={formAction} className="flex w-full flex-col gap-4">
+      <div className="flex flex-col gap-5 rounded-2xl border border-pink-100 bg-white p-5 shadow-[0_16px_38px_-30px_rgba(107,28,64,0.42)] sm:p-6">
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="type">Type</Label>
+            <Select
+              name="type"
+              defaultValue={defaultValues?.type ?? "individual"}
+              items={[
+                { value: "individual", label: "Individual" },
+                { value: "business", label: "Business" },
+              ]}
+            >
+              <SelectTrigger id="type" className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="individual">Individual</SelectItem>
+                <SelectItem value="business">Business</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="businessName">Business name</Label>
+            <Input
+              id="businessName"
+              name="businessName"
+              defaultValue={defaultValues?.businessName ?? ""}
+            />
+          </div>
         </div>
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="businessName">Business name</Label>
-          <Input
-            id="businessName"
-            name="businessName"
-            defaultValue={defaultValues?.businessName ?? ""}
-          />
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="name">
+              Name <span className="text-destructive">*</span>
+            </Label>
+            <Input id="name" name="name" required defaultValue={defaultValues?.name ?? ""} />
+          </div>
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="phone">
+              Phone <span className="text-destructive">*</span>
+            </Label>
+            <Input
+              id="phone"
+              name="phone"
+              required
+              placeholder="98765 43210"
+              defaultValue={defaultValues?.phone ?? ""}
+            />
+          </div>
         </div>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="email">Email</Label>
+            <Input id="email" name="email" type="email" defaultValue={defaultValues?.email ?? ""} />
+          </div>
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="referralSource">Referral source</Label>
+            <Input
+              id="referralSource"
+              name="referralSource"
+              defaultValue={defaultValues?.referralSource ?? ""}
+            />
+          </div>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="gstin">GSTIN</Label>
+            <Input id="gstin" name="gstin" defaultValue={defaultValues?.gstin ?? ""} />
+          </div>
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="pan">PAN</Label>
+            <Input id="pan" name="pan" defaultValue={defaultValues?.pan ?? ""} />
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="address">Address</Label>
+          <Textarea id="address" name="address" defaultValue={defaultValues?.address ?? ""} />
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-3">
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="pincode">Pincode</Label>
+            <Input
+              id="pincode"
+              name="pincode"
+              defaultValue={defaultValues?.pincode ?? ""}
+              onBlur={handlePincodeBlur}
+              placeholder="560001"
+            />
+          </div>
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="city">City</Label>
+            <Input id="city" name="city" value={city} onChange={(e) => setCity(e.target.value)} />
+          </div>
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="state">State</Label>
+            <Select
+              name="state"
+              value={stateName}
+              onValueChange={(value) => setStateName(value ?? "")}
+              items={states.map((s) => ({ value: s.name, label: s.name }))}
+            >
+              <SelectTrigger id="state" className="w-full">
+                <SelectValue placeholder="Select a state" />
+              </SelectTrigger>
+              <SelectContent>
+                {states.map((s) => (
+                  <SelectItem key={s.id} value={s.name}>
+                    {s.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        {canAssign ? (
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="assignedTo">Assigned to</Label>
+            <Select
+              name="assignedTo"
+              defaultValue={defaultValues?.assignedTo ?? undefined}
+              items={staff.map((member) => ({ value: member.id, label: member.name }))}
+            >
+              <SelectTrigger id="assignedTo" className="w-full">
+                <SelectValue placeholder="Unassigned" />
+              </SelectTrigger>
+              <SelectContent>
+                {staff.map((member) => (
+                  <SelectItem key={member.id} value={member.id}>
+                    {member.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        ) : null}
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="name">
-            Name <span className="text-destructive">*</span>
-          </Label>
-          <Input id="name" name="name" required defaultValue={defaultValues?.name ?? ""} />
-        </div>
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="phone">
-            Phone <span className="text-destructive">*</span>
-          </Label>
-          <Input
-            id="phone"
-            name="phone"
-            required
-            placeholder="98765 43210"
-            defaultValue={defaultValues?.phone ?? ""}
-          />
-        </div>
-      </div>
-
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="email">Email</Label>
-          <Input id="email" name="email" type="email" defaultValue={defaultValues?.email ?? ""} />
-        </div>
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="referralSource">Referral source</Label>
-          <Input
-            id="referralSource"
-            name="referralSource"
-            defaultValue={defaultValues?.referralSource ?? ""}
-          />
-        </div>
-      </div>
-
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="gstin">GSTIN</Label>
-          <Input id="gstin" name="gstin" defaultValue={defaultValues?.gstin ?? ""} />
-        </div>
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="pan">PAN</Label>
-          <Input id="pan" name="pan" defaultValue={defaultValues?.pan ?? ""} />
-        </div>
-      </div>
-
-      <div className="flex flex-col gap-2">
-        <Label htmlFor="address">Address</Label>
-        <Textarea id="address" name="address" defaultValue={defaultValues?.address ?? ""} />
-      </div>
-
-      <div className="grid gap-4 sm:grid-cols-3">
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="pincode">Pincode</Label>
-          <Input
-            id="pincode"
-            name="pincode"
-            defaultValue={defaultValues?.pincode ?? ""}
-            onBlur={handlePincodeBlur}
-            placeholder="560001"
-          />
-        </div>
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="city">City</Label>
-          <Input id="city" name="city" value={city} onChange={(e) => setCity(e.target.value)} />
-        </div>
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="state">State</Label>
-          <Select
-            name="state"
-            value={stateName}
-            onValueChange={(value) => setStateName(value ?? "")}
-            items={states.map((s) => ({ value: s.name, label: s.name }))}
-          >
-            <SelectTrigger id="state" className="w-full">
-              <SelectValue placeholder="Select a state" />
-            </SelectTrigger>
-            <SelectContent>
-              {states.map((s) => (
-                <SelectItem key={s.id} value={s.name}>
-                  {s.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      {canAssign ? (
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="assignedTo">Assigned to</Label>
-          <Select
-            name="assignedTo"
-            defaultValue={defaultValues?.assignedTo ?? undefined}
-            items={staff.map((member) => ({ value: member.id, label: member.name }))}
-          >
-            <SelectTrigger id="assignedTo" className="w-full">
-              <SelectValue placeholder="Unassigned" />
-            </SelectTrigger>
-            <SelectContent>
-              {staff.map((member) => (
-                <SelectItem key={member.id} value={member.id}>
-                  {member.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+      {state && !state.ok ? (
+        <p className="rounded-xl border border-red-100 bg-red-50 p-3 text-sm text-destructive">
+          {state.error}
+        </p>
       ) : null}
 
-      {state && !state.ok ? <p className="text-sm text-destructive">{state.error}</p> : null}
-
       <div>
-        <Button type="submit" disabled={isPending}>
+        <Button
+          type="submit"
+          disabled={isPending}
+          className="h-9 bg-pink-600 px-4 text-white hover:bg-pink-700"
+        >
           {isPending ? "Saving…" : submitLabel}
         </Button>
       </div>

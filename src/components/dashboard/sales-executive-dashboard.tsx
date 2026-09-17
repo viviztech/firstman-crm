@@ -75,7 +75,7 @@ export function SalesExecutiveDashboard({
   services: ServiceOption[];
 }) {
   const tabs: { value: string; label: string; count: number; dot: string }[] = [
-    { value: "my-enquiries", label: "My Enquiries", count: myEnquiries.length, dot: "bg-blue-500" },
+    { value: "my-enquiries", label: "My Enquiries", count: myEnquiries.length, dot: "bg-pink-500" },
     {
       value: "open-enquiries",
       label: "Open Enquiries",

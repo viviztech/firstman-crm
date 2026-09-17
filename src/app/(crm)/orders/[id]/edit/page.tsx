@@ -1,7 +1,9 @@
+import { ClipboardPenLineIcon } from "lucide-react";
 import { notFound } from "next/navigation";
 import { updateOrderAction } from "@/actions/orders";
 import { toScope } from "@/actions/shared";
 import { OrderEditForm } from "@/components/orders/order-edit-form";
+import { OrderPageHeader } from "@/components/orders/order-page-header";
 import { requireRole } from "@/lib/session";
 import { getOrder } from "@/services/orders";
 import { listAssignableStaffForService } from "@/services/users";
@@ -18,8 +20,13 @@ export default async function EditOrderPage({ params }: { params: Promise<{ id: 
   const staff = await listAssignableStaffForService(order.service.id);
 
   return (
-    <div className="flex flex-col gap-4">
-      <h1 className="text-2xl font-semibold">Edit job card {order.orderNo}</h1>
+    <div className="order-workflow mx-auto flex w-full max-w-4xl flex-col gap-5">
+      <OrderPageHeader
+        title={`Edit ${order.orderNo}`}
+        description={`Update pricing, ownership, and internal notes for ${order.service.name}.`}
+        icon={ClipboardPenLineIcon}
+        backHref={`/orders/${id}`}
+      />
       <OrderEditForm
         action={updateOrderAction.bind(null, id)}
         role={user.role}

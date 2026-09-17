@@ -1,6 +1,8 @@
 import { formatInTimeZone } from "date-fns-tz";
+import { PencilLineIcon } from "lucide-react";
 import { notFound } from "next/navigation";
 import { updateServiceAction } from "@/actions/catalog";
+import { CatalogPageHeader } from "@/components/catalog/catalog-page-header";
 import { DeleteServiceButton } from "@/components/catalog/delete-service-button";
 import { ServiceForm } from "@/components/catalog/service-form";
 import { ServiceStatePricingEditor } from "@/components/catalog/service-state-pricing-editor";
@@ -40,11 +42,12 @@ export default async function EditServicePage({ params }: { params: Promise<{ id
   const otherServices = allServices.filter((candidate) => candidate.id !== id);
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Edit service</h1>
-        <DeleteServiceButton serviceId={id} serviceName={service.name} />
-      </div>
+    <div className="catalog-workflow mx-auto flex w-full max-w-4xl flex-col gap-5">
+      <CatalogPageHeader
+        title={`Edit ${service.name}`}
+        description="Keep pricing, delivery requirements, and related services accurate for the sales team."
+        icon={PencilLineIcon}
+      />
 
       <ServiceForm
         action={updateServiceAction.bind(null, id)}
@@ -70,9 +73,9 @@ export default async function EditServicePage({ params }: { params: Promise<{ id
         }))}
       />
 
-      <Card className="max-w-3xl">
+      <Card className="border-pink-100 shadow-sm">
         <CardHeader>
-          <CardTitle className="text-sm text-muted-foreground">Price history</CardTitle>
+          <CardTitle className="text-base font-semibold text-[#0b203a]">Price history</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-2 text-sm">
           {priceHistory.length === 0 ? (
@@ -101,6 +104,10 @@ export default async function EditServicePage({ params }: { params: Promise<{ id
         statePrices={statePrices}
         states={states.map((s) => ({ id: s.id, name: s.name }))}
       />
+
+      <div className="flex justify-end border-t border-pink-100 pt-5">
+        <DeleteServiceButton serviceId={id} serviceName={service.name} />
+      </div>
     </div>
   );
 }

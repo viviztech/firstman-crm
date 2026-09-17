@@ -29,10 +29,12 @@ export function CategoryFormDialog({
   category,
   verticals,
   defaultVerticalId,
+  triggerClassName,
 }: {
   category?: ServiceCategory;
   verticals: VerticalOption[];
   defaultVerticalId?: string;
+  triggerClassName?: string;
 }) {
   const [open, setOpen] = useState(false);
   const action = category
@@ -46,7 +48,15 @@ export function CategoryFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={<Button variant={category ? "outline" : "default"} size="sm" />}>
+      <DialogTrigger
+        render={
+          <Button
+            variant={category ? "outline" : "default"}
+            size="sm"
+            className={triggerClassName}
+          />
+        }
+      >
         {category ? "Edit" : "New category"}
       </DialogTrigger>
       <DialogContent>

@@ -108,7 +108,7 @@ export function KanbanBoard({
         collisionDetection={closestCenter}
         onDragEnd={handleDragEnd}
       >
-        <div className="flex gap-4 overflow-x-auto pb-4">
+        <div className="flex w-full min-w-0 max-w-full gap-4 overflow-x-auto rounded-2xl border border-pink-100/80 bg-white/65 p-4 pb-5 shadow-[0_16px_38px_-32px_rgba(107,28,64,0.38)]">
           {ENQUIRY_STATUS_ORDER.map((status) => (
             <KanbanColumn
               key={status}

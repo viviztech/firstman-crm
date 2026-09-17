@@ -52,7 +52,10 @@ export function ComplianceEditForm({
   }, [state, router, itemId]);
 
   return (
-    <form action={formAction} className="flex max-w-2xl flex-col gap-4">
+    <form
+      action={formAction}
+      className="flex w-full flex-col gap-5 rounded-2xl border border-pink-100 bg-white p-4 shadow-[0_18px_45px_-36px_rgba(107,28,64,0.45)] sm:p-6"
+    >
       <div className="flex flex-col gap-2">
         <Label htmlFor="serviceId">Related service</Label>
         <Select
@@ -128,8 +131,8 @@ export function ComplianceEditForm({
 
       {state && !state.ok ? <p className="text-sm text-destructive">{state.error}</p> : null}
 
-      <div>
-        <Button type="submit" disabled={isPending}>
+      <div className="flex justify-end border-t border-pink-100 pt-5">
+        <Button type="submit" className="min-w-36" disabled={isPending}>
           {isPending ? "Saving…" : "Save changes"}
         </Button>
       </div>

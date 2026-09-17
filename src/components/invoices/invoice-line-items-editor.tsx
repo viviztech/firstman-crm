@@ -72,7 +72,7 @@ export function InvoiceLineItemsEditor({
   );
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-4 rounded-xl border border-pink-100 bg-pink-50/30 p-4">
       <input type="hidden" name="lineItemsJson" value={lineItemsJson} />
 
       <div className="flex flex-col gap-2">
@@ -81,13 +81,13 @@ export function InvoiceLineItemsEditor({
           {items.map((item) => (
             <div key={item.id} className="grid grid-cols-12 items-center gap-2">
               <Input
-                className="col-span-6"
+                className="col-span-12 sm:col-span-6"
                 placeholder="Description"
                 value={item.description}
                 onChange={(event) => updateItem(item.id, { description: event.target.value })}
               />
               <Input
-                className="col-span-2"
+                className="col-span-3 sm:col-span-2"
                 type="number"
                 min={0}
                 step="any"
@@ -96,7 +96,7 @@ export function InvoiceLineItemsEditor({
                 onChange={(event) => updateItem(item.id, { qty: event.target.value })}
               />
               <Input
-                className="col-span-3"
+                className="col-span-7 sm:col-span-3"
                 type="number"
                 min={0}
                 step="0.01"
@@ -107,7 +107,7 @@ export function InvoiceLineItemsEditor({
               <Button
                 type="button"
                 variant="outline"
-                className="col-span-1"
+                className="col-span-2 px-2 sm:col-span-1"
                 onClick={() => removeItem(item.id)}
                 disabled={items.length <= 1}
               >
@@ -146,7 +146,7 @@ export function InvoiceLineItemsEditor({
         </div>
       </div>
 
-      <div className="flex flex-col gap-1 rounded-lg border p-3 text-sm">
+      <div className="flex flex-col gap-1 rounded-lg border border-pink-100 bg-white p-3 text-sm">
         <div className="flex justify-between">
           <span className="text-muted-foreground">Subtotal</span>
           <span>{formatMoney(subtotalPaise)}</span>
@@ -155,7 +155,7 @@ export function InvoiceLineItemsEditor({
           <span className="text-muted-foreground">GST ({gstRate}%)</span>
           <span>{formatMoney(gstAmountPaise)}</span>
         </div>
-        <div className="flex justify-between font-medium">
+        <div className="flex justify-between border-t border-pink-100 pt-2 font-bold text-[#0b203a]">
           <span>Total</span>
           <span>{formatMoney(totalPaise)}</span>
         </div>

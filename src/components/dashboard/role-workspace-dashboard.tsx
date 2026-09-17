@@ -86,7 +86,19 @@ export function RoleWorkspaceDashboard({
 }) {
   const isWorkforce = workspace === "workforce";
   return (
-    <div className="flex flex-col gap-4">
+    <section className="flex flex-col gap-4" aria-labelledby="workspace-heading">
+      <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-[0.14em] text-pink-600">Overview</p>
+          <h2
+            id="workspace-heading"
+            className="mt-1 text-lg font-bold tracking-tight text-[#0b203a]"
+          >
+            {isWorkforce ? "Workforce control centre" : "Business operations"}
+          </h2>
+        </div>
+        <p className="text-sm text-muted-foreground">Live workload across your team</p>
+      </div>
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
         <StatCard
           label="Enquiries this month"
@@ -117,15 +129,15 @@ export function RoleWorkspaceDashboard({
             <Link
               key={action.href}
               href={action.href}
-              className="group rounded-xl border p-4 transition-colors hover:bg-muted/50"
+              className="group rounded-xl border border-pink-100 bg-white p-4 transition-[border-color,background-color,box-shadow,transform] hover:-translate-y-0.5 hover:border-pink-200 hover:bg-pink-50/40 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink-500 focus-visible:ring-offset-2"
             >
-              <action.icon className="mb-3 size-5 text-primary" />
-              <p className="font-medium group-hover:text-primary">{action.title}</p>
+              <action.icon className="mb-3 size-5 text-pink-600" aria-hidden="true" />
+              <p className="font-semibold group-hover:text-pink-700">{action.title}</p>
               <p className="mt-1 text-xs text-muted-foreground">{action.description}</p>
             </Link>
           ))}
         </div>
       </SectionCard>
-    </div>
+    </section>
   );
 }

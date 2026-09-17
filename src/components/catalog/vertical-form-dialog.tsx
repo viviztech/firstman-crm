@@ -17,7 +17,13 @@ import { Label } from "@/components/ui/label";
 
 type ServiceVertical = { id: string; name: string; sort: number };
 
-export function VerticalFormDialog({ vertical }: { vertical?: ServiceVertical }) {
+export function VerticalFormDialog({
+  vertical,
+  triggerClassName,
+}: {
+  vertical?: ServiceVertical;
+  triggerClassName?: string;
+}) {
   const [open, setOpen] = useState(false);
   const action = vertical
     ? updateServiceVerticalAction.bind(null, vertical.id)
@@ -30,7 +36,15 @@ export function VerticalFormDialog({ vertical }: { vertical?: ServiceVertical })
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={<Button variant={vertical ? "outline" : "default"} size="sm" />}>
+      <DialogTrigger
+        render={
+          <Button
+            variant={vertical ? "outline" : "default"}
+            size="sm"
+            className={triggerClassName}
+          />
+        }
+      >
         {vertical ? "Edit" : "New vertical"}
       </DialogTrigger>
       <DialogContent>
