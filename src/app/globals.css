@@ -156,7 +156,11 @@
   .catalog-workflow,
   .order-workflow,
   .compliance-workflow,
-  .invoice-workflow {
+  .invoice-workflow,
+  .expense-workflow,
+  .reports-workflow,
+  .settings-workflow,
+  .notification-workflow {
     --primary: #ba2a66;
     --ring: #ba2a66;
     position: relative;
@@ -169,7 +173,11 @@
   .catalog-workflow::before,
   .order-workflow::before,
   .compliance-workflow::before,
-  .invoice-workflow::before {
+  .invoice-workflow::before,
+  .expense-workflow::before,
+  .reports-workflow::before,
+  .settings-workflow::before,
+  .notification-workflow::before {
     content: "";
     position: absolute;
     inset: 0;
@@ -314,6 +322,39 @@
   .invoice-workflow [data-slot="input"],
   .invoice-workflow [data-slot="textarea"],
   .invoice-workflow [data-slot="select-trigger"] {
+    border-color: rgb(250 225 235);
+    background-color: rgb(248 250 252 / 0.65);
+  }
+
+  .expense-workflow [data-slot="card"],
+  .reports-workflow [data-slot="card"],
+  .settings-workflow [data-slot="card"] {
+    border-color: rgb(250 225 235 / 0.9);
+    border-radius: 1rem;
+    box-shadow: 0 14px 35px -30px rgb(107 28 64 / 0.5);
+  }
+
+  .expense-workflow [data-slot="card-header"],
+  .reports-workflow [data-slot="card-header"],
+  .settings-workflow [data-slot="card-header"] {
+    border-bottom: 1px solid rgb(253 243 247);
+    background: linear-gradient(to right, rgb(248 250 252 / 0.9), white);
+  }
+
+  .expense-workflow [data-slot="card-title"],
+  .reports-workflow [data-slot="card-title"],
+  .settings-workflow [data-slot="card-title"] {
+    color: #0b203a;
+    font-weight: 700;
+  }
+
+  .expense-workflow [data-slot="input"],
+  .expense-workflow [data-slot="textarea"],
+  .expense-workflow [data-slot="select-trigger"],
+  .settings-workflow [data-slot="input"],
+  .settings-workflow [data-slot="textarea"],
+  .settings-workflow [data-slot="select-trigger"],
+  .settings-workflow select {
     border-color: rgb(250 225 235);
     background-color: rgb(248 250 252 / 0.65);
   }

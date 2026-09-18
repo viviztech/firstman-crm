@@ -1,8 +1,7 @@
-import { ChevronLeft } from "lucide-react";
-import Link from "next/link";
+import { UsersIcon } from "lucide-react";
 import { InviteUserDialog } from "@/components/settings/invite-user-dialog";
+import { SettingsPageHeader } from "@/components/settings/settings-page-header";
 import { UsersTable } from "@/components/settings/users-table";
-import { Button } from "@/components/ui/button";
 import { requireRole } from "@/lib/session";
 import { listServiceOptions } from "@/services/catalog";
 import { listAllStaffForAdmin } from "@/services/users";
@@ -12,28 +11,16 @@ export default async function UsersSettingsPage() {
   const [staff, services] = await Promise.all([listAllStaffForAdmin(), listServiceOptions()]);
 
   return (
-    <div className="flex flex-col gap-4">
-      <Button
-        variant="ghost"
-        size="sm"
-        className="w-fit"
-        nativeButton={false}
-        render={<Link href="/settings" />}
-      >
-        <ChevronLeft className="size-4" /> Settings
-      </Button>
-
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold">Users</h1>
-          <p className="text-sm text-muted-foreground">
-            Invite staff, change roles, and deactivate accounts.
-          </p>
-        </div>
-        <InviteUserDialog />
+    <div className="settings-workflow flex min-w-0 flex-col gap-5">
+      <SettingsPageHeader
+        title="Users"
+        description="Invite staff, change roles, define access scope, and deactivate accounts."
+        icon={UsersIcon}
+        actions={<InviteUserDialog />}
+      />
+      <div className="min-w-0 overflow-x-auto rounded-2xl border border-pink-100 bg-white shadow-sm">
+        <UsersTable staff={staff} currentUserId={currentUser.id} services={services} />
       </div>
-
-      <UsersTable staff={staff} currentUserId={currentUser.id} services={services} />
     </div>
   );
 }

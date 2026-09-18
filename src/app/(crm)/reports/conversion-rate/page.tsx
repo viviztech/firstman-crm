@@ -19,7 +19,7 @@ export default async function ConversionRateReportPage() {
   ]);
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="reports-workflow flex min-w-0 flex-col gap-5">
       <ReportPageHeader
         title="Conversion rate"
         description="Conversion rate broken down by source and by executive."
@@ -29,9 +29,9 @@ export default async function ConversionRateReportPage() {
       <div className="grid gap-4 lg:grid-cols-2">
         <div className="flex flex-col gap-2">
           <h2 className="text-sm font-medium text-muted-foreground">By source</h2>
-          <div className="rounded-lg border">
+          <div className="overflow-x-auto rounded-2xl border border-pink-100 bg-white shadow-sm">
             <Table>
-              <TableHeader>
+              <TableHeader className="bg-pink-50/70">
                 <TableRow>
                   <TableHead>Source</TableHead>
                   <TableHead className="text-right">Total</TableHead>
@@ -57,9 +57,9 @@ export default async function ConversionRateReportPage() {
 
         <div className="flex flex-col gap-2">
           <h2 className="text-sm font-medium text-muted-foreground">By executive</h2>
-          <div className="rounded-lg border">
+          <div className="overflow-x-auto rounded-2xl border border-pink-100 bg-white shadow-sm">
             <Table>
-              <TableHeader>
+              <TableHeader className="bg-pink-50/70">
                 <TableRow>
                   <TableHead>Executive</TableHead>
                   <TableHead className="text-right">Total</TableHead>

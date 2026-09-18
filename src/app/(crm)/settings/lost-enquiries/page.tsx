@@ -1,8 +1,7 @@
 import { formatInTimeZone } from "date-fns-tz";
-import { ChevronLeft } from "lucide-react";
-import Link from "next/link";
+import { Trash2Icon } from "lucide-react";
 import { HardDeleteEnquiryButton } from "@/components/settings/hard-delete-enquiry-button";
-import { Button } from "@/components/ui/button";
+import { SettingsPageHeader } from "@/components/settings/settings-page-header";
 import {
   Table,
   TableBody,
@@ -20,63 +19,53 @@ export default async function LostEnquiriesSettingsPage() {
   const enquiries = await listLostEnquiries();
 
   return (
-    <div className="flex flex-col gap-4">
-      <Button
-        variant="ghost"
-        size="sm"
-        className="w-fit"
-        nativeButton={false}
-        render={<Link href="/settings" />}
-      >
-        <ChevronLeft className="size-4" /> Settings
-      </Button>
+    <div className="settings-workflow flex min-w-0 flex-col gap-5">
+      <SettingsPageHeader
+        title="Lost enquiries"
+        description="Review enquiries hidden from active workflows and permanently remove records when required."
+        icon={Trash2Icon}
+      />
 
-      <div>
-        <h1 className="text-2xl font-semibold">Lost enquiries</h1>
-        <p className="text-sm text-muted-foreground">
-          Hidden from every other list, kanban, and search in the app. Permanently deleting one here
-          cannot be undone.
-        </p>
-      </div>
-
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Name</TableHead>
-            <TableHead>Phone</TableHead>
-            <TableHead>Service</TableHead>
-            <TableHead>Lost reason</TableHead>
-            <TableHead>Marked lost</TableHead>
-            <TableHead />
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {enquiries.length === 0 ? (
+      <div className="min-w-0 overflow-x-auto rounded-2xl border border-pink-100 bg-white shadow-sm">
+        <Table>
+          <TableHeader className="bg-pink-50/70">
             <TableRow>
-              <TableCell colSpan={6} className="text-center text-sm text-muted-foreground">
-                No lost enquiries.
-              </TableCell>
+              <TableHead>Name</TableHead>
+              <TableHead>Phone</TableHead>
+              <TableHead>Service</TableHead>
+              <TableHead>Lost reason</TableHead>
+              <TableHead>Marked lost</TableHead>
+              <TableHead />
             </TableRow>
-          ) : (
-            enquiries.map((enquiry) => (
-              <TableRow key={enquiry.id}>
-                <TableCell className="font-medium">{enquiry.name}</TableCell>
-                <TableCell>{enquiry.phone}</TableCell>
-                <TableCell>{enquiry.serviceInterested?.name ?? "—"}</TableCell>
-                <TableCell className="max-w-xs truncate">{enquiry.lostReason ?? "—"}</TableCell>
-                <TableCell>
-                  {formatInTimeZone(enquiry.updatedAt, env.TZ_DISPLAY, "d MMM yyyy")}
-                </TableCell>
-                <TableCell>
-                  <div className="flex justify-end">
-                    <HardDeleteEnquiryButton enquiryId={enquiry.id} enquiryName={enquiry.name} />
-                  </div>
+          </TableHeader>
+          <TableBody>
+            {enquiries.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={6} className="py-10 text-center text-sm text-muted-foreground">
+                  No lost enquiries.
                 </TableCell>
               </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
+            ) : (
+              enquiries.map((enquiry) => (
+                <TableRow key={enquiry.id} className="hover:bg-pink-50/40">
+                  <TableCell className="font-medium">{enquiry.name}</TableCell>
+                  <TableCell>{enquiry.phone}</TableCell>
+                  <TableCell>{enquiry.serviceInterested?.name ?? "—"}</TableCell>
+                  <TableCell className="max-w-xs truncate">{enquiry.lostReason ?? "—"}</TableCell>
+                  <TableCell>
+                    {formatInTimeZone(enquiry.updatedAt, env.TZ_DISPLAY, "d MMM yyyy")}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex justify-end">
+                      <HardDeleteEnquiryButton enquiryId={enquiry.id} enquiryName={enquiry.name} />
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   );
 }

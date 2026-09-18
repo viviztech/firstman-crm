@@ -49,7 +49,10 @@ export function ExpenseEditForm({
   }, [state, router]);
 
   return (
-    <form action={formAction} className="flex max-w-2xl flex-col gap-4">
+    <form
+      action={formAction}
+      className="flex max-w-3xl flex-col gap-5 rounded-2xl border border-pink-100 bg-white p-5 shadow-[0_18px_45px_-32px_rgba(107,28,64,0.4)] sm:p-7"
+    >
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="flex flex-col gap-2">
           <Label htmlFor="date">
@@ -114,7 +117,7 @@ export function ExpenseEditForm({
 
       {state && !state.ok ? <p className="text-sm text-destructive">{state.error}</p> : null}
 
-      <div>
+      <div className="flex justify-end border-t border-pink-50 pt-5">
         <Button type="submit" disabled={isPending}>
           {isPending ? "Saving…" : "Save changes"}
         </Button>

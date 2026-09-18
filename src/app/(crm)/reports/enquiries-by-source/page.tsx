@@ -16,16 +16,16 @@ export default async function EnquiriesBySourceReportPage() {
   const rows = await getEnquirySourcePerformance();
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="reports-workflow flex min-w-0 flex-col gap-5">
       <ReportPageHeader
         title="Enquiry source performance"
         description="Enquiries, wins, and conversion rate by source."
         exportHref="/api/reports/enquiries-by-source/export"
       />
 
-      <div className="rounded-lg border">
+      <div className="overflow-x-auto rounded-2xl border border-pink-100 bg-white shadow-sm">
         <Table>
-          <TableHeader>
+          <TableHeader className="bg-pink-50/70">
             <TableRow>
               <TableHead>Source</TableHead>
               <TableHead className="text-right">Total enquiries</TableHead>

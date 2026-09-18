@@ -16,16 +16,16 @@ export default async function ComplianceStatusReportPage() {
   const rows = await getComplianceFilingStatus();
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="reports-workflow flex min-w-0 flex-col gap-5">
       <ReportPageHeader
         title="Compliance filing status"
         description="Compliance items grouped by current status."
         exportHref="/api/reports/compliance-status/export"
       />
 
-      <div className="rounded-lg border">
+      <div className="overflow-x-auto rounded-2xl border border-pink-100 bg-white shadow-sm">
         <Table>
-          <TableHeader>
+          <TableHeader className="bg-pink-50/70">
             <TableRow>
               <TableHead>Status</TableHead>
               <TableHead className="text-right">Count</TableHead>

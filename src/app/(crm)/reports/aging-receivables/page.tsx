@@ -18,7 +18,7 @@ export default async function AgingReceivablesReportPage() {
   const summary = summarizeAgingBuckets(rows);
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="reports-workflow flex min-w-0 flex-col gap-5">
       <ReportPageHeader
         title="Aging receivables"
         description="Open invoice balances bucketed by days past due."
@@ -27,7 +27,10 @@ export default async function AgingReceivablesReportPage() {
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-5">
         {summary.map((bucket) => (
-          <div key={bucket.bucket} className="rounded-lg border p-3">
+          <div
+            key={bucket.bucket}
+            className="rounded-2xl border border-pink-100 bg-white p-4 shadow-sm"
+          >
             <p className="text-xs text-muted-foreground uppercase">{bucket.bucket}</p>
             <p className="text-lg font-semibold">{formatMoney(bucket.totalPaise)}</p>
             <p className="text-xs text-muted-foreground">{bucket.count} invoices</p>
@@ -35,9 +38,9 @@ export default async function AgingReceivablesReportPage() {
         ))}
       </div>
 
-      <div className="rounded-lg border">
+      <div className="overflow-x-auto rounded-2xl border border-pink-100 bg-white shadow-sm">
         <Table>
-          <TableHeader>
+          <TableHeader className="bg-pink-50/70">
             <TableRow>
               <TableHead>Invoice #</TableHead>
               <TableHead>Client</TableHead>

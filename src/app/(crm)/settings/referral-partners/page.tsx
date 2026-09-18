@@ -1,10 +1,9 @@
-import { ChevronLeft } from "lucide-react";
-import Link from "next/link";
+import { HandshakeIcon } from "lucide-react";
 import { ListPagination } from "@/components/list-pagination";
 import { DeleteReferralPartnerButton } from "@/components/settings/delete-referral-partner-button";
 import { ReferralPartnerFormDialog } from "@/components/settings/referral-partner-form-dialog";
+import { SettingsPageHeader } from "@/components/settings/settings-page-header";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -26,74 +25,62 @@ export default async function ReferralPartnersSettingsPage({
   const result = await listReferralPartners({ page: page ? Number(page) : 1 });
 
   return (
-    <div className="flex flex-col gap-4">
-      <Button
-        variant="ghost"
-        size="sm"
-        className="w-fit"
-        nativeButton={false}
-        render={<Link href="/settings" />}
-      >
-        <ChevronLeft className="size-4" /> Settings
-      </Button>
+    <div className="settings-workflow flex min-w-0 flex-col gap-5">
+      <SettingsPageHeader
+        title="Referral partners"
+        description="Manage external associates tracked for enquiry attribution and commission."
+        icon={HandshakeIcon}
+        actions={<ReferralPartnerFormDialog />}
+      />
 
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold">Referral partners</h1>
-          <p className="text-sm text-muted-foreground">
-            External associates tracked for enquiry attribution and commission — they never get a
-            CRM login.
-          </p>
-        </div>
-        <ReferralPartnerFormDialog />
-      </div>
-
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Name</TableHead>
-            <TableHead>Phone</TableHead>
-            <TableHead>Commission</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead />
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {result.rows.length === 0 ? (
+      <div className="min-w-0 overflow-x-auto rounded-2xl border border-pink-100 bg-white shadow-sm">
+        <Table>
+          <TableHeader className="bg-pink-50/70">
             <TableRow>
-              <TableCell colSpan={5} className="text-center text-sm text-muted-foreground">
-                No referral partners yet.
-              </TableCell>
+              <TableHead>Name</TableHead>
+              <TableHead>Phone</TableHead>
+              <TableHead>Commission</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead />
             </TableRow>
-          ) : (
-            result.rows.map((partner) => (
-              <TableRow key={partner.id}>
-                <TableCell className="font-medium">{partner.name}</TableCell>
-                <TableCell>{partner.phone}</TableCell>
-                <TableCell>
-                  {partner.commissionType
-                    ? `${partner.commissionType} · ${partner.commissionRate ?? 0}`
-                    : "—"}
-                </TableCell>
-                <TableCell>
-                  <Badge variant={partner.active ? "secondary" : "destructive"}>
-                    {partner.active ? "Active" : "Inactive"}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <div className="flex justify-end gap-2">
-                    <ReferralPartnerFormDialog partner={partner} />
-                    <DeleteReferralPartnerButton
-                      partnerId={partner.id}
-                      partnerName={partner.name}
-                    />
-                  </div>
+          </TableHeader>
+          <TableBody>
+            {result.rows.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={5} className="py-10 text-center text-sm text-muted-foreground">
+                  No referral partners yet.
                 </TableCell>
               </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
+            ) : (
+              result.rows.map((partner) => (
+                <TableRow key={partner.id} className="hover:bg-pink-50/40">
+                  <TableCell className="font-medium">{partner.name}</TableCell>
+                  <TableCell>{partner.phone}</TableCell>
+                  <TableCell>
+                    {partner.commissionType
+                      ? `${partner.commissionType} · ${partner.commissionRate ?? 0}`
+                      : "—"}
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={partner.active ? "secondary" : "destructive"}>
+                      {partner.active ? "Active" : "Inactive"}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex justify-end gap-2">
+                      <ReferralPartnerFormDialog partner={partner} />
+                      <DeleteReferralPartnerButton
+                        partnerId={partner.id}
+                        partnerName={partner.name}
+                      />
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
 
       <ListPagination
         page={result.page}

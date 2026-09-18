@@ -1,11 +1,11 @@
-import { ChevronLeft } from "lucide-react";
-import Link from "next/link";
+import { MapPinnedIcon } from "lucide-react";
 import {
   createConstituencyAction,
   mapPincodeAction,
   removeFranchiseTerritoryAction,
   saveFranchiseTerritoryAction,
 } from "@/actions/franchise";
+import { SettingsPageHeader } from "@/components/settings/settings-page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -19,23 +19,12 @@ export default async function FranchiseSettingsPage() {
   await requireRole("super_admin", "manager");
   const data = await listFranchiseAdminData();
   return (
-    <div className="flex flex-col gap-4">
-      <Button
-        variant="ghost"
-        size="sm"
-        className="w-fit"
-        nativeButton={false}
-        render={<Link href="/settings" />}
-      >
-        <ChevronLeft className="size-4" /> Settings
-      </Button>
-      <div>
-        <h1 className="text-2xl font-semibold">Franchise territories</h1>
-        <p className="text-sm text-muted-foreground">
-          Exclusive state, parliamentary, assembly and pincode territories with basic and additional
-          commission rates.
-        </p>
-      </div>
+    <div className="settings-workflow flex min-w-0 flex-col gap-5">
+      <SettingsPageHeader
+        title="Franchise territories"
+        description="Manage exclusive state, constituency, and pincode territories with commission rates."
+        icon={MapPinnedIcon}
+      />
 
       <Card>
         <CardHeader>

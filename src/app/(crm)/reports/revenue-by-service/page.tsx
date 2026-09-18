@@ -16,16 +16,16 @@ export default async function RevenueByServiceReportPage() {
   const rows = await getRevenueByService();
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="reports-workflow flex min-w-0 flex-col gap-5">
       <ReportPageHeader
         title="Revenue by service"
         description="Job card revenue (quoted price, non-cancelled job cards) grouped by catalog service."
         exportHref="/api/reports/revenue-by-service/export"
       />
 
-      <div className="rounded-lg border">
+      <div className="overflow-x-auto rounded-2xl border border-pink-100 bg-white shadow-sm">
         <Table>
-          <TableHeader>
+          <TableHeader className="bg-pink-50/70">
             <TableRow>
               <TableHead>Service</TableHead>
               <TableHead className="text-right">Job Cards</TableHead>
