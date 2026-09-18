@@ -10,6 +10,8 @@ import {
   createStaffUser,
   inviteUserInputSchema,
   setUserBanned,
+  updateStaffUser,
+  updateUserInputSchema,
 } from "@/lib/user-admin";
 
 export async function inviteUserAction(
@@ -37,6 +39,30 @@ export async function inviteUserAction(
     return {
       ok: false,
       error: error instanceof Error ? error.message : "Failed to create user.",
+    };
+  }
+}
+
+export async function updateUserAction(
+  userId: string,
+  _prev: ActionResult | undefined,
+  formData: FormData,
+): Promise<ActionResult> {
+  await requireRole("super_admin");
+
+  const parsed = updateUserInputSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) {
+    return { ok: false, error: firstIssueMessage(parsed.error) };
+  }
+
+  try {
+    await updateStaffUser(userId, parsed.data);
+    revalidatePath("/settings/users");
+    return { ok: true, data: undefined };
+  } catch (error) {
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : "Failed to update user.",
     };
   }
 }

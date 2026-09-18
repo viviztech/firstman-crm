@@ -1,6 +1,7 @@
 "use client";
 
 import { type ColumnDef, flexRender, getCoreRowModel, useReactTable } from "@tanstack/react-table";
+import { EditUserDialog } from "@/components/settings/edit-user-dialog";
 import { StaffEmployeeTypeSelect } from "@/components/settings/staff-employee-type-select";
 import { StaffScopeDialog } from "@/components/settings/staff-scope-dialog";
 import { StaffTeamSelect } from "@/components/settings/staff-team-select";
@@ -117,12 +118,19 @@ function buildColumns(currentUserId: string, services: ServiceOption[]): ColumnD
       id: "actions",
       header: "",
       cell: ({ row }) => (
-        <UserBanToggle
-          userId={row.original.id}
-          userName={row.original.name}
-          banned={Boolean(row.original.banned)}
-          disabled={row.original.id === currentUserId}
-        />
+        <div className="flex items-center justify-end gap-2">
+          <EditUserDialog
+            userId={row.original.id}
+            name={row.original.name}
+            email={row.original.email}
+          />
+          <UserBanToggle
+            userId={row.original.id}
+            userName={row.original.name}
+            banned={Boolean(row.original.banned)}
+            disabled={row.original.id === currentUserId}
+          />
+        </div>
       ),
     },
   ];

@@ -18,6 +18,12 @@ export const inviteUserInputSchema = z.object({
 });
 export type InviteUserInput = z.infer<typeof inviteUserInputSchema>;
 
+export const updateUserInputSchema = z.object({
+  name: z.string().trim().min(2, "Name is required").max(200),
+  email: z.string().trim().toLowerCase().email("Enter a valid email"),
+});
+export type UpdateUserInput = z.infer<typeof updateUserInputSchema>;
+
 function generateTempPassword(): string {
   return randomBytes(15).toString("base64url");
 }
@@ -34,6 +40,13 @@ export async function createStaffUser(
   });
 
   return { id: created.user.id, email: input.email, tempPassword };
+}
+
+export async function updateStaffUser(userId: string, input: UpdateUserInput): Promise<void> {
+  await auth.api.adminUpdateUser({
+    body: { userId, data: input },
+    headers: await headers(),
+  });
 }
 
 /** A super_admin can't demote their own account — avoids an accidental self-lockout. */
