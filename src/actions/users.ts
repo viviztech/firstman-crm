@@ -9,6 +9,8 @@ import {
   changeUserRole,
   createStaffUser,
   inviteUserInputSchema,
+  resetStaffUserPassword,
+  resetUserPasswordInputSchema,
   setUserBanned,
   updateStaffUser,
   updateUserInputSchema,
@@ -63,6 +65,29 @@ export async function updateUserAction(
     return {
       ok: false,
       error: error instanceof Error ? error.message : "Failed to update user.",
+    };
+  }
+}
+
+export async function resetUserPasswordAction(
+  userId: string,
+  _prev: ActionResult | undefined,
+  formData: FormData,
+): Promise<ActionResult> {
+  const actor = await requireRole("super_admin");
+
+  const parsed = resetUserPasswordInputSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) {
+    return { ok: false, error: firstIssueMessage(parsed.error) };
+  }
+
+  try {
+    await resetStaffUserPassword(userId, parsed.data.newPassword, actor.id);
+    return { ok: true, data: undefined };
+  } catch (error) {
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : "Failed to reset password.",
     };
   }
 }

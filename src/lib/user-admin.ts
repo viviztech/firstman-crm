@@ -24,6 +24,16 @@ export const updateUserInputSchema = z.object({
 });
 export type UpdateUserInput = z.infer<typeof updateUserInputSchema>;
 
+export const resetUserPasswordInputSchema = z
+  .object({
+    newPassword: z.string().min(8, "Password must be at least 8 characters").max(128),
+    confirmPassword: z.string(),
+  })
+  .refine((input) => input.newPassword === input.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
+  });
+
 function generateTempPassword(): string {
   return randomBytes(15).toString("base64url");
 }
@@ -46,6 +56,26 @@ export async function updateStaffUser(userId: string, input: UpdateUserInput): P
   await auth.api.adminUpdateUser({
     body: { userId, data: input },
     headers: await headers(),
+  });
+}
+
+export async function resetStaffUserPassword(
+  userId: string,
+  newPassword: string,
+  actingUserId: string,
+): Promise<void> {
+  if (userId === actingUserId) {
+    throw new Error("You can't reset your own password from user management.");
+  }
+
+  const requestHeaders = await headers();
+  await auth.api.setUserPassword({
+    body: { userId, newPassword },
+    headers: requestHeaders,
+  });
+  await auth.api.revokeUserSessions({
+    body: { userId },
+    headers: requestHeaders,
   });
 }
 

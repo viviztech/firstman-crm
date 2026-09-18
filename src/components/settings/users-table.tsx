@@ -2,6 +2,7 @@
 
 import { type ColumnDef, flexRender, getCoreRowModel, useReactTable } from "@tanstack/react-table";
 import { EditUserDialog } from "@/components/settings/edit-user-dialog";
+import { ResetUserPasswordDialog } from "@/components/settings/reset-user-password-dialog";
 import { StaffEmployeeTypeSelect } from "@/components/settings/staff-employee-type-select";
 import { StaffScopeDialog } from "@/components/settings/staff-scope-dialog";
 import { StaffTeamSelect } from "@/components/settings/staff-team-select";
@@ -123,6 +124,11 @@ function buildColumns(currentUserId: string, services: ServiceOption[]): ColumnD
             userId={row.original.id}
             name={row.original.name}
             email={row.original.email}
+          />
+          <ResetUserPasswordDialog
+            userId={row.original.id}
+            userName={row.original.name}
+            disabled={row.original.id === currentUserId}
           />
           <UserBanToggle
             userId={row.original.id}
