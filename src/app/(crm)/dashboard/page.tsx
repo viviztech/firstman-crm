@@ -211,6 +211,13 @@ export default async function DashboardPage() {
     .filter((row) => row.status !== "completed" && row.status !== "cancelled")
     .reduce((total, row) => total + row.count, 0);
   const portalRole = getPortalRole(user.role, scope.team, scope.employeeType);
+  const heroDescription = isSalesExecutive
+    ? "Prioritize your leads, complete today’s follow-ups, and keep every opportunity moving."
+    : isOperationsExecutive
+      ? "Pick up available work, clear today’s tasks, and keep every client delivery on schedule."
+      : user.role === "executive"
+        ? "Your assigned clients, tasks, and deadlines are organized around today’s work."
+        : undefined;
 
   const headline = showAccountantStats
     ? {
@@ -251,7 +258,12 @@ export default async function DashboardPage() {
 
   return (
     <div className="dashboard-system mx-auto flex w-full max-w-[1600px] flex-col gap-6">
-      <DashboardHero userName={user.name} roleLabel={portalRole} headline={headline} />
+      <DashboardHero
+        userName={user.name}
+        roleLabel={portalRole}
+        headline={headline}
+        description={heroDescription}
+      />
 
       {franchiseNetwork ? <FranchiseManagerDashboard data={franchiseNetwork} /> : null}
 

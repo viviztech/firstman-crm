@@ -2,6 +2,7 @@ import {
   CheckCircle2Icon,
   ClockIcon,
   ListChecksIcon,
+  TargetIcon,
   TrendingUpIcon,
   UserXIcon,
   WalletIcon,
@@ -93,11 +94,19 @@ export function SalesExecutiveDashboard({
   ];
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h2 className="text-lg font-semibold">My sales dashboard</h2>
-          <p className="text-sm text-muted-foreground">Your pipeline, follow-ups, and results.</p>
+    <div className="executive-workspace flex min-w-0 flex-col gap-5">
+      <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-pink-100 bg-gradient-to-r from-white via-white to-pink-50/70 p-5 shadow-[0_14px_35px_-30px_rgba(107,28,64,0.5)]">
+        <div className="flex items-center gap-3">
+          <span className="flex size-10 items-center justify-center rounded-xl bg-pink-50 text-pink-600 ring-1 ring-pink-100">
+            <TargetIcon className="size-5" aria-hidden="true" />
+          </span>
+          <div>
+            <p className="text-[11px] font-bold tracking-[0.14em] text-pink-600 uppercase">
+              Sales workspace
+            </p>
+            <h2 className="text-lg font-bold tracking-[-0.02em] text-[#0b203a]">My pipeline</h2>
+            <p className="text-sm text-slate-500">Follow up, convert, and track your results.</p>
+          </div>
         </div>
         <AddEnquiryDialog services={services} />
       </div>
@@ -142,7 +151,7 @@ export function SalesExecutiveDashboard({
       </div>
 
       <Tabs defaultValue="my-enquiries" className="gap-3">
-        <TabsList className="h-auto! w-full flex-wrap justify-start gap-2 rounded-2xl bg-muted/60 p-1.5">
+        <TabsList className="h-auto! w-full flex-wrap justify-start gap-2 rounded-2xl border border-pink-100 bg-white p-1.5 shadow-sm">
           {tabs.map((tab) => (
             <TabsTrigger
               key={tab.value}
@@ -268,9 +277,9 @@ function EnquiryTable<T extends DashboardEnquiry>({
 
   return (
     <>
-      <div className="hidden overflow-x-auto rounded-lg border md:block">
+      <div className="hidden overflow-x-auto rounded-2xl border border-pink-100 bg-white shadow-sm md:block">
         <table className="w-full text-sm">
-          <thead className="bg-muted/50 text-left text-xs text-muted-foreground">
+          <thead className="bg-pink-50/70 text-left text-xs text-slate-500">
             <tr>
               <th className="px-4 py-2 font-medium">Service</th>
               <th className="px-4 py-2 font-medium">Name</th>
@@ -282,7 +291,7 @@ function EnquiryTable<T extends DashboardEnquiry>({
           </thead>
           <tbody className="divide-y">
             {rows.map((row) => (
-              <tr key={row.id} className="hover:bg-muted/30">
+              <tr key={row.id} className="transition-colors hover:bg-pink-50/40">
                 <td className="px-4 py-2 whitespace-nowrap">
                   {row.serviceInterested?.name ?? <span className="text-muted-foreground">—</span>}
                 </td>

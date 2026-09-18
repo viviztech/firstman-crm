@@ -4,6 +4,7 @@ import {
   CalendarClockIcon,
   CheckCircle2Icon,
   FileWarningIcon,
+  GaugeIcon,
   PackageSearchIcon,
   TrophyIcon,
 } from "lucide-react";
@@ -100,10 +101,18 @@ export function OperationsExecutiveDashboard({
   ];
 
   return (
-    <div className="flex flex-col gap-4">
-      <div>
-        <h2 className="text-lg font-semibold">My operations dashboard</h2>
-        <p className="text-sm text-muted-foreground">Your job cards, tasks, and results.</p>
+    <div className="executive-workspace flex min-w-0 flex-col gap-5">
+      <div className="flex items-center gap-3 rounded-2xl border border-pink-100 bg-gradient-to-r from-white via-white to-pink-50/70 p-5 shadow-[0_14px_35px_-30px_rgba(107,28,64,0.5)]">
+        <span className="flex size-10 items-center justify-center rounded-xl bg-pink-50 text-pink-600 ring-1 ring-pink-100">
+          <GaugeIcon className="size-5" aria-hidden="true" />
+        </span>
+        <div>
+          <p className="text-[11px] font-bold tracking-[0.14em] text-pink-600 uppercase">
+            Operations workspace
+          </p>
+          <h2 className="text-lg font-bold tracking-[-0.02em] text-[#0b203a]">My delivery queue</h2>
+          <p className="text-sm text-slate-500">Pick up work, clear tasks, and deliver on time.</p>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-3 xl:grid-cols-7">
@@ -153,7 +162,7 @@ export function OperationsExecutiveDashboard({
       </div>
 
       <Tabs defaultValue="job-cards" className="gap-3">
-        <TabsList className="h-auto! w-full flex-wrap justify-start gap-2 rounded-2xl bg-muted/60 p-1.5">
+        <TabsList className="h-auto! w-full flex-wrap justify-start gap-2 rounded-2xl border border-pink-100 bg-white p-1.5 shadow-sm">
           {tabs.map((tab) => (
             <TabsTrigger
               key={tab.value}
@@ -248,9 +257,9 @@ function JobCardTable({
 
   return (
     <>
-      <div className="hidden overflow-x-auto rounded-lg border md:block">
+      <div className="hidden overflow-x-auto rounded-2xl border border-pink-100 bg-white shadow-sm md:block">
         <table className="w-full text-sm">
-          <thead className="bg-muted/50 text-left text-xs text-muted-foreground">
+          <thead className="bg-pink-50/70 text-left text-xs text-slate-500">
             <tr>
               <th className="px-4 py-2 font-medium">Job Card #</th>
               <th className="px-4 py-2 font-medium">Client</th>
@@ -265,7 +274,7 @@ function JobCardTable({
             {rows.map((row) => {
               const overdue = !row.completedAt && row.dueAt < new Date();
               return (
-                <tr key={row.id} className="hover:bg-muted/30">
+                <tr key={row.id} className="transition-colors hover:bg-pink-50/40">
                   <td className="px-4 py-2 font-medium whitespace-nowrap">{row.orderNo}</td>
                   <td className="px-4 py-2 whitespace-nowrap">{row.client.name}</td>
                   <td className="px-4 py-2 whitespace-nowrap">{row.service.name}</td>
@@ -358,7 +367,7 @@ function TaskRow({ task }: { task: DashboardTask }) {
   return (
     <Link
       href={`/orders/${task.order.id}`}
-      className="flex items-center justify-between rounded-lg border p-3 hover:bg-muted/50"
+      className="flex items-center justify-between rounded-xl border border-pink-100 bg-white p-3 transition-colors hover:bg-pink-50/50"
     >
       <div className="flex flex-col">
         <span className="font-medium">{task.title}</span>

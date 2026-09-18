@@ -166,6 +166,12 @@
     position: relative;
   }
 
+  .executive-workspace [data-slot="card"] {
+    border-color: rgb(250 225 235 / 0.9);
+    border-radius: 1rem;
+    box-shadow: 0 14px 35px -30px rgb(107 28 64 / 0.5);
+  }
+
   .dashboard-system::before,
   .enquiries-system::before,
   .enquiry-workflow::before,

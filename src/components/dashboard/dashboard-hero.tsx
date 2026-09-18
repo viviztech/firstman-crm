@@ -18,9 +18,11 @@ export function DashboardHero({
   userName,
   headline,
   roleLabel,
+  description = "Your pipeline, delivery work, and deadlines are in one clear view.",
 }: {
   userName: string;
   roleLabel?: string;
+  description?: string;
   headline?: {
     label: string;
     value: string;
@@ -62,9 +64,7 @@ export function DashboardHero({
           <h1 className="text-pretty text-2xl font-bold tracking-[-0.035em] text-[#0b203a] sm:text-3xl">
             {greetingFor(now)}, {userName.split(" ")[0]}
           </h1>
-          <p className="mt-2 max-w-xl text-sm leading-6 text-slate-500">
-            Your pipeline, delivery work, and deadlines are in one clear view.
-          </p>
+          <p className="mt-2 max-w-xl text-sm leading-6 text-slate-500">{description}</p>
         </div>
 
         {headline && classes ? (
