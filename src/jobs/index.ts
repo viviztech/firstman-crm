@@ -4,6 +4,7 @@ import { registerDocsPendingCron } from "@/jobs/docs-pending-cron";
 import { registerEnquiryDigestCron } from "@/jobs/enquiry-digest-cron";
 import { registerEnquiryNotificationJobs } from "@/jobs/enquiry-notifications";
 import { registerEnquiryQuoteNotificationJobs } from "@/jobs/enquiry-quote-notifications";
+import { registerHrLeaveCron } from "@/jobs/hr-leave-cron";
 import { registerInvoiceCron } from "@/jobs/invoice-cron";
 import { registerInvoiceNotificationJobs } from "@/jobs/invoice-notifications";
 import { registerMarketingEnquiryNotificationJobs } from "@/jobs/marketing-enquiry-notifications";
@@ -36,8 +37,9 @@ export async function registerJobs(): Promise<void> {
   await registerEnquiryDigestCron();
   await registerDocsPendingCron();
   await registerTaskOverdueCron();
+  await registerHrLeaveCron();
   await registerUserInvitationJobs();
   logger.info(
-    "pg-boss started, notification workers (incl. enquiry quotes) + compliance/invoice/enquiry-digest/docs-pending/task-overdue cron registered",
+    "pg-boss started, notification workers + compliance/invoice/enquiry-digest/docs-pending/task-overdue/HR-leave cron registered",
   );
 }

@@ -1,0 +1,1 @@
+ALTER TABLE "employee_status_history" ADD COLUMN "previous_join_date" date;

@@ -24,8 +24,8 @@ const PROTECTED_PREFIXES = [
   "/expenses",
   "/reports",
   "/settings",
+  "/hr",
 ];
-const AUTH_PATHS = ["/login"];
 
 function withSecurityHeaders(response: NextResponse): NextResponse {
   response.headers.set("X-Frame-Options", "DENY");
@@ -55,19 +55,12 @@ export function middleware(request: NextRequest): NextResponse {
   const isProtected = PROTECTED_PREFIXES.some(
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
   );
-  const isAuthPath = AUTH_PATHS.some((path) => pathname.startsWith(path));
   const sessionCookie = getSessionCookie(request);
 
   if (!sessionCookie && isProtected) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("redirect", pathname);
     return withSecurityHeaders(NextResponse.redirect(loginUrl));
-  }
-
-  // Signed-in staff hitting the login page land on the dashboard instead — the marketing
-  // homepage stays visible to everyone, signed in or not.
-  if (sessionCookie && isAuthPath) {
-    return withSecurityHeaders(NextResponse.redirect(new URL("/dashboard", request.url)));
   }
 
   return withSecurityHeaders(NextResponse.next());

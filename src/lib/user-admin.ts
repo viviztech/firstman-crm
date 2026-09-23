@@ -1,6 +1,9 @@
 import { randomBytes } from "node:crypto";
+import { eq } from "drizzle-orm";
 import { headers } from "next/headers";
 import { z } from "zod";
+import { db } from "@/db";
+import { staffProfiles } from "@/db/schema/staff";
 import { auth, type Role } from "@/lib/auth";
 
 /**
@@ -102,6 +105,15 @@ export async function setUserBanned(
 ): Promise<void> {
   if (userId === actingUserId) {
     throw new Error("You can't deactivate your own account.");
+  }
+  if (!banned) {
+    const profile = await db.query.staffProfiles.findFirst({
+      where: eq(staffProfiles.userId, userId),
+      columns: { employmentStatus: true },
+    });
+    if (profile?.employmentStatus === "exited") {
+      throw new Error("Use the HR rehire workflow to restore an exited employee's access.");
+    }
   }
   if (banned) {
     await auth.api.banUser({ body: { userId }, headers: await headers() });

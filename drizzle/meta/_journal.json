@@ -190,6 +190,90 @@
       "when": 1788960117726,
       "tag": "0026_left_rhodey",
       "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1789967408356,
+      "tag": "0027_numerous_wilson_fisk",
+      "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1789969457504,
+      "tag": "0028_amusing_nova",
+      "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1789970801596,
+      "tag": "0029_wonderful_nomad",
+      "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1789972928677,
+      "tag": "0030_low_chamber",
+      "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1789975258011,
+      "tag": "0031_blue_psynapse",
+      "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1789981415478,
+      "tag": "0032_left_doomsday",
+      "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1789986274202,
+      "tag": "0033_powerful_echo",
+      "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1790140605013,
+      "tag": "0034_steep_sphinx",
+      "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1790143515499,
+      "tag": "0035_odd_doctor_doom",
+      "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1790146713207,
+      "tag": "0036_loud_gwen_stacy",
+      "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1790149774757,
+      "tag": "0037_salty_satana",
+      "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1790155173235,
+      "tag": "0038_broad_kingpin",
+      "breakpoints": true
     }
   ]
 }

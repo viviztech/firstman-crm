@@ -7,7 +7,9 @@ export type SessionUser = NonNullable<Awaited<ReturnType<typeof auth.api.getSess
 };
 
 export async function getCurrentSession() {
-  return auth.api.getSession({ headers: await headers() });
+  // Employment exit revokes sessions immediately. Bypass the signed five-minute cookie cache
+  // so an old cookie cannot continue authorizing CRM requests after revocation.
+  return auth.api.getSession({ headers: await headers(), query: { disableCookieCache: true } });
 }
 
 /** Server-side defense in depth — middleware already redirects unauthenticated requests. */

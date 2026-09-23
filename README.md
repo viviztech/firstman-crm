@@ -109,6 +109,8 @@ See `.env.example` for the full list with placeholder values. Notable ones:
 
 - `DATABASE_URL` — Postgres connection string.
 - `BETTER_AUTH_SECRET` / `BETTER_AUTH_URL` — auth config; secret must be ≥32 chars.
+- `HR_DATA_ENCRYPTION_KEY` — optional dedicated key for existing HR records. When blank, private HR records use a key derived from `BETTER_AUTH_SECRET`; keep that secret stable and backed up or those records become unreadable.
+- `HR_DATA_PREVIOUS_AUTH_SECRET` — temporary old `BETTER_AUTH_SECRET` used only during HR ciphertext recovery/rotation; remove it after a successful rotation.
 - `WHATSAPP_TOKEN` / `WHATSAPP_PHONE_NUMBER_ID` / `WHATSAPP_BUSINESS_ID` — leave
   blank in dev to use a console/log driver (wired up in Phase 7).
 - `ENQUIRIES_API_TOKEN` — bearer token for the public `POST /api/v1/enquiries`

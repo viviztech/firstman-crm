@@ -9,6 +9,17 @@ const envSchema = z.object({
   BETTER_AUTH_URL: z.string().url(),
   ADMIN_DEFAULT_PASSWORD: z.string().min(8),
 
+  // Optional legacy/override key. New private HR records derive a separate key from
+  // BETTER_AUTH_SECRET when this is blank; v1 records still need their original key.
+  HR_DATA_ENCRYPTION_KEY: z
+    .string()
+    .default("")
+    .refine((value) => value === "" || /^[A-Za-z0-9+/]{43}=$/.test(value), {
+      message: "Provide a base64-encoded 32-byte HR encryption key",
+    }),
+  // Temporary during BETTER_AUTH_SECRET rotation. Remove after HR ciphertext rotation succeeds.
+  HR_DATA_PREVIOUS_AUTH_SECRET: z.string().min(32).default(""),
+
   SMTP_HOST: z.string().min(1),
   SMTP_PORT: z.coerce.number().int().positive(),
   SMTP_USER: z.string().default(""),

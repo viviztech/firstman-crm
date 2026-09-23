@@ -1,0 +1,451 @@
+{
+  "summary": {
+    "health_score": 56,
+    "business_type": "Professional / local service — Indian corporate compliance services firm (single Chennai office, Tamil Nadu-wide service area)",
+    "top_findings": [
+      "No canonical tags on any of the 101 pages — high duplicate-content risk across ~85 near-identical service pages",
+      "Every non-home page title is duplicated: \"... | FirstMan | FirstMan\" (metadata template bug, ~99 pages)",
+      "No phone number anywhere on the site — no tel: links, not in header/footer/contact, not in schema",
+      "Government-fee amounts are null/missing in both page copy and Offer schema — the exact fact cost-intent searchers want",
+      "Organization schema uses a bare address string and generic type instead of ProfessionalService + PostalAddress + contactPoint",
+      "Topically related pages barely link to each other — e.g. the ISO Certification pillar page links to none of its 8 variant pages",
+      "No E-E-A-T signals anywhere: no named/credentialed authors, no testimonials, no case studies"
+    ],
+    "quick_wins": [
+      "Fix the title-template double-suffix bug in the shared Next.js metadata layout — one fix covers ~99 pages",
+      "Add a self-referencing canonical tag in the same shared metadata generator — one fix covers all 101 URLs",
+      "Add a phone number (tel: link) to the header/footer and contactPoint to schema",
+      "Add government-fee breakdown to the price block + Offer schema on service pages",
+      "Add reciprocal internal links: ISO pillar → its 8 variants, compliance spokes → the pillar guide",
+      "Add a CTA button to the /pricing page hero (currently has none)"
+    ]
+  },
+  "categories": [
+    {
+      "name": "Technical SEO",
+      "score": 67,
+      "what_works": [
+        "Correct robots.txt (only internal CRM app paths disallowed, marketing site fully open)",
+        "Valid sitemap.xml, 1:1 parity with actual site structure (81/81 service pages, 3/3 compare, 10/10 resources), no orphans, no dead entries",
+        "Clean single-hop redirects, real 404s, consistent security headers (CSP, HSTS, X-Frame-Options, X-Content-Type-Options) including on error pages",
+        "Server-rendered HTML throughout, no SPA shell, no JS wall for crawlers",
+        "Single H1 per page, viewport meta present everywhere"
+      ],
+      "findings": [
+        {
+          "title": "No canonical tag on any page (site-wide)",
+          "severity": "Critical",
+          "description": "All 15 sampled pages across every template (homepage, service detail, resources, compare, pricing) render with no <link rel=\"canonical\">. With ~85 near-identical /services/<slug> pages sharing one template, there is no self-referencing canonical to anchor Google's indexing decisions.",
+          "recommendation": "Add a self-referencing canonical URL to the shared Next.js metadata generator used across (marketing) route group templates — one fix covers all 101 URLs."
+        },
+        {
+          "title": "Duplicated title tag suffix: \"... | FirstMan | FirstMan\"",
+          "severity": "High",
+          "description": "Verified on ~99 of 101 URLs (e.g. \"DSC Class III - Sign & Encryption — Fees, documents & process | FirstMan | FirstMan\", 86 chars). The page-level title already includes \"| FirstMan\" and the root layout's title template appends \"| FirstMan\" again.",
+          "recommendation": "Fix the metadata title template layering — either strip the per-page \"| FirstMan\" suffix or change the root layout's template to not re-append it. Single fix in the shared metadata layout."
+        },
+        {
+          "title": "No Open Graph / Twitter Card tags anywhere",
+          "severity": "Medium",
+          "description": "No og:title/og:image/twitter:card tags found on any sampled page — hurts link-preview quality on WhatsApp and LinkedIn, both important channels for an India-based B2B services referral business.",
+          "recommendation": "Add OG/Twitter tags to the shared layout metadata, reusing the existing /brand/firstman-logo.png as the default og:image."
+        },
+        {
+          "title": "No BreadcrumbList schema despite deep hierarchy",
+          "severity": "Medium",
+          "description": "~90 pages sit under /services/, /resources/, /compare/ with no BreadcrumbList JSON-LD, losing a low-effort SERP enhancement and a clear hierarchy signal.",
+          "recommendation": "Add one BreadcrumbList component reused across the three route groups, deriving labels from existing route params/catalog data."
+        },
+        {
+          "title": "Minor: /services hub only links 81 of 85 detail pages; other low-severity items",
+          "severity": "Low",
+          "description": "4 service pages are reachable only via sitemap/direct URL, not the hub page (orphan risk). Also: a 2-hop redirect on the http://www variant, X-Powered-By: Next.js disclosed on every response, no Permissions-Policy header.",
+          "recommendation": "Audit the /services hub's catalog query for the 4 missing entries; collapse the www redirect to one hop; strip X-Powered-By; add a Permissions-Policy header alongside the existing CSP/HSTS."
+        }
+      ]
+    },
+    {
+      "name": "Content Quality",
+      "score": 46,
+      "what_works": [
+        "/compare/<slug> pages lead with a genuine synthesized recommendation, not a bare comparison table",
+        "Resource articles carry real, visible publish/update dates",
+        "Service pages carry specific, citable cost/turnaround facts in their FAQ blocks"
+      ],
+      "findings": [
+        {
+          "title": "Verbatim boilerplate reuse across unrelated services",
+          "severity": "High",
+          "description": "/services/dsc-class-iii-individual and /services/iso-27001-2013-certification open with identical sentences except for the service name; FSSAI, IEC, and trademark pages share an identical \"What you receive\" bullet block. Strong evidence the ~85 service pages are minimally differentiated beyond string substitution on one shared template.",
+          "recommendation": "Add a data-driven unique-content block (150-200 words) per service page, generated from the existing checklistTemplate/requiredDocuments catalog fields already stored per service — turns near-duplicate pages into genuinely differentiated ones without manual per-page writing."
+        },
+        {
+          "title": "No E-E-A-T signals on any sampled page",
+          "severity": "High",
+          "description": "No named author with credentials, no testimonials, no case studies anywhere. Resource articles only carry a generic \"FirstMan Team\" byline. This matters more than average for a compliance/legal-adjacent business where trust directly drives conversion.",
+          "recommendation": "Add named practitioner bylines with credentials (CA/CS) to resource articles and flagship service pages; add client testimonials/case studies to the homepage and top-converting service pages."
+        },
+        {
+          "title": "No freshness signal on service pages",
+          "severity": "Medium",
+          "description": "Service pages all resolve to an identical 2026-01-01 date (a deploy-time artifact, not real content freshness), with no visible \"last reviewed\" date — unlike resource articles, which do show real dates.",
+          "recommendation": "Surface a real \"Last reviewed: [date]\" on service pages tied to an actual review cadence, sourced from a genuine content-update timestamp rather than deploy time."
+        }
+      ]
+    },
+    {
+      "name": "On-Page SEO",
+      "score": 33,
+      "what_works": [
+        "Consistent template structure and heading hierarchy across each page family",
+        "Existing internal navigation (header, footer, breadcrumb-style category links) does connect every page at a basic level"
+      ],
+      "findings": [
+        {
+          "title": "Internal linking between topically related pages is largely absent",
+          "severity": "High",
+          "description": "Content-cluster analysis of 5 major topic groups (Company Formation, Annual Compliance, GST, ISO Certification, Tax Filing) found the ISO Certification pillar page (/services/iso-certification) links to NONE of its 8 certification variant pages, and none of the variants link to each other or back to the pillar — the single worst gap on the site. Annual Compliance is one-directional only (the pillar guide links down to 3 service pages, but none of them link back). GST and Tax Filing clusters have zero interlinking and no pillar page at all.",
+          "recommendation": "Add an \"ISO standards\" grid on /services/iso-certification linking all 8 variants (highest-leverage single fix on the site). Clone the reciprocal-linking module already built on /resources/annual-compliance-guide onto its service-page spokes. Build simple pillar sections for the GST and Tax Filing clusters."
+        },
+        {
+          "title": "Title tag and canonical issues are fundamentally on-page defects",
+          "severity": "High",
+          "description": "The duplicated-title-suffix bug and site-wide missing canonicals (detailed under Technical SEO) are on-page metadata defects that directly determine what appears in search results and how duplicate near-identical pages get consolidated.",
+          "recommendation": "See Technical SEO fixes — same shared metadata layout, same two fixes, cross-referenced here because they are the most consequential on-page issues found."
+        },
+        {
+          "title": "Compare pages never cross-link each other despite overlapping entities",
+          "severity": "Medium",
+          "description": "The 3 /compare/<slug> pages (private-limited-vs-llp, llp-vs-opc, proprietorship-vs-private-limited) never link to each other even though LLP appears in 2 of 3, and none link to /resources/how-to-choose-a-business-structure, the natural pillar for this cluster.",
+          "recommendation": "Add a small \"Related comparisons\" module cross-linking the 3 compare pages and the business-structure resource guide."
+        }
+      ]
+    },
+    {
+      "name": "Schema / Structured Data",
+      "score": 55,
+      "what_works": [
+        "Service + Offer schema with live INR pricing already implemented on all ~85 service pages, generated server-side from the catalog DB",
+        "Article schema with real dates on the 10 resource guides",
+        "FAQPage schema present on service and compare pages",
+        "All JSON-LD blocks are syntactically valid"
+      ],
+      "findings": [
+        {
+          "title": "Organization address is a bare string, not a PostalAddress object (sitewide)",
+          "severity": "Critical",
+          "description": "The one shared Organization JSON-LD block (injected in the marketing layout, present on all ~101 pages) emits \"address\": \"W-426A, Second Floor, ...\" as a plain string instead of a structured PostalAddress object — this alone disqualifies the site from any Local Business rich-result eligibility. Because it's emitted from one shared component, the fix propagates everywhere at once.",
+          "recommendation": "Change address to a proper schema.org PostalAddress object (streetAddress, addressLocality, addressRegion, postalCode, addressCountry) in the shared JSON-LD-emitting component."
+        },
+        {
+          "title": "Organization schema type should be ProfessionalService, not generic Organization",
+          "severity": "High",
+          "description": "Given the real single-location Chennai office and the professional-services nature of the business, @type should be ProfessionalService (or a more specific subtype) rather than generic Organization.",
+          "recommendation": "Change @type to ProfessionalService in the same shared component; add geo coordinates and openingHoursSpecification if available."
+        },
+        {
+          "title": "No contactPoint / telephone in schema",
+          "severity": "High",
+          "description": "No contactPoint block exists in the Organization schema, and /contact itself has no visible tel:/mailto: link in the rendered HTML (cross-confirmed by the Local SEO audit).",
+          "recommendation": "Add a contactPoint with telephone once a phone number is added to the site (see Local SEO finding) — same shared component fix."
+        },
+        {
+          "title": "No BreadcrumbList schema anywhere",
+          "severity": "High",
+          "description": "Despite the deep /services/, /resources/, /compare/ hierarchy, no page emits BreadcrumbList JSON-LD.",
+          "recommendation": "Add one reusable BreadcrumbList component across the three route groups (see Technical SEO — same fix, cross-referenced)."
+        },
+        {
+          "title": "Article schema missing image and publisher",
+          "severity": "Medium",
+          "description": "The 10 resource-guide Article blocks omit `image` (a property Google lists as required for Article rich-result eligibility) and `publisher`.",
+          "recommendation": "Add image and publisher (referencing the Organization block) to the existing Article generator used for /resources/<slug> pages; reuse the same generator for /compare/<slug> pages, which currently carry only FAQPage schema with no Article/WebPage description of the comparison itself."
+        },
+        {
+          "title": "No page-specific schema on /pricing, /about, /services hub",
+          "severity": "Low",
+          "description": "These pages currently rely solely on the sitewide Organization block with no page-specific structured data.",
+          "recommendation": "Low priority — add WebPage/ItemList schema opportunistically if revisiting these templates for other reasons."
+        }
+      ]
+    },
+    {
+      "name": "Performance (CWV)",
+      "score": 78,
+      "what_works": [
+        "Full static/ISR caching confirmed (Cache-Control: s-maxage=31536000, X-Nextjs-Cache: HIT)",
+        "Fonts self-hosted via next/font with font-display: swap",
+        "Images used via next/image with explicit dimensions — zero CLS risk from images",
+        "All JS chunks load async/non-blocking; recently-added GA/GTM correctly uses strategy=\"afterInteractive\" rather than blocking hydration"
+      ],
+      "findings": [
+        {
+          "title": "114KB render-blocking global CSS bundle, not split per route",
+          "severity": "Medium",
+          "description": "The same global Tailwind CSS bundle (114.6KB) loads on every page regardless of what that page actually uses — unusually large for a JIT-purged Tailwind 4 build, and directly gates LCP since it's render-blocking.",
+          "recommendation": "Audit the Tailwind content globs and any dynamically-constructed class names (which defeat purging) to shrink the shared CSS bundle."
+        },
+        {
+          "title": "177KB oversized shared JS chunk loaded on every route",
+          "severity": "Medium",
+          "description": "One shared JS chunk (177KB) is the largest of ~15-20 chunks by far and loads even on lightweight pages like /pricing that don't need most of it.",
+          "recommendation": "Route-split this chunk so static/simple pages don't pay its full cost."
+        },
+        {
+          "title": "CWV estimates sit close to the pass/fail edge on mobile (lab-only data, no CrUX access)",
+          "severity": "Info",
+          "description": "Homepage ~1.9-2.3s LCP / ~120-220ms INP proxy / ~0.01-0.03 CLS; service and pricing pages estimated similarly, all passing but close enough to the ceiling that real mid-tier-Android/4G field data could tip them into \"needs improvement.\" This can't be confirmed without CrUX/PSI API access, which isn't configured in this environment.",
+          "recommendation": "Connect Google PageSpeed Insights / CrUX API credentials to replace these lab estimates with real field data (see Phase 4)."
+        }
+      ]
+    },
+    {
+      "name": "AI Search Readiness",
+      "score": 68,
+      "what_works": [
+        "robots.txt fully open to AI crawlers (GPTBot, ClaudeBot, PerplexityBot etc.), no AI-specific blocks",
+        "/llms.txt present and well-formed",
+        "All pages server-rendered, no JS wall blocking AI crawlers",
+        "Resource articles consistently open with a self-contained direct-answer sentence in the first ~40 words",
+        "/compare/* pages combine literal comparison tables with question-form FAQs — the best-optimized content type on the site for AI extraction",
+        "Visible and machine-detected publication/update dates on resource articles"
+      ],
+      "findings": [
+        {
+          "title": "Resource guides and compare pages likely under-use FAQPage/Article schema for AI extraction",
+          "severity": "High",
+          "description": "The GEO-focused audit pass found genuine, well-formed Q&A content on resource guides and compare pages (question-form headers, single-paragraph answers) but reported it couldn't confirm matching JSON-LD there. Note: this appears to partially conflict with the Schema audit's finding that FAQPage schema IS present on service/compare page templates — the discrepancy likely reflects the resource-guide template specifically lacking FAQPage/Article-with-full-properties rather than a sitewide absence. Treat as: resource guides (/resources/<slug>) are the template most likely to be under-schema'd; verify directly before treating either finding as final.",
+          "recommendation": "Add FAQPage JSON-LD to the 10 /resources/<slug> guides from their existing visible Q&A content, and complete their Article schema (image, publisher — see Schema section) — regardless of which audit pass is more precise, this is a low-effort, high-impact fix."
+        },
+        {
+          "title": "Generic team byline, no named/credentialed author",
+          "severity": "Medium",
+          "description": "Every resource article credits \"By FirstMan Corporate Services Team\" rather than a named individual with CA/CS credentials — weakens the authority signal AI systems weigh when selecting sources on compliance/legal topics.",
+          "recommendation": "Same fix as the Content Quality E-E-A-T finding — add named, credentialed bylines."
+        },
+        {
+          "title": "Organization schema too thin for strong brand/entity grounding",
+          "severity": "Medium",
+          "description": "Same underlying issue as the Schema section — bare address string, generic Organization type, no contactPoint reduces how confidently AI systems can ground \"FirstMan Corporate Services\" as a verified real-world entity.",
+          "recommendation": "Same fix as Schema section — ProfessionalService + PostalAddress + contactPoint."
+        },
+        {
+          "title": "llms.txt appears to list only /services/* pages, not resources/compare",
+          "severity": "Info",
+          "description": "The reviewed portion of /llms.txt did not include the resource guides or compare pages, which are actually the site's strongest citable content per this audit.",
+          "recommendation": "Low priority per current AI-engine behavior (llms.txt has limited confirmed uptake) — expand opportunistically, don't over-invest."
+        }
+      ]
+    },
+    {
+      "name": "Images",
+      "score": 88,
+      "what_works": [
+        "The marketing site is deliberately icon-driven (lucide-react SVG icons) rather than photo-heavy, so there is very little raster-image surface area to get wrong",
+        "The one raster image found (the logo, src/components/marketing/logo.tsx) uses next/image correctly: descriptive alt text, explicit width/height, and priority loading",
+        "No <img> tags anywhere on the marketing site outside next/image, and no missing-alt risk found in the codebase"
+      ],
+      "findings": [
+        {
+          "title": "Missed opportunity for trust-building photography",
+          "severity": "Low",
+          "description": "The near-total absence of real photography (office, team, client-facing imagery) is technically clean but ties into the E-E-A-T/trust gap flagged under Content Quality and Local SEO — a compliance-services firm often benefits from showing a real office and real people.",
+          "recommendation": "Consider adding a small set of real photos (office exterior/interior, team) alongside the E-E-A-T improvements in Phase 3 — content strategy, not a technical image-SEO fix."
+        }
+      ]
+    }
+  ],
+  "supplementary_categories": [
+    {
+      "name": "Local SEO",
+      "score": 42,
+      "note": "Not part of the 7 officially-weighted categories, but material for this business type (single physical location, geographically bounded service area). Weighted informally into the On-Page/Schema commentary above where findings overlap.",
+      "what_works": [
+        "Address is 100% consistent across JSON-LD, footer, and /contact body text on every page checked",
+        "GSTIN + LLPIN displayed sitewide and match schema — a strong, vertical-appropriate trust signal for a compliance-services firm"
+      ],
+      "findings": [
+        {
+          "title": "No phone number anywhere on the site",
+          "severity": "Critical",
+          "description": "Zero tel: links and zero phone number patterns found across the full rendered HTML of /, /about, /contact. The only \"phone\"-labeled field is the visitor's own number in the enquiry form. No telephone/contactPoint in schema either.",
+          "recommendation": "Add a real phone number to the header/footer and /contact page as a tel: link, plus contactPoint.telephone in the Organization schema."
+        },
+        {
+          "title": "No Chennai/Tamil Nadu-specific landing content",
+          "severity": "High",
+          "description": "All ~85 service pages use identical generic titles (\"<Service> — Fees, documents & process\"); \"Tamil Nadu\"/\"Chennai\" appear only in the shared footer/JSON-LD, never in page-specific H1s or titles, despite areaServed: \"Tamil Nadu\" in schema.",
+          "recommendation": "Add Chennai/Tamil Nadu qualifiers to titles/H1s of the top-converting service pages (company registration, GST, compliance) — dedicated local-intent pages are a top local-organic ranking factor."
+        },
+        {
+          "title": "No Maps embed or directions link on /contact",
+          "severity": "Medium",
+          "description": "The only iframe found on /contact is Google Tag Manager's noscript tag — no embedded map or \"Get Directions\" link.",
+          "recommendation": "Embed a Google Maps iframe and add a directions link on /contact."
+        },
+        {
+          "title": "No testimonials or review schema",
+          "severity": "Medium",
+          "description": "No client testimonials or Review/AggregateRating schema found anywhere on the site.",
+          "recommendation": "Same fix as the Content Quality E-E-A-T recommendation — add testimonials, consider review schema once genuine reviews exist."
+        },
+        {
+          "title": "GBP listing status and citation presence unverifiable from the site alone",
+          "severity": "Info",
+          "description": "Google Business Profile status/category/reviews, Tier-1 citation presence (JustDial/Sulekha/etc.), and proximity-based local-pack ranking require Maps/GBP or search-API access not available in this environment — explicitly flagged as unverified, not assumed absent.",
+          "recommendation": "Business owner should independently confirm/claim/optimize the GBP listing; revisit with Maps API access if it becomes available."
+        }
+      ]
+    },
+    {
+      "name": "Search Experience (SXO)",
+      "score": 48,
+      "note": "Page-type-mismatch and persona-scoring analysis against 4 representative target queries.",
+      "findings": [
+        {
+          "title": "Government-fee transparency missing site-wide",
+          "severity": "Critical",
+          "description": "govtFeePaise is null in Offer schema on all 3 sampled service pages, and the same gap shows in page copy — this is literally the fact that cost-intent queries (\"trademark registration India cost\") are searching for. Competing SERP results for this query show explicit fee breakdowns (e.g. ₹4,500 individual/MSME vs ₹9,000 company).",
+          "recommendation": "Add a government-fee line item (varying by applicant type where applicable) to the price block and Offer schema on every service page — the single highest-leverage fix identified across the entire audit for conversion + informational-query matching."
+        },
+        {
+          "title": "One generic template serves both transactional and informational search intent",
+          "severity": "High",
+          "description": "The same ~380-word service-page template with an identical 4-question FAQ (included? / cost? / how long? / track progress?) is used regardless of whether the target query is transactional (\"register a company\") or informational (\"GST registration process\") — competing content for informational queries runs 1,500-3,000 words with step-by-step guidance.",
+          "recommendation": "Add 2-3 query-specific FAQ entries per service (eligibility, minimum capital, individual-vs-company fee) on top of the existing generic 4, and route deeper informational intent to the /resources hub rather than trying to serve it entirely from the thin service-page template."
+        },
+        {
+          "title": "Compliance-checklist content fragmented across 3 separate pages",
+          "severity": "Medium",
+          "description": "The \"annual compliance checklist\" resource page omits due dates and penalties, forcing 2 extra clicks to /resources/annual-compliance-calendar and /resources/penalties-for-missing-compliance-deadlines — while competing long-form articles cover due dates + penalties in one piece.",
+          "recommendation": "Consolidate due-date and penalty data directly into the compliance-checklist article, or clearly cross-link all 3 pieces to each other."
+        }
+      ]
+    },
+    {
+      "name": "Visual / UX",
+      "score": 80,
+      "note": "Screenshots captured live via Playwright (desktop + mobile) for homepage, a service detail page, and /pricing.",
+      "what_works": [
+        "Strong homepage above-the-fold clarity on both viewports — value prop, primary/secondary CTA, and trust badges all visible with no scroll",
+        "Genuine price transparency (real ₹ figures, not \"contact us\")",
+        "Footer displays GSTIN/LLPIN/registered address on every page — a strong compliance-firm trust signal",
+        "Pricing table degrades gracefully to stacked cards on mobile with no horizontal overflow",
+        "No layout bugs or overlaps found anywhere sampled"
+      ],
+      "findings": [
+        {
+          "title": "Pricing page hero has no CTA button",
+          "severity": "High",
+          "description": "The /pricing hero shows only a headline/subhead with no CTA — the only conversion path on this very long (80+ service row) page is scrolling all the way down or using the sticky header button.",
+          "recommendation": "Add a CTA button directly in the pricing page hero."
+        },
+        {
+          "title": "Mobile header hides the primary CTA and login behind a hamburger menu",
+          "severity": "Medium",
+          "description": "The desktop \"Talk to an expert\" CTA and \"Client login\" link disappear entirely on mobile, leaving only a hamburger icon — the primary conversion action is one extra tap away on every page.",
+          "recommendation": "Add a persistent visible contact action (call icon or sticky bar) to the mobile header instead of hiding it in the hamburger menu."
+        },
+        {
+          "title": "Service-detail CTA sits just below the mobile fold",
+          "severity": "Low",
+          "description": "Headline, description, and price are visible without scrolling on mobile, but the enquiry form/CTA itself needs one scroll.",
+          "recommendation": "Consider tightening the mobile hero to bring the CTA into the initial viewport, or add a sticky mobile CTA bar."
+        }
+      ]
+    },
+    {
+      "name": "Sitemap",
+      "score": 78,
+      "note": "Folded into the Technical SEO narrative above; scored separately here for detail.",
+      "findings": [
+        {
+          "title": "Two live pages missing from the sitemap",
+          "severity": "Medium",
+          "description": "/legal/privacy and /legal/terms both return 200 and are linked from the homepage footer, but neither appears in sitemap.xml, and neither is disallowed in robots.txt.",
+          "recommendation": "Add both to the sitemap generator's route enumeration."
+        },
+        {
+          "title": "All 101 lastmod values are identical",
+          "severity": "Medium",
+          "description": "Every URL shares the exact same lastmod timestamp — clearly a build/render-time stamp rather than a real content-change date, providing zero recrawl-priority signal.",
+          "recommendation": "Drive lastmod from a real content-updated timestamp per page, touched only when content actually changes, or omit the field entirely."
+        }
+      ]
+    },
+    {
+      "name": "Backlinks",
+      "score": null,
+      "note": "Data-insufficient placeholder, not a real health score — domain is not yet present in Common Crawl (the only backlink data source available in this environment; no Moz/Bing/DataForSEO API keys configured). Expected for a newly launched marketing site, not a tool failure or a confirmed \"zero backlinks\" finding.",
+      "findings": [
+        {
+          "title": "No backlink data source has any record of the domain",
+          "severity": "High",
+          "description": "Common Crawl reports in_crawl: false / in_rankings: false for firstmancorp.com. This is a coverage gap (CC is a sampled, quarterly-refreshed graph that under-represents small/new/regional sites), not evidence the profile is empty.",
+          "recommendation": "Connect Google Search Console (free, direct-from-Google Links report) and add a free Moz API key to close the data gap; re-check Common Crawl in ~3 months at its next quarterly refresh."
+        },
+        {
+          "title": "Realistic regional link-building opportunities",
+          "severity": "Info",
+          "description": "Consistent with a brand-new regional professional-services site with no digital-PR history — framed as an opportunity, not a defect.",
+          "recommendation": "Pursue Justdial/Sulekha/IndiaMART/Google Business Profile listings, Madras/Tamil Nadu Chamber of Commerce membership listings, guest articles on Indian business/finance outlets (Inc42, YourStory) on GST/MSME/trademark topics, and referral links from partner CA/CS/legal firms."
+        }
+      ]
+    }
+  ],
+  "action_plan": {
+    "phases": [
+      {
+        "name": "Phase 1: Critical Fixes",
+        "timeframe": "Week 1",
+        "items": [
+          "Fix the duplicated title-tag suffix bug (\"| FirstMan | FirstMan\") in the shared Next.js metadata layout — covers ~99 pages in one fix",
+          "Add self-referencing canonical tags in the same shared metadata generator — covers all 101 URLs",
+          "Add a real phone number as a tel: link to the header/footer and /contact page, plus contactPoint.telephone in schema",
+          "Add government-fee amounts to the price block and Offer schema on every service page"
+        ]
+      },
+      {
+        "name": "Phase 2: High-Impact Improvements",
+        "timeframe": "Weeks 2-3",
+        "items": [
+          "Upgrade the shared Organization JSON-LD to ProfessionalService with a structured PostalAddress object and contactPoint",
+          "Add a reusable BreadcrumbList component across the /services, /resources, /compare route groups",
+          "Add OG/Twitter Card tags to the shared layout metadata, reusing the existing brand logo",
+          "Fix the worst internal-linking gaps: link /services/iso-certification to all 8 of its variant pages; add reciprocal links from Annual Compliance service pages back to their pillar guide; cross-link the 3 /compare pages",
+          "Add a data-driven unique-content block per service page sourced from existing checklistTemplate/requiredDocuments catalog fields",
+          "Add a CTA button to the /pricing hero; surface a persistent mobile CTA instead of hiding it behind the hamburger menu"
+        ]
+      },
+      {
+        "name": "Phase 3: Content & Authority",
+        "timeframe": "Month 2",
+        "items": [
+          "Add named, credentialed (CA/CS) bylines to resource articles and flagship service pages",
+          "Add client testimonials/case studies to the homepage and top-converting service pages; consider Review schema once genuine reviews exist",
+          "Add Chennai/Tamil Nadu-specific qualifiers to titles/H1s of top-converting service pages",
+          "Embed a Google Maps iframe and directions link on /contact",
+          "Consolidate the compliance-checklist content currently fragmented across 3 pages",
+          "Add FAQPage + complete Article schema (image, publisher) to the 10 /resources/<slug> guides",
+          "Add the 2 missing legal pages to the sitemap; fix the uniform lastmod timestamp",
+          "Reduce the shared CSS (114KB) and JS chunk (177KB) sizes for lighter page weight sitewide"
+        ]
+      },
+      {
+        "name": "Phase 4: Monitoring & Iteration",
+        "timeframe": "Ongoing",
+        "items": [
+          "Connect Google Search Console + PageSpeed Insights/CrUX API credentials to replace lab-only performance estimates with real field data",
+          "Add a free Moz API key; monitor for Common Crawl re-inclusion at its next quarterly refresh",
+          "Pursue realistic regional link-building: GBP listing, JustDial/Sulekha/IndiaMART, Chamber of Commerce, guest posts on Indian business/finance outlets, partner CA/CS referral links",
+          "Capture an SEO drift baseline now so future changes can be compared against this audit",
+          "Re-audit after Phase 1-2 ships to confirm the canonical/title/schema fixes landed correctly and measure score improvement"
+        ]
+      }
+    ]
+  },
+  "artifacts": {
+    "findings_dir": "findings/",
+    "screenshots_dir": "screenshots/"
+  }
+}

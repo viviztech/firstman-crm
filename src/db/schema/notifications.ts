@@ -9,6 +9,11 @@ export const notificationTypeEnum = pgEnum("notification_type", [
   "invoice_overdue_digest",
   "task_overdue",
   "quote_responded",
+  "leave_submitted",
+  "leave_decided",
+  "leave_cancelled",
+  "leave_upcoming",
+  "payslip_published",
 ]);
 
 /**

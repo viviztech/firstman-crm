@@ -4,6 +4,7 @@ import {
   BookText,
   CalendarClock,
   FileText,
+  HeartHandshake,
   LayoutDashboard,
   Receipt,
   Settings,
@@ -14,12 +15,13 @@ import {
 import type { Role } from "@/lib/auth";
 import type { StaffTeam } from "@/lib/scope";
 
-export type NavGroup = "Main" | "Operations" | "Finance" | "Admin";
+export type NavGroup = "Main" | "Operations" | "Finance" | "HR" | "Admin";
 
 export const NAV_GROUP_LABEL: Record<NavGroup, string> = {
   Main: "Main Menu",
   Operations: "Operations",
   Finance: "Finance",
+  HR: "Human Resources",
   Admin: "Admin",
 };
 
@@ -100,6 +102,13 @@ export const NAV_ITEMS: NavItem[] = [
     group: "Finance",
   },
   {
+    title: "Human Resources",
+    href: "/hr",
+    icon: HeartHandshake,
+    roles: ["super_admin", "manager", "executive", "accountant"],
+    group: "HR",
+  },
+  {
     title: "Settings",
     href: "/settings",
     icon: Settings,
@@ -109,4 +118,4 @@ export const NAV_ITEMS: NavItem[] = [
 ];
 
 /** Render order for grouped nav sections — groups with no visible items are skipped. */
-export const NAV_GROUP_ORDER: NavGroup[] = ["Main", "Operations", "Finance", "Admin"];
+export const NAV_GROUP_ORDER: NavGroup[] = ["Main", "Operations", "Finance", "HR", "Admin"];

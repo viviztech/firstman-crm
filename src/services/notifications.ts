@@ -43,6 +43,25 @@ export async function hasUnreadNotificationFor(params: {
   return !!existing;
 }
 
+export async function hasNotificationFor(params: {
+  userId: string;
+  type: (typeof notificationTypeEnum.enumValues)[number];
+  entityType: string;
+  entityId: string;
+}): Promise<boolean> {
+  const existing = await db.query.notifications.findFirst({
+    where: and(
+      eq(notifications.userId, params.userId),
+      eq(notifications.type, params.type),
+      eq(notifications.entityType, params.entityType),
+      eq(notifications.entityId, params.entityId),
+      isNull(notifications.deletedAt),
+    ),
+    columns: { id: true },
+  });
+  return Boolean(existing);
+}
+
 export async function listNotificationsForUser(userId: string, limit = 20) {
   return db.query.notifications.findMany({
     where: and(eq(notifications.userId, userId), isNull(notifications.deletedAt)),
