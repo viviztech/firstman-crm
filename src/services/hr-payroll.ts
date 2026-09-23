@@ -10,15 +10,17 @@ import {
   payrollAdjustments,
   payrollEntries,
   payrollEntryLines,
+  payrollOpeningBalances,
   payrollPeriods,
   salaryComponents,
   salaryStructureLines,
   salaryStructures,
 } from "@/db/schema/payroll";
 import { staffProfiles } from "@/db/schema/staff";
+import { recordActivity } from "@/services/activity-log";
 import { assertHrCapability, type HrActor } from "@/services/hr";
 import { lockAttendancePeriod, materializeAttendanceMonth } from "@/services/hr-attendance";
-import { calculatePayroll } from "@/services/hr-payroll-calculator";
+import { calculatePayroll, summarizePayrollYtd } from "@/services/hr-payroll-calculator";
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 export const salaryComponentInputSchema = z.object({
@@ -68,6 +70,12 @@ export const payrollAdjustmentInputSchema = z.object({
   componentId: z.string().uuid(),
   amountPaise: z.coerce.number().int(),
   reason: z.string().trim().min(3).max(500),
+});
+export const payrollOpeningBalanceInputSchema = z.object({
+  year: z.coerce.number().int().min(2000).max(2100),
+  employeeUserId: z.string().min(1),
+  componentId: z.string().uuid(),
+  amountPaise: z.coerce.number().int().min(0),
 });
 export const payrollPeriodInputSchema = z.object({ month: z.string().regex(/^\d{4}-\d{2}$/) });
 
@@ -204,6 +212,50 @@ export async function addPayrollAdjustment(
     .values({ ...input, createdBy: actor.id, updatedBy: actor.id })
     .returning();
   return row;
+}
+
+export async function savePayrollOpeningBalance(
+  input: z.infer<typeof payrollOpeningBalanceInputSchema>,
+  actor: HrActor,
+) {
+  await assertHrCapability(actor, "payroll_admin");
+  const finalized = await db.query.payrollPeriods.findFirst({
+    where: and(
+      gte(payrollPeriods.periodMonth, `${input.year}-01-01`),
+      lte(payrollPeriods.periodMonth, `${input.year}-12-31`),
+      inArray(payrollPeriods.status, ["posted", "paid"]),
+      isNull(payrollPeriods.deletedAt),
+    ),
+    columns: { id: true },
+  });
+  if (finalized)
+    throw new Error("Opening balances are locked after payroll is posted for the year.");
+  return db.transaction(async (tx) => {
+    const [saved] = await tx
+      .insert(payrollOpeningBalances)
+      .values({ ...input, createdBy: actor.id, updatedBy: actor.id })
+      .onConflictDoUpdate({
+        target: [
+          payrollOpeningBalances.employeeUserId,
+          payrollOpeningBalances.componentId,
+          payrollOpeningBalances.year,
+        ],
+        set: { amountPaise: input.amountPaise, deletedAt: null, updatedBy: actor.id },
+      })
+      .returning();
+    if (!saved) throw new Error("Failed to save opening balance.");
+    await recordActivity(
+      {
+        actorId: actor.id,
+        entityType: "payroll_opening_balance",
+        entityId: saved.id,
+        action: "payroll_opening_balance_saved",
+        diff: { year: input.year, employeeUserId: input.employeeUserId },
+      },
+      tx,
+    );
+    return saved;
+  });
 }
 
 function paidUnits(status: string, isPaidLeave: boolean | undefined) {
@@ -516,51 +568,66 @@ export async function getPayrollPeriod(periodId: string, actor: HrActor) {
 }
 export async function listPayrollSettings(actor: HrActor) {
   await assertHrCapability(actor, "payroll_admin");
-  const [components, structures, lines, assignments, employees] = await Promise.all([
-    db
-      .select()
-      .from(salaryComponents)
-      .where(isNull(salaryComponents.deletedAt))
-      .orderBy(salaryComponents.displayOrder),
-    db
-      .select()
-      .from(salaryStructures)
-      .where(isNull(salaryStructures.deletedAt))
-      .orderBy(salaryStructures.name),
-    db
-      .select({
-        id: salaryStructureLines.id,
-        structureName: salaryStructures.name,
-        componentName: salaryComponents.name,
-        calculationMode: salaryComponents.calculationMode,
-        amountPaise: salaryStructureLines.amountPaise,
-        rateBasisPoints: salaryStructureLines.rateBasisPoints,
-      })
-      .from(salaryStructureLines)
-      .innerJoin(salaryStructures, eq(salaryStructureLines.structureId, salaryStructures.id))
-      .innerJoin(salaryComponents, eq(salaryStructureLines.componentId, salaryComponents.id))
-      .where(isNull(salaryStructureLines.deletedAt)),
-    db
-      .select({
-        id: employeeSalaryAssignments.id,
-        employeeName: user.name,
-        structureName: salaryStructures.name,
-        effectiveFrom: employeeSalaryAssignments.effectiveFrom,
-        effectiveTo: employeeSalaryAssignments.effectiveTo,
-      })
-      .from(employeeSalaryAssignments)
-      .innerJoin(user, eq(employeeSalaryAssignments.employeeUserId, user.id))
-      .innerJoin(salaryStructures, eq(employeeSalaryAssignments.structureId, salaryStructures.id))
-      .where(isNull(employeeSalaryAssignments.deletedAt))
-      .orderBy(user.name),
-    db
-      .select({ id: user.id, name: user.name })
-      .from(user)
-      .innerJoin(staffProfiles, eq(user.id, staffProfiles.userId))
-      .where(eq(staffProfiles.payrollEligible, true))
-      .orderBy(user.name),
-  ]);
-  return { components, structures, lines, assignments, employees };
+  const [components, structures, lines, assignments, employees, openingBalances] =
+    await Promise.all([
+      db
+        .select()
+        .from(salaryComponents)
+        .where(isNull(salaryComponents.deletedAt))
+        .orderBy(salaryComponents.displayOrder),
+      db
+        .select()
+        .from(salaryStructures)
+        .where(isNull(salaryStructures.deletedAt))
+        .orderBy(salaryStructures.name),
+      db
+        .select({
+          id: salaryStructureLines.id,
+          structureName: salaryStructures.name,
+          componentName: salaryComponents.name,
+          calculationMode: salaryComponents.calculationMode,
+          amountPaise: salaryStructureLines.amountPaise,
+          rateBasisPoints: salaryStructureLines.rateBasisPoints,
+        })
+        .from(salaryStructureLines)
+        .innerJoin(salaryStructures, eq(salaryStructureLines.structureId, salaryStructures.id))
+        .innerJoin(salaryComponents, eq(salaryStructureLines.componentId, salaryComponents.id))
+        .where(isNull(salaryStructureLines.deletedAt)),
+      db
+        .select({
+          id: employeeSalaryAssignments.id,
+          employeeName: user.name,
+          structureName: salaryStructures.name,
+          effectiveFrom: employeeSalaryAssignments.effectiveFrom,
+          effectiveTo: employeeSalaryAssignments.effectiveTo,
+        })
+        .from(employeeSalaryAssignments)
+        .innerJoin(user, eq(employeeSalaryAssignments.employeeUserId, user.id))
+        .innerJoin(salaryStructures, eq(employeeSalaryAssignments.structureId, salaryStructures.id))
+        .where(isNull(employeeSalaryAssignments.deletedAt))
+        .orderBy(user.name),
+      db
+        .select({ id: user.id, name: user.name })
+        .from(user)
+        .innerJoin(staffProfiles, eq(user.id, staffProfiles.userId))
+        .where(eq(staffProfiles.payrollEligible, true))
+        .orderBy(user.name),
+      db
+        .select({
+          id: payrollOpeningBalances.id,
+          year: payrollOpeningBalances.year,
+          employeeName: user.name,
+          componentName: salaryComponents.name,
+          componentType: salaryComponents.type,
+          amountPaise: payrollOpeningBalances.amountPaise,
+        })
+        .from(payrollOpeningBalances)
+        .innerJoin(user, eq(payrollOpeningBalances.employeeUserId, user.id))
+        .innerJoin(salaryComponents, eq(payrollOpeningBalances.componentId, salaryComponents.id))
+        .where(isNull(payrollOpeningBalances.deletedAt))
+        .orderBy(desc(payrollOpeningBalances.year), user.name, salaryComponents.displayOrder),
+    ]);
+  return { components, structures, lines, assignments, employees, openingBalances };
 }
 export async function listPayrollAdjustmentOptions(periodId: string, actor: HrActor) {
   await assertHrCapability(actor, "payroll_admin");
@@ -578,4 +645,92 @@ export async function listPayrollAdjustmentOptions(periodId: string, actor: HrAc
       .orderBy(salaryComponents.name),
   ]);
   return { periodId, employees, components };
+}
+
+export async function getOwnPayrollYtd(actor: HrActor, year: number) {
+  const start = `${year}-01-01`;
+  const end = `${year}-12-31`;
+  const [opening, processed] = await Promise.all([
+    db
+      .select({ type: salaryComponents.type, amountPaise: payrollOpeningBalances.amountPaise })
+      .from(payrollOpeningBalances)
+      .innerJoin(salaryComponents, eq(payrollOpeningBalances.componentId, salaryComponents.id))
+      .where(
+        and(
+          eq(payrollOpeningBalances.employeeUserId, actor.id),
+          eq(payrollOpeningBalances.year, year),
+          isNull(payrollOpeningBalances.deletedAt),
+        ),
+      ),
+    db
+      .select({ type: payrollEntryLines.componentType, amountPaise: payrollEntryLines.amountPaise })
+      .from(payrollEntryLines)
+      .innerJoin(payrollEntries, eq(payrollEntryLines.entryId, payrollEntries.id))
+      .innerJoin(payrollPeriods, eq(payrollEntries.periodId, payrollPeriods.id))
+      .where(
+        and(
+          eq(payrollEntries.employeeUserId, actor.id),
+          gte(payrollPeriods.periodMonth, start),
+          lte(payrollPeriods.periodMonth, end),
+          inArray(payrollPeriods.status, ["posted", "paid"]),
+          isNull(payrollEntryLines.deletedAt),
+        ),
+      ),
+  ]);
+  return summarizePayrollYtd([...opening, ...processed]);
+}
+
+export async function listPayrollYtdForPeriod(periodId: string, actor: HrActor) {
+  const data = await getPayrollPeriod(periodId, actor);
+  if (!data) throw new Error("Payroll period not found.");
+  if (!data.entries.length) return [];
+  const employeeIds = data.entries.map((entry) => entry.employeeUserId);
+  const year = Number(data.period.periodMonth.slice(0, 4));
+  const [opening, processed] = await Promise.all([
+    db
+      .select({
+        employeeUserId: payrollOpeningBalances.employeeUserId,
+        type: salaryComponents.type,
+        amountPaise: payrollOpeningBalances.amountPaise,
+      })
+      .from(payrollOpeningBalances)
+      .innerJoin(salaryComponents, eq(payrollOpeningBalances.componentId, salaryComponents.id))
+      .where(
+        and(
+          inArray(payrollOpeningBalances.employeeUserId, employeeIds),
+          eq(payrollOpeningBalances.year, year),
+          isNull(payrollOpeningBalances.deletedAt),
+        ),
+      ),
+    db
+      .select({
+        employeeUserId: payrollEntries.employeeUserId,
+        type: payrollEntryLines.componentType,
+        amountPaise: payrollEntryLines.amountPaise,
+      })
+      .from(payrollEntryLines)
+      .innerJoin(payrollEntries, eq(payrollEntryLines.entryId, payrollEntries.id))
+      .innerJoin(payrollPeriods, eq(payrollEntries.periodId, payrollPeriods.id))
+      .where(
+        and(
+          inArray(payrollEntries.employeeUserId, employeeIds),
+          gte(payrollPeriods.periodMonth, `${year}-01-01`),
+          lte(payrollPeriods.periodMonth, data.period.periodMonth),
+          or(
+            eq(payrollPeriods.id, data.period.id),
+            inArray(payrollPeriods.status, ["posted", "paid"]),
+          ),
+          isNull(payrollEntryLines.deletedAt),
+        ),
+      ),
+  ]);
+  return data.entries.map((entry) => ({
+    employeeUserId: entry.employeeUserId,
+    employeeCode: entry.employeeCode,
+    employeeName: entry.employeeName,
+    year,
+    ...summarizePayrollYtd(
+      [...opening, ...processed].filter((line) => line.employeeUserId === entry.employeeUserId),
+    ),
+  }));
 }

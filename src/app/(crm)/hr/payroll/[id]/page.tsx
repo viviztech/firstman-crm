@@ -82,16 +82,25 @@ export default async function PayrollPeriodPage({ params }: { params: Promise<{ 
           {period.status === "posted" ? (
             <PayrollTransitionButton periodId={id} transition="paid" />
           ) : null}
-          {entries.length ? (
-            <Button
-              variant="outline"
-              nativeButton={false}
-              render={<Link href={`/api/hr/payroll/${id}/export?kind=register`} />}
-            >
-              <DownloadIcon />
-              Payroll register
-            </Button>
-          ) : null}
+          {entries.length
+            ? [
+                ["register", "Payroll register"],
+                ["components", "Component totals"],
+                ["bank", "Masked bank advice"],
+                ["statutory", "Statutory working"],
+                ["ytd", "Employee YTD"],
+              ].map(([kind, label]) => (
+                <Button
+                  key={kind}
+                  variant="outline"
+                  nativeButton={false}
+                  render={<Link href={`/api/hr/payroll/${id}/export?kind=${kind}`} />}
+                >
+                  <DownloadIcon />
+                  {label}
+                </Button>
+              ))
+            : null}
         </CardContent>
       </Card>
       {["draft", "calculated"].includes(period.status) ? (

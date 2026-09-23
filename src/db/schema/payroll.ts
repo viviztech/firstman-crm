@@ -111,6 +111,30 @@ export const employeeSalaryAssignments = pgTable(
   ],
 );
 
+export const payrollOpeningBalances = pgTable(
+  "payroll_opening_balances",
+  {
+    ...baseColumns(),
+    ...actorColumns(),
+    year: integer("year").notNull(),
+    employeeUserId: text("employee_user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    componentId: uuid("component_id")
+      .notNull()
+      .references(() => salaryComponents.id, { onDelete: "restrict" }),
+    amountPaise: integer("amount_paise").notNull(),
+  },
+  (table) => [
+    uniqueIndex("payroll_opening_balances_employee_component_year_idx").on(
+      table.employeeUserId,
+      table.componentId,
+      table.year,
+    ),
+    index("payroll_opening_balances_year_idx").on(table.year),
+  ],
+);
+
 export const payrollPeriods = pgTable(
   "payroll_periods",
   {

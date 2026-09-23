@@ -13,10 +13,12 @@ import {
   createSalaryComponent,
   createSalaryStructure,
   payrollAdjustmentInputSchema,
+  payrollOpeningBalanceInputSchema,
   salaryAssignmentInputSchema,
   salaryComponentInputSchema,
   salaryStructureInputSchema,
   salaryStructureLineInputSchema,
+  savePayrollOpeningBalance,
 } from "@/services/hr-payroll";
 import { markPayrollPaid, postPayrollPeriod } from "@/services/hr-payslips";
 
@@ -133,6 +135,25 @@ export async function addPayrollAdjustmentAction(
     return { ok: true, data: undefined };
   } catch (error) {
     return fail(error, "Failed to add adjustment.");
+  }
+}
+export async function savePayrollOpeningBalanceAction(
+  _: ActionResult | undefined,
+  data: FormData,
+): Promise<ActionResult> {
+  const actor = await requireUser();
+  const parsed = payrollOpeningBalanceInputSchema.safeParse({
+    ...Object.fromEntries(data),
+    amountPaise: paise(data.get("amountRupees")),
+  });
+  if (!parsed.success)
+    return fail(new Error(parsed.error.issues[0]?.message), "Invalid opening balance.");
+  try {
+    await savePayrollOpeningBalance(parsed.data, actor);
+    refresh();
+    return { ok: true, data: undefined };
+  } catch (error) {
+    return fail(error, "Failed to save opening balance.");
   }
 }
 async function transition(

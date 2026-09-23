@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { calculatePayroll } from "@/services/hr-payroll-calculator";
+import { calculatePayroll, summarizePayrollYtd } from "@/services/hr-payroll-calculator";
 
 const components = [
   {
@@ -60,5 +60,24 @@ describe("calculatePayroll", () => {
     });
     expect(result.grossPaise).toBe(4350000);
     expect(result.netPayPaise).toBe(3990000);
+  });
+
+  it("combines opening and processed lines into reconciled YTD totals", () => {
+    expect(
+      summarizePayrollYtd([
+        { type: "earning", amountPaise: 1_000_000 },
+        { type: "reimbursement", amountPaise: 50_000 },
+        { type: "deduction", amountPaise: 120_000 },
+        { type: "employer_contribution", amountPaise: 120_000 },
+      ]),
+    ).toEqual({
+      earningsPaise: 1_000_000,
+      deductionsPaise: 120_000,
+      reimbursementsPaise: 50_000,
+      employerContributionsPaise: 120_000,
+      grossPaise: 1_050_000,
+      netPayPaise: 930_000,
+      totalCostPaise: 1_170_000,
+    });
   });
 });

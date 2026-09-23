@@ -12,6 +12,40 @@ export type PayrollLine = Pick<PayrollComponentInput, "code" | "name" | "type" |
   amountPaise: number;
 };
 
+export type PayrollYtdTotals = {
+  earningsPaise: number;
+  deductionsPaise: number;
+  reimbursementsPaise: number;
+  employerContributionsPaise: number;
+  grossPaise: number;
+  netPayPaise: number;
+  totalCostPaise: number;
+};
+
+export function summarizePayrollYtd(
+  lines: Array<{ type: PayrollLine["type"]; amountPaise: number }>,
+): PayrollYtdTotals {
+  const totals: PayrollYtdTotals = {
+    earningsPaise: 0,
+    deductionsPaise: 0,
+    reimbursementsPaise: 0,
+    employerContributionsPaise: 0,
+    grossPaise: 0,
+    netPayPaise: 0,
+    totalCostPaise: 0,
+  };
+  for (const line of lines) {
+    if (line.type === "earning") totals.earningsPaise += line.amountPaise;
+    else if (line.type === "deduction") totals.deductionsPaise += line.amountPaise;
+    else if (line.type === "reimbursement") totals.reimbursementsPaise += line.amountPaise;
+    else totals.employerContributionsPaise += line.amountPaise;
+  }
+  totals.grossPaise = totals.earningsPaise + totals.reimbursementsPaise;
+  totals.netPayPaise = totals.grossPaise - totals.deductionsPaise;
+  totals.totalCostPaise = totals.grossPaise + totals.employerContributionsPaise;
+  return totals;
+}
+
 export function calculatePayroll(input: {
   components: PayrollComponentInput[];
   adjustments?: Array<PayrollLine>;

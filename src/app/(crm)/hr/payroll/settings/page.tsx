@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import {
+  PayrollOpeningBalanceForm,
   SalaryAssignmentForm,
   SalaryComponentForm,
   SalaryLineForm,
@@ -83,6 +84,36 @@ export default async function PayrollSettingsPage() {
               </div>
             ))}
           </div>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>Opening year-to-date balances</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-5">
+          <p className="text-sm text-muted-foreground">
+            Enter component totals already processed before payroll moved into this system. Saving
+            the same employee, component, and year updates the existing amount.
+          </p>
+          <PayrollOpeningBalanceForm
+            employees={data.employees}
+            components={data.components}
+            currentYear={new Date().getFullYear()}
+          />
+          {data.openingBalances.length ? (
+            <div className="divide-y">
+              {data.openingBalances.map((balance) => (
+                <div className="flex flex-wrap justify-between gap-3 py-2 text-sm" key={balance.id}>
+                  <span>
+                    {balance.year} · {balance.employeeName} · {balance.componentName}
+                  </span>
+                  <span>{formatMoney(balance.amountPaise)}</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">No opening YTD balances recorded.</p>
+          )}
         </CardContent>
       </Card>
     </div>

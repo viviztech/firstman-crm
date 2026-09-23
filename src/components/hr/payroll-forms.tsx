@@ -12,6 +12,7 @@ import {
   createSalaryStructureAction,
   markPayrollPaidAction,
   postPayrollAction,
+  savePayrollOpeningBalanceAction,
 } from "@/actions/hr-payroll";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -217,6 +218,50 @@ export function PayrollAdjustmentForm({
       </div>
       <Feedback state={state} />
       <Button disabled={pending}>Add adjustment</Button>
+    </form>
+  );
+}
+export function PayrollOpeningBalanceForm({
+  employees,
+  components,
+  currentYear,
+}: {
+  employees: Option[];
+  components: Option[];
+  currentYear: number;
+}) {
+  const [state, action, pending] = useActionState(savePayrollOpeningBalanceAction, undefined);
+  return (
+    <form action={action} className="space-y-3">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div>
+          <Label htmlFor="openingYear">Calendar year</Label>
+          <Input
+            id="openingYear"
+            name="year"
+            type="number"
+            min="2000"
+            max="2100"
+            defaultValue={currentYear}
+            required
+          />
+        </div>
+        <Select name="employeeUserId" label="Employee" options={employees} />
+        <Select name="componentId" label="Component" options={components} />
+        <div>
+          <Label htmlFor="openingAmount">Opening YTD amount (Rs.)</Label>
+          <Input
+            id="openingAmount"
+            name="amountRupees"
+            type="number"
+            min="0"
+            step="0.01"
+            required
+          />
+        </div>
+      </div>
+      <Feedback state={state} />
+      <Button disabled={pending}>{pending ? "Saving..." : "Save opening balance"}</Button>
     </form>
   );
 }

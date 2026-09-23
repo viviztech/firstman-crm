@@ -1,6 +1,6 @@
 # Human Resource Management (HRM) Implementation Plan
 
-**Status:** Phases 1–4 core complete; Phase 4 advanced reporting remains
+**Status:** Phases 1–4 complete; Phase 5 hardening remains
 **Application:** FirstMan CRM
 **Last updated:** 2026-09-23
 
@@ -50,9 +50,9 @@ The employee profile editor and CSV importer cannot change employment status;
 the lifecycle workflow owns all transitions. Phase 4 now includes salary components and
 structures, effective employee assignments, attendance/leave-aware calculation, adjustments,
 validation, maker-checker approval, attendance locking, posting, payment status, summarized finance
-expense creation, notifications, private payslip storage/downloads, and payroll register/component
-exports. Opening YTD, bank/statutory working exports, and employee YTD summaries remain reporting
-enhancements. Phase 5 remains pending.
+expense creation, notifications, private payslip storage/downloads, opening YTD balances, masked
+bank advice, payroll register/component totals, statutory working reports, and employee/admin YTD
+summaries. Phase 5 remains pending.
 
 CSV import only matches existing CRM account emails; it does not create logins. A new HR
 profile is created as `draft`, while an existing profile keeps its employment status. The
