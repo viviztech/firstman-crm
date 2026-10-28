@@ -15,6 +15,7 @@ import {
   assignedToCondition,
   isPincodeInFranchiseTerritory,
   serviceCondition,
+  teamCondition,
   territoryCondition,
   visibilityConditions,
 } from "@/lib/scope";
@@ -411,6 +412,37 @@ describe("serviceCondition", () => {
   it("does not apply to non-executive roles even with service assignments set", () => {
     const scope = makeScope("u1", "manager", { serviceIds: ["s1"] });
     expect(serviceCondition(enquiries.serviceInterestedId, scope)).toBeUndefined();
+  });
+});
+
+describe("teamCondition", () => {
+  it("opens both modules for combined executives while retaining row scoping", () => {
+    const scope = makeScope("u1", "executive", {
+      team: "sales_operations",
+      serviceIds: ["s1"],
+    });
+    expect(teamCondition(scope, "sales")).toBeUndefined();
+    expect(teamCondition(scope, "operations")).toBeUndefined();
+    expect(teamCondition(scope, "workforce")).toBeDefined();
+    expect(assignedToCondition(enquiries.assignedTo, scope)).toBeDefined();
+    expect(serviceCondition(enquiries.serviceInterestedId, scope)).toBeDefined();
+  });
+
+  it("keeps the single-team module boundary", () => {
+    expect(
+      teamCondition(makeScope("u1", "executive", { team: "sales" }), "operations"),
+    ).toBeDefined();
+    expect(
+      teamCondition(makeScope("u1", "executive", { team: "operations" }), "sales"),
+    ).toBeDefined();
+  });
+
+  it("preserves unrestricted module access for unset teams and non-executives", () => {
+    expect(teamCondition(makeScope("u1", "executive"), "sales")).toBeUndefined();
+    expect(teamCondition(makeScope("u1", "executive"), "operations")).toBeUndefined();
+    expect(
+      teamCondition(makeScope("u1", "manager", { team: "workforce" }), "sales"),
+    ).toBeUndefined();
   });
 });
 

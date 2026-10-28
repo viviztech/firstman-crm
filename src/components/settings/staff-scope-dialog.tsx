@@ -16,7 +16,8 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import type { EmployeeType } from "@/lib/scope";
+import type { EmployeeType, StaffTeam } from "@/lib/scope";
+import { hasStaffTeam } from "@/lib/teams";
 
 type ServiceOption = { id: string; name: string };
 
@@ -24,6 +25,7 @@ export function StaffScopeDialog({
   userId,
   userName,
   employeeType,
+  team,
   pincodes,
   serviceIds,
   services,
@@ -31,6 +33,7 @@ export function StaffScopeDialog({
   userId: string;
   userName: string;
   employeeType: EmployeeType;
+  team: StaffTeam | null;
   pincodes: string[];
   serviceIds: string[];
   services: ServiceOption[];
@@ -38,6 +41,7 @@ export function StaffScopeDialog({
   const [open, setOpen] = useState(false);
   const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>(serviceIds);
   const [isPending, startTransition] = useTransition();
+  const handlesOperations = hasStaffTeam(team, "operations");
 
   function toggleService(serviceId: string, checked: boolean) {
     setSelectedServiceIds((current) =>
@@ -65,9 +69,11 @@ export function StaffScopeDialog({
         <DialogHeader>
           <DialogTitle>Scope for {userName}</DialogTitle>
           <DialogDescription>
-            {employeeType === "franchise"
-              ? "Territories are managed centrally. Choose which services this franchise handles here."
-              : "Services this employee handles. Leave empty for no restriction."}
+            {handlesOperations
+              ? "Select the services this employee can handle. At least one service is required to receive or pick up job cards."
+              : employeeType === "franchise"
+                ? "Territories are managed centrally. Choose which services this franchise handles here."
+                : "Services this employee handles. Leave empty for no restriction."}
           </DialogDescription>
         </DialogHeader>
 

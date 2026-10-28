@@ -19,7 +19,7 @@ export async function listAssignableStaff() {
 
 /**
  * Same roster as listAssignableStaff, but narrowed for a specific job card's service: an
- * operations-team executive who isn't scoped to `serviceId` is left out, since assigning them
+ * Operations-capable executive who isn't scoped to `serviceId` is left out, since assigning them
  * would just be rejected by orders.ts's mandatory scope check (ADR 0004). Everyone else — sales/
  * no-team executives, franchise staff, managers, super_admins — stays included; the mandatory
  * scoping rule only ever applies to operations-team executives.
@@ -30,7 +30,7 @@ export async function listAssignableStaffForService(serviceId: string) {
     db
       .select({ userId: staffProfiles.userId })
       .from(staffProfiles)
-      .where(eq(staffProfiles.team, "operations")),
+      .where(inArray(staffProfiles.team, ["operations", "sales_operations"])),
     db
       .select({ userId: staffServiceAssignments.userId })
       .from(staffServiceAssignments)

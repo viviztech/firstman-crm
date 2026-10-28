@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/sidebar";
 import type { Role } from "@/lib/auth";
 import type { StaffTeam } from "@/lib/scope";
+import { hasStaffTeam } from "@/lib/teams";
 
 export function AppSidebar({ role, team }: { role: Role; team: StaffTeam | null }) {
   const pathname = usePathname();
@@ -24,7 +25,10 @@ export function AppSidebar({ role, team }: { role: Role; team: StaffTeam | null 
   const items = NAV_ITEMS.filter(
     (item) =>
       item.roles.includes(role) &&
-      (!item.teams || role !== "executive" || !team || item.teams.includes(team)),
+      (!item.teams ||
+        role !== "executive" ||
+        !team ||
+        item.teams.some((requiredTeam) => hasStaffTeam(team, requiredTeam))),
   );
 
   return (

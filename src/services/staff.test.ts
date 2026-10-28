@@ -11,6 +11,7 @@ import {
   getStaffScope,
   listStaffProfileSummaries,
   setStaffServiceAssignments,
+  staffTeamInputSchema,
   updateStaffTeam,
 } from "@/services/staff";
 
@@ -64,6 +65,15 @@ describe("staff service — team (ADR 0002, integration)", () => {
 
     const scope = await getStaffScope(execId);
     expect(scope.team).toBeNull();
+  });
+
+  it("validates and persists combined membership without changing the base role", async () => {
+    expect(staffTeamInputSchema.safeParse({ team: "sales_operations" }).success).toBe(true);
+    await updateStaffTeam(execId, "sales_operations", managerScope);
+    expect((await getStaffScope(execId)).team).toBe("sales_operations");
+    expect((await listStaffProfileSummaries()).get(execId)?.team).toBe("sales_operations");
+    const member = await db.query.user.findFirst({ where: eq(user.id, execId) });
+    expect(member?.role).toBe("executive");
   });
 
   it("logs a team_changed activity entry", async () => {

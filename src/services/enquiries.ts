@@ -845,10 +845,8 @@ export async function closeEnquiryAsSale(
       const service = await tx.query.services.findFirst({ where: eq(services.id, line.serviceId) });
       if (!service) throw new Error("Service not found");
 
-      // assignedTo intentionally omitted: the job card belongs to Operations, not the sales
-      // executive who closed the deal (ADR 0002) — createOrderInTx's enforceAssignment would
-      // only self-assign for a team:"operations" actor, so a sales exec's job cards are created
-      // unassigned for a manager/operations lead to triage.
+      // Sales always hands job cards to the Operations pool, including when the seller has
+      // both teams. Selling a service must not require personally fulfilling that service.
       const order = await createOrderInTx(
         tx,
         {
@@ -859,6 +857,7 @@ export async function closeEnquiryAsSale(
           notes: input.comments,
         },
         actor,
+        { assignmentMode: "sales_handoff" },
       );
       orders.push(order);
 

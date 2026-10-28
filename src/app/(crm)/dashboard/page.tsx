@@ -32,6 +32,7 @@ import { env } from "@/lib/env";
 import { formatMoney } from "@/lib/money";
 import { getPortalRole } from "@/lib/portal-role";
 import { requireUser } from "@/lib/session";
+import { hasStaffTeam } from "@/lib/teams";
 import {
   getEnquiriesThisMonthByStatus,
   getMyOpenTasks,
@@ -107,8 +108,8 @@ export default async function DashboardPage() {
     : [[], { thisMonthPaise: 0, lastMonthPaise: 0 }, [], [], []];
 
   const isFranchise = user.role === "executive" && scope.employeeType === "franchise";
-  const isSalesExecutive = user.role === "executive" && scope.team === "sales";
-  const isOperationsExecutive = user.role === "executive" && scope.team === "operations";
+  const isSalesExecutive = user.role === "executive" && hasStaffTeam(scope.team, "sales");
+  const isOperationsExecutive = user.role === "executive" && hasStaffTeam(scope.team, "operations");
   const showExecutiveStats =
     user.role === "executive" && !isSalesExecutive && !isOperationsExecutive;
   const showTerritoryCard =
@@ -211,13 +212,16 @@ export default async function DashboardPage() {
     .filter((row) => row.status !== "completed" && row.status !== "cancelled")
     .reduce((total, row) => total + row.count, 0);
   const portalRole = getPortalRole(user.role, scope.team, scope.employeeType);
-  const heroDescription = isSalesExecutive
-    ? "Prioritize your leads, complete today’s follow-ups, and keep every opportunity moving."
-    : isOperationsExecutive
-      ? "Pick up available work, clear today’s tasks, and keep every client delivery on schedule."
-      : user.role === "executive"
-        ? "Your assigned clients, tasks, and deadlines are organized around today’s work."
-        : undefined;
+  const heroDescription =
+    isSalesExecutive && isOperationsExecutive
+      ? "Follow up on your leads, convert sales, and keep client deliveries on schedule."
+      : isSalesExecutive
+        ? "Prioritize your leads, complete today’s follow-ups, and keep every opportunity moving."
+        : isOperationsExecutive
+          ? "Pick up available work, clear today’s tasks, and keep every client delivery on schedule."
+          : user.role === "executive"
+            ? "Your assigned clients, tasks, and deadlines are organized around today’s work."
+            : undefined;
 
   const headline = showAccountantStats
     ? {

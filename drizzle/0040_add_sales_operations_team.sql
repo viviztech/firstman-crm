@@ -1,0 +1,1 @@
+ALTER TYPE "public"."staff_team" ADD VALUE 'sales_operations' BEFORE 'backoffice';

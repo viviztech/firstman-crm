@@ -44,6 +44,12 @@ middleware.ts (route guards + security headers)  pg-boss (Postgres-backed queue)
   fast cookie-presence check (edge-safe) and redirects; `src/lib/session.ts`'s
   `requireUser()`/`requireRole()` re-validate the real session server-side in the
   `(crm)` layout and any page that needs it — never trust the middleware check alone.
+  Sales and Operations are staff teams, independent of these base roles. To grant both,
+  select **Sales & Operations** for an Executive under **Settings > Users > Team** and
+  assign eligible services through **Scope**. Both workspaces are available while owner,
+  territory, and service restrictions remain in force; service assignments apply to both
+  workflows. Requires migration `0040_add_sales_operations_team`; see
+  [ADR 0011](docs/adr/0011-combined-sales-and-operations-team.md).
 - **UI:** Tailwind CSS 4 + shadcn/ui (Base UI primitives, not Radix — that's shadcn's
   current default; see Assumptions). Role-aware sidebar nav in
   `src/components/nav-config.ts` + `app-sidebar.tsx`.

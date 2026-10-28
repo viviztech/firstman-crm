@@ -11,6 +11,7 @@ import { WIP_STATUSES } from "@/lib/badges";
 import { inferDocumentKind } from "@/lib/document-kind";
 import type { ActorScope } from "@/lib/scope";
 import { isAssignedEmployee, teamCondition, visibilityConditions } from "@/lib/scope";
+import { hasStaffTeam } from "@/lib/teams";
 import { optionalDateTime, optionalTrimmed } from "@/lib/validation/helpers";
 import { recordActivity } from "@/services/activity-log";
 import { listDocumentsForOwner } from "@/services/documents";
@@ -82,7 +83,7 @@ function scopeCondition(scope: ActorScope) {
   if (
     scope.role === "executive" &&
     isAssignedEmployee(scope) &&
-    scope.team === "operations" &&
+    hasStaffTeam(scope.team, "operations") &&
     scope.serviceIds.length > 0
   ) {
     const readyToPickUp = and(
@@ -106,7 +107,9 @@ function scopeCondition(scope: ActorScope) {
  * lead/manager picks them up.
  */
 function enforceAssignment(assignedTo: string | undefined, actor: ActorScope) {
-  return actor.role === "executive" && isAssignedEmployee(actor) && actor.team === "operations"
+  return actor.role === "executive" &&
+    isAssignedEmployee(actor) &&
+    hasStaffTeam(actor.team, "operations")
     ? actor.userId
     : assignedTo;
 }
@@ -130,7 +133,7 @@ async function assertOperationsAssigneeServiceScope(
   const profile = await tx.query.staffProfiles.findFirst({
     where: eq(staffProfiles.userId, assignedTo),
   });
-  if (profile?.team !== "operations") return;
+  if (!hasStaffTeam(profile?.team, "operations")) return;
 
   const assignments = await tx
     .select({ serviceId: staffServiceAssignments.serviceId })
@@ -397,7 +400,7 @@ export async function listJobCardsAvailableToPickUp(scope: ActorScope, limit = 5
   if (
     scope.role !== "executive" ||
     !isAssignedEmployee(scope) ||
-    scope.team !== "operations" ||
+    !hasStaffTeam(scope.team, "operations") ||
     scope.serviceIds.length === 0
   ) {
     return [];
@@ -489,11 +492,21 @@ export async function getMyJobCardDashboardStats(userId: string, now: Date = new
  * (e.g. the enquiry Sales action, which also converts the enquiry to a client) can compose it
  * instead of nesting a second `db.transaction`.
  */
-export async function createOrderInTx(tx: Transaction, input: OrderInput, actor: ActorScope) {
+export async function createOrderInTx(
+  tx: Transaction,
+  input: OrderInput,
+  actor: ActorScope,
+  options?: { assignmentMode?: "sales_handoff" },
+) {
   const service = await tx.query.services.findFirst({ where: eq(services.id, input.serviceId) });
   if (!service) throw new Error("Service not found");
 
-  const assignedTo = enforceAssignment(input.assignedTo, actor);
+  // Sales conversion hands work to the Operations pool, including when the seller also
+  // works in Operations. This option is supplied only by the server-side Sales workflow.
+  const assignedTo =
+    options?.assignmentMode === "sales_handoff"
+      ? undefined
+      : enforceAssignment(input.assignedTo, actor);
   await assertOperationsAssigneeServiceScope(tx, assignedTo, input.serviceId);
   const startedAt = input.startedAt ?? new Date();
   const dueAt = new Date(startedAt.getTime() + service.estimatedDays * DAY_MS);
@@ -571,7 +584,11 @@ export async function createOrder(input: OrderInput, actor: ActorScope) {
  * available" case, not an error.
  */
 export async function pickUpJobCard(orderId: string, actor: ActorScope) {
-  if (actor.role !== "executive" || !isAssignedEmployee(actor) || actor.team !== "operations") {
+  if (
+    actor.role !== "executive" ||
+    !isAssignedEmployee(actor) ||
+    !hasStaffTeam(actor.team, "operations")
+  ) {
     throw new Error("Only operations executives can pick up a job card this way.");
   }
 

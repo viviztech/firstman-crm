@@ -31,10 +31,13 @@ export const employeeTypeEnum = pgEnum("employee_type", ["internal", "franchise"
  * `backoffice`/`workforce` (ADR 0006) and `franchise` (ADR 0008) are manager-only values that
  * pick a dashboard workspace — they don't restrict a manager's permissions or nav, unlike
  * `sales`/`operations` on executives.
+ * `sales_operations` grants both executive workflows, retaining their existing row and
+ * service scopes (ADR 0011).
  */
 export const staffTeamEnum = pgEnum("staff_team", [
   "sales",
   "operations",
+  "sales_operations",
   "backoffice",
   "workforce",
   "franchise",

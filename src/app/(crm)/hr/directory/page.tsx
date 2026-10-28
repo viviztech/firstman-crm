@@ -2,6 +2,7 @@ import { UsersRoundIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { requireUser } from "@/lib/session";
+import { getStaffTeamLabel } from "@/lib/teams";
 import { listEmployeeDirectory } from "@/services/hr";
 
 export default async function EmployeeDirectoryPage() {
@@ -36,7 +37,9 @@ export default async function EmployeeDirectoryPage() {
                 {employee.departmentName ?? "Department not assigned"}
               </p>
               <div className="flex flex-wrap gap-2">
-                {employee.team ? <Badge variant="secondary">{employee.team}</Badge> : null}
+                {employee.team ? (
+                  <Badge variant="secondary">{getStaffTeamLabel(employee.team)}</Badge>
+                ) : null}
                 {employee.locationName ? (
                   <Badge variant="outline">{employee.locationName}</Badge>
                 ) : null}

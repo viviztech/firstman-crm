@@ -564,6 +564,7 @@ describe("team scoping (ADR 0002, integration)", () => {
   const managerId = randomUUID();
   const salesExecId = randomUUID();
   const opsExecId = randomUUID();
+  const combinedExecId = randomUUID();
   const managerScope = makeScope(managerId, "manager");
   let pvtLtdServiceId: string;
   let gstServiceId: string;
@@ -591,9 +592,17 @@ describe("team scoping (ADR 0002, integration)", () => {
         emailVerified: true,
         role: "executive",
       },
+      {
+        id: combinedExecId,
+        name: "Order Team Test Sales and Ops Exec",
+        email: `order-team-combined-${combinedExecId}@test.local`,
+        emailVerified: true,
+        role: "executive",
+      },
     ]);
     await updateStaffTeam(salesExecId, "sales", managerScope);
     await updateStaffTeam(opsExecId, "operations", managerScope);
+    await updateStaffTeam(combinedExecId, "sales_operations", managerScope);
 
     const service = await db.query.services.findFirst({
       where: eq(services.slug, "pvt-ltd-registration"),
@@ -614,6 +623,7 @@ describe("team scoping (ADR 0002, integration)", () => {
     await db.delete(user).where(eq(user.id, managerId));
     await db.delete(user).where(eq(user.id, salesExecId));
     await db.delete(user).where(eq(user.id, opsExecId));
+    await db.delete(user).where(eq(user.id, combinedExecId));
   });
 
   it("hides every order from a sales-team executive, even ones assigned to them", async () => {
@@ -654,6 +664,108 @@ describe("team scoping (ADR 0002, integration)", () => {
     const visible = await listOrders(opsScope);
     expect(visible.rows.map((o) => o.id)).toContain(order.id);
     expect(await getOrder(order.id, opsScope)).toBeTruthy();
+  });
+
+  it("lets Sales and Operations executives create their own job cards without accessing another owner's work", async () => {
+    await setStaffServiceAssignments(combinedExecId, [pvtLtdServiceId], managerScope);
+    const client = await makeTestClient("+919876609030", managerId);
+    const combinedScope = makeScope(combinedExecId, "executive", {
+      team: "sales_operations",
+      serviceIds: [pvtLtdServiceId],
+    });
+    const own = await createOrder(
+      {
+        clientId: client.id,
+        serviceId: pvtLtdServiceId,
+        quotedPricePaise: 100000,
+        assignedTo: salesExecId,
+        notes: "order-team-test-marker combined-own",
+      },
+      combinedScope,
+    );
+    expect(own.assignedTo).toBe(combinedExecId);
+    expect(await getOrder(own.id, combinedScope)).toBeTruthy();
+
+    const other = await createOrder(
+      {
+        clientId: client.id,
+        serviceId: pvtLtdServiceId,
+        quotedPricePaise: 100000,
+        assignedTo: salesExecId,
+        notes: "order-team-test-marker combined-other",
+      },
+      managerScope,
+    );
+    const visible = await listOrders(combinedScope);
+    expect(visible.rows.map((order) => order.id)).toContain(own.id);
+    expect(visible.rows.map((order) => order.id)).not.toContain(other.id);
+    expect(await getOrder(other.id, combinedScope)).toBeUndefined();
+    expect(await updateOrder(other.id, { quotedPricePaise: 200000 }, combinedScope)).toBeNull();
+  });
+
+  it("applies mandatory Operations service scope to combined-team creation and reassignment", async () => {
+    const client = await makeTestClient("+919876609031", managerId);
+    const combinedScope = makeScope(combinedExecId, "executive", { team: "sales_operations" });
+    const input = {
+      clientId: client.id,
+      serviceId: pvtLtdServiceId,
+      quotedPricePaise: 100000,
+      notes: "order-team-test-marker combined-mandatory",
+    };
+    await setStaffServiceAssignments(combinedExecId, [], managerScope);
+    await expect(createOrder(input, combinedScope)).rejects.toThrow(/isn't scoped to this service/);
+
+    await setStaffServiceAssignments(combinedExecId, [gstServiceId], managerScope);
+    await expect(
+      createOrder({ ...input, assignedTo: combinedExecId }, managerScope),
+    ).rejects.toThrow(/isn't scoped to this service/);
+    const unassigned = await createOrder(input, managerScope);
+    await expect(
+      updateOrder(
+        unassigned.id,
+        { quotedPricePaise: 100000, assignedTo: combinedExecId },
+        managerScope,
+      ),
+    ).rejects.toThrow(/isn't scoped to this service/);
+  });
+
+  it("lets combined-team executives pick up only unassigned work within their Operations service scope", async () => {
+    await setStaffServiceAssignments(combinedExecId, [pvtLtdServiceId], managerScope);
+    const client = await makeTestClient("+919876609032", managerId);
+    const inScope = await createOrder(
+      {
+        clientId: client.id,
+        serviceId: pvtLtdServiceId,
+        quotedPricePaise: 100000,
+        notes: "order-team-test-marker combined-pickup-in",
+      },
+      managerScope,
+    );
+    const outOfScope = await createOrder(
+      {
+        clientId: client.id,
+        serviceId: gstServiceId,
+        quotedPricePaise: 100000,
+        notes: "order-team-test-marker combined-pickup-out",
+      },
+      managerScope,
+    );
+    const combinedScope = makeScope(combinedExecId, "executive", {
+      team: "sales_operations",
+      serviceIds: [pvtLtdServiceId],
+    });
+    const availableIds = (await listJobCardsAvailableToPickUp(combinedScope)).map(
+      (order) => order.id,
+    );
+    expect(availableIds).toContain(inScope.id);
+    expect(availableIds).not.toContain(outOfScope.id);
+    expect(await getOrder(inScope.id, combinedScope)).toBeTruthy();
+    expect(await getOrder(outOfScope.id, combinedScope)).toBeUndefined();
+    expect((await pickUpJobCard(inScope.id, combinedScope))?.assignedTo).toBe(combinedExecId);
+    await expect(pickUpJobCard(outOfScope.id, combinedScope)).rejects.toThrow(
+      /isn't scoped to this service/,
+    );
+    expect((await getOrder(outOfScope.id, managerScope))?.assignedTo).toBeNull();
   });
 
   describe("mandatory operations service scope (ADR 0004)", () => {

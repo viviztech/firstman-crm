@@ -1114,6 +1114,7 @@ describe("team scoping (ADR 0002, integration)", () => {
   const salesExecId = randomUUID();
   const opsExecId = randomUUID();
   const noTeamExecId = randomUUID();
+  const combinedExecId = randomUUID();
   const managerScope = makeScope(managerId, "manager");
 
   beforeAll(async () => {
@@ -1146,9 +1147,17 @@ describe("team scoping (ADR 0002, integration)", () => {
         emailVerified: true,
         role: "executive",
       },
+      {
+        id: combinedExecId,
+        name: "Team Test Sales and Ops Exec",
+        email: `team-combined-${combinedExecId}@test.local`,
+        emailVerified: true,
+        role: "executive",
+      },
     ]);
     await updateStaffTeam(salesExecId, "sales", managerScope);
     await updateStaffTeam(opsExecId, "operations", managerScope);
+    await updateStaffTeam(combinedExecId, "sales_operations", managerScope);
   });
 
   afterAll(async () => {
@@ -1157,6 +1166,7 @@ describe("team scoping (ADR 0002, integration)", () => {
     await db.delete(user).where(eq(user.id, salesExecId));
     await db.delete(user).where(eq(user.id, opsExecId));
     await db.delete(user).where(eq(user.id, noTeamExecId));
+    await db.delete(user).where(eq(user.id, combinedExecId));
   });
 
   it("hides every enquiry from an operations-team executive, even ones assigned to them", async () => {
@@ -1217,6 +1227,74 @@ describe("team scoping (ADR 0002, integration)", () => {
     );
     expect(result?.orders[0]?.assignedTo).toBeNull();
   });
+
+  it("lets combined-team executives work their own enquiries without accessing another owner's pipeline", async () => {
+    const own = await createEnquiry(
+      input("9876603005", { assignedTo: combinedExecId }),
+      managerScope,
+    );
+    const other = await createEnquiry(
+      input("9876603006", { assignedTo: salesExecId }),
+      managerScope,
+    );
+    const combinedScope = makeScope(combinedExecId, "executive", { team: "sales_operations" });
+    const visible = await listEnquiries(combinedScope);
+    expect(visible.rows.map((enquiry) => enquiry.id)).toContain(own.id);
+    expect(visible.rows.map((enquiry) => enquiry.id)).not.toContain(other.id);
+    expect(await getEnquiry(own.id, combinedScope)).toBeTruthy();
+    expect(await getEnquiry(other.id, combinedScope)).toBeUndefined();
+    expect(await updateEnquiryStatus(other.id, { status: "contacted" }, combinedScope)).toBeNull();
+
+    const open = await createEnquiry(input("9876603007"), managerScope);
+    expect((await listOpenEnquiries(combinedScope)).map((enquiry) => enquiry.id)).toContain(
+      open.id,
+    );
+    expect((await claimEnquiry(open.id, combinedScope))?.assignedTo).toBe(combinedExecId);
+  });
+
+  it.each([false, true])(
+    "leaves a combined executive's multi-service sale unassigned with partial Operations scope=%s",
+    async (hasPartialScope) => {
+      const pvtLtd = await db.query.services.findFirst({
+        where: eq(services.slug, "pvt-ltd-registration"),
+      });
+      const gst = await db.query.services.findFirst({
+        where: eq(services.slug, "gst-registration"),
+      });
+      if (!pvtLtd || !gst) throw new Error("Seed catalog first — registration services not found");
+
+      const serviceIds = hasPartialScope ? [pvtLtd.id] : [];
+      await setStaffServiceAssignments(combinedExecId, serviceIds, managerScope);
+      const enquiry = await createEnquiry(
+        input(hasPartialScope ? "9876603009" : "9876603008", {
+          assignedTo: combinedExecId,
+          serviceInterestedId: pvtLtd.id,
+        }),
+        managerScope,
+      );
+      const combinedScope = makeScope(combinedExecId, "executive", {
+        team: "sales_operations",
+        serviceIds,
+      });
+      const result = await closeEnquiryAsSale(
+        enquiry.id,
+        {
+          name: "Combined Team Multi-Service Customer",
+          phone: enquiry.phone,
+          pincode: "560001",
+          services: [
+            { serviceId: pvtLtd.id, quotedPricePaise: 500000 },
+            { serviceId: gst.id, quotedPricePaise: 200000 },
+          ],
+        },
+        combinedScope,
+      );
+      expect(result?.orders).toHaveLength(2);
+      expect(result?.orders.every((order) => order.assignedTo === null)).toBe(true);
+      expect(result?.proformaInvoices).toHaveLength(2);
+      expect((await getEnquiry(enquiry.id, combinedScope))?.status).toBe("won");
+    },
+  );
 });
 
 describe("sales-executive personal dashboard (integration)", () => {

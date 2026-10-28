@@ -14,6 +14,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { requireUser } from "@/lib/session";
+import { getStaffTeamLabel } from "@/lib/teams";
 import { getHrCapabilities, listCapabilityAssignments, listEmployeesForHr } from "@/services/hr";
 
 export default async function HrEmployeesPage() {
@@ -69,7 +70,8 @@ export default async function HrEmployeesPage() {
                   <TableCell>
                     <p>{employee.departmentName ?? "Not assigned"}</p>
                     <p className="text-xs text-muted-foreground">
-                      {employee.designationName ?? employee.team ?? "—"}
+                      {employee.designationName ??
+                        (employee.team ? getStaffTeamLabel(employee.team) : "—")}
                     </p>
                   </TableCell>
                   <TableCell>

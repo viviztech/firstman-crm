@@ -281,6 +281,13 @@
       "when": 1790159744013,
       "tag": "0039_tan_midnight",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1793170066585,
+      "tag": "0040_add_sales_operations_team",
+      "breakpoints": true
     }
   ]
 }

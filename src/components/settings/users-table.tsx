@@ -97,6 +97,7 @@ function buildColumns(currentUserId: string, services: ServiceOption[]): ColumnD
               userId={row.original.id}
               userName={row.original.name}
               employeeType={row.original.employeeType}
+              team={row.original.team}
               pincodes={row.original.pincodes}
               serviceIds={row.original.serviceIds}
               services={services}

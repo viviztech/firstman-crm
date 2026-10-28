@@ -6,6 +6,7 @@ import { assemblyConstituencies, pincodeConstituencies } from "@/db/schema/franc
 import { pincodes } from "@/db/schema/geography";
 import type { employeeTypeEnum, staffTeamEnum } from "@/db/schema/staff";
 import type { Role } from "@/lib/auth";
+import { hasStaffTeam } from "@/lib/teams";
 
 export type EmployeeType = (typeof employeeTypeEnum.enumValues)[number];
 export type StaffTeam = (typeof staffTeamEnum.enumValues)[number];
@@ -197,15 +198,16 @@ export function serviceCondition(serviceIdColumn: AnyPgColumn, scope: ActorScope
 }
 
 /**
- * Sales-team executives never see fulfillment work; operations-team executives never see the
- * sales pipeline (ADR 0002). Unlike assignedTo/territory/service scoping, this is an all-or-
+ * Sales-only executives never see fulfillment work; operations-only executives never see the
+ * sales pipeline (ADR 0002). Combined-team executives can access both (ADR 0011).
+ * Unlike assignedTo/territory/service scoping, this is an all-or-
  * nothing module boundary, not a row filter — so it's composed by each module's own
  * scopeCondition() rather than through visibilityConditions()'s per-column shape. No team set
  * (or a non-executive role) is unrestricted, same "absence = unrestricted" rule as elsewhere.
  */
 export function teamCondition(scope: ActorScope, requiredTeam: StaffTeam): SQL | undefined {
   if (scope.role !== "executive" || !scope.team) return undefined;
-  return scope.team === requiredTeam ? undefined : sql`false`;
+  return hasStaffTeam(scope.team, requiredTeam) ? undefined : sql`false`;
 }
 
 type VisibilityColumns = {

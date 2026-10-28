@@ -6,12 +6,14 @@ export type PortalRole =
   | "Backoffice Admin"
   | "Sales"
   | "Operations"
+  | "Sales & Operations"
   | "Accounts"
   | "Workforce Manager"
   | "Franchise Manager"
   | "Franchise"
   | "Associate Sales"
-  | "Associate Operations";
+  | "Associate Operations"
+  | "Associate Sales & Operations";
 
 export function getPortalRole(
   role: Role,
@@ -24,6 +26,9 @@ export function getPortalRole(
   if (role === "manager" && team === "franchise") return "Franchise Manager";
   if (role === "manager") return "Backoffice Admin";
   if (employeeType === "franchise") return "Franchise";
+  if (team === "sales_operations") {
+    return employeeType === "associate" ? "Associate Sales & Operations" : "Sales & Operations";
+  }
   if (employeeType === "associate" && team === "sales") return "Associate Sales";
   if (employeeType === "associate" && team === "operations") return "Associate Operations";
   if (team === "operations") return "Operations";

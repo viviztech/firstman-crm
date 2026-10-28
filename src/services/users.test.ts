@@ -110,6 +110,7 @@ describe("listAssignableStaffForService (integration, ADR 0004)", () => {
   const managerId = randomUUID();
   const opsExecId = randomUUID();
   const salesExecId = randomUUID();
+  const combinedExecId = randomUUID();
   const managerScope = makeScope(managerId, "manager");
   let pvtLtdServiceId: string;
   let gstServiceId: string;
@@ -137,9 +138,17 @@ describe("listAssignableStaffForService (integration, ADR 0004)", () => {
         emailVerified: true,
         role: "executive",
       },
+      {
+        id: combinedExecId,
+        name: "Assignable Staff Test Sales and Ops Exec",
+        email: `assignable-staff-combined-${combinedExecId}@test.local`,
+        emailVerified: true,
+        role: "executive",
+      },
     ]);
     await updateStaffTeam(opsExecId, "operations", managerScope);
     await updateStaffTeam(salesExecId, "sales", managerScope);
+    await updateStaffTeam(combinedExecId, "sales_operations", managerScope);
 
     const pvtLtd = await db.query.services.findFirst({
       where: eq(services.slug, "pvt-ltd-registration"),
@@ -158,6 +167,7 @@ describe("listAssignableStaffForService (integration, ADR 0004)", () => {
     await db.delete(user).where(eq(user.id, managerId));
     await db.delete(user).where(eq(user.id, opsExecId));
     await db.delete(user).where(eq(user.id, salesExecId));
+    await db.delete(user).where(eq(user.id, combinedExecId));
   });
 
   it("excludes an operations executive not scoped to the given service", async () => {
@@ -186,5 +196,20 @@ describe("listAssignableStaffForService (integration, ADR 0004)", () => {
 
     const staff = await listAssignableStaffForService(pvtLtdServiceId);
     expect(staff.map((member) => member.id)).toContain(salesExecId);
+  });
+
+  it("requires explicit service scope for a Sales and Operations executive", async () => {
+    await setStaffServiceAssignments(combinedExecId, [], managerScope);
+    expect(
+      (await listAssignableStaffForService(pvtLtdServiceId)).map((member) => member.id),
+    ).not.toContain(combinedExecId);
+
+    await setStaffServiceAssignments(combinedExecId, [gstServiceId], managerScope);
+    expect(
+      (await listAssignableStaffForService(pvtLtdServiceId)).map((member) => member.id),
+    ).not.toContain(combinedExecId);
+    expect(
+      (await listAssignableStaffForService(gstServiceId)).map((member) => member.id),
+    ).toContain(combinedExecId);
   });
 });

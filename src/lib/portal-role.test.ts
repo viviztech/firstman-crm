@@ -22,6 +22,11 @@ describe("getPortalRole", () => {
     expect(getPortalRole("executive", null, "franchise")).toBe("Franchise");
     expect(getPortalRole("executive", "sales", "associate")).toBe("Associate Sales");
     expect(getPortalRole("executive", "operations", "associate")).toBe("Associate Operations");
+    expect(getPortalRole("executive", "sales_operations", "associate")).toBe(
+      "Associate Sales & Operations",
+    );
+    expect(getPortalRole("executive", "sales_operations", "internal")).toBe("Sales & Operations");
+    expect(getPortalRole("executive", "sales_operations", "franchise")).toBe("Franchise");
     expect(getPortalRole("executive", "operations", "internal")).toBe("Operations");
     expect(getPortalRole("executive", "sales", "internal")).toBe("Sales");
     expect(getPortalRole("executive", null, "internal")).toBe("Sales");

@@ -19,6 +19,7 @@ const EXECUTIVE_TEAMS: { value: string; label: string }[] = [
   { value: NONE, label: "Unset" },
   { value: "sales", label: "Sales" },
   { value: "operations", label: "Operations" },
+  { value: "sales_operations", label: "Sales & Operations" },
 ];
 
 const MANAGER_TEAMS: { value: string; label: string }[] = [
@@ -54,7 +55,8 @@ export function StaffTeamSelect({
         toast.error(result.error);
         return;
       }
-      toast.success(`Team updated to ${next === NONE ? "unset" : next}`);
+      const label = TEAMS.find((option) => option.value === next)?.label ?? next;
+      toast.success(`Team updated to ${label}`);
     });
   }
 
@@ -65,7 +67,7 @@ export function StaffTeamSelect({
       disabled={disabled || isPending}
       items={TEAMS}
     >
-      <SelectTrigger className="w-32" size="sm">
+      <SelectTrigger className="w-44" size="sm">
         <SelectValue />
       </SelectTrigger>
       <SelectContent>
